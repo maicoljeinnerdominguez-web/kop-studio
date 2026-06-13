@@ -94,7 +94,7 @@ export default function PromoBanner() {
         {/* Dismiss button */}
         <button
           onClick={dismiss}
-          className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-4 text-neutral-500 hover:text-white transition-colors z-10 p-0.5"
+          className="absolute top-1/2 -translate-y-1/2 right-1 sm:right-4 text-neutral-500 hover:text-white transition-colors z-10 touch-target flex items-center justify-center p-1"
           aria-label="Cerrar banner promocional"
         >
           <X className="size-3.5" />

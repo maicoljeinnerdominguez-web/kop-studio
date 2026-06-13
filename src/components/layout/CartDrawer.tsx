@@ -83,7 +83,7 @@ export default function CartDrawer() {
 
         {items.length === 0 ? (
           /* Empty Cart */
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 py-12">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -173,7 +173,7 @@ export default function CartDrawer() {
                         }`}
                       >
                         {/* Thumbnail */}
-                        <div className="w-20 h-24 rounded bg-[#1a1a1a] overflow-hidden flex-shrink-0">
+                        <div className="w-20 h-24 sm:w-22 sm:h-26 rounded bg-[#1a1a1a] overflow-hidden flex-shrink-0">
                           {imageUrl ? (
                             <img
                               src={imageUrl}
@@ -278,7 +278,7 @@ export default function CartDrawer() {
             </ScrollArea>
 
             {/* Summary */}
-            <div className="border-t border-[#262626] px-5 py-4 flex-shrink-0 bg-[#0a0a0a]">
+            <div className="border-t border-[#262626] px-5 py-4 flex-shrink-0 bg-[#0a0a0a] shadow-[0_-4px_12px_rgba(0,0,0,0.4)]">
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-neutral-400">Subtotal</span>

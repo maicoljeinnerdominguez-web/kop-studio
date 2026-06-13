@@ -23,7 +23,10 @@ export default function SearchCommandPalette() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const quickLinkRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Focus input when opened
@@ -77,11 +80,26 @@ export default function SearchCommandPalette() {
     }, 300);
   }, []);
 
+  // Reset selected index when query changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [query]);
+
+  // Scroll selected item into view
+  useEffect(() => {
+    if (showResults && selectedIndex >= 0) {
+      resultRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+    } else if (!showResults && selectedIndex >= 0) {
+      quickLinkRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex, showResults]);
+
   const close = useCallback(() => {
     setOpen(false);
     setQuery('');
     setResults([]);
     setLoading(false);
+    setSelectedIndex(-1);
     if (debounceRef.current) clearTimeout(debounceRef.current);
   }, [setOpen]);
 
@@ -124,6 +142,30 @@ export default function SearchCommandPalette() {
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
               if (e.key === 'Escape') close();
+              const navItems = showResults ? results : QUICK_LINKS;
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (navItems.length === 0) return;
+                setSelectedIndex((prev) =>
+                  prev < navItems.length - 1 ? prev + 1 : 0
+                );
+              }
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (navItems.length === 0) return;
+                setSelectedIndex((prev) =>
+                  prev > 0 ? prev - 1 : navItems.length - 1
+                );
+              }
+              if (e.key === 'Enter') {
+                if (selectedIndex >= 0) {
+                  if (showResults && results[selectedIndex]) {
+                    handleResultClick(results[selectedIndex]);
+                  } else if (!showResults && QUICK_LINKS[selectedIndex]) {
+                    handleQuickLinkClick(QUICK_LINKS[selectedIndex].category);
+                  }
+                }
+              }
             }}
           >
             {/* Search Input Area */}
@@ -159,14 +201,19 @@ export default function SearchCommandPalette() {
               {/* Search Results */}
               {showResults && !loading && results.length > 0 && (
                 <div className="p-1">
-                  {results.map((product) => {
+                  {results.map((product, i) => {
                     const primaryImage = product.images?.[0];
                     return (
                       <button
                         key={product.id}
+                        ref={(el) => { resultRefs.current[i] = el; }}
                         onClick={() => handleResultClick(product)}
-                        className="flex items-center gap-4 p-3 hover:bg-white/5 transition-colors cursor-pointer rounded-md mx-1 w-full text-left"
-                      >
+                        className={`flex items-center gap-4 p-3 hover:bg-white/5 transition-colors cursor-pointer rounded-md mx-1 w-full text-left border-l-2 ${
+                          i === selectedIndex
+                            ? 'bg-white/10 border-l-red-600'
+                            : 'border-l-transparent'
+                        }`
+                      }>
                         <div className="w-12 h-12 rounded-md bg-[#111] overflow-hidden flex-shrink-0">
                           {primaryImage?.url ? (
                             <img
@@ -212,12 +259,17 @@ export default function SearchCommandPalette() {
                     ACCESOS RÁPIDOS
                   </p>
                   <div className="p-1 pb-2">
-                    {QUICK_LINKS.map((link) => (
+                    {QUICK_LINKS.map((link, i) => (
                       <button
                         key={link.category}
+                        ref={(el) => { quickLinkRefs.current[i] = el; }}
                         onClick={() => handleQuickLinkClick(link.category)}
-                        className="flex items-center gap-4 p-3 hover:bg-white/5 transition-colors cursor-pointer rounded-md mx-1 w-full text-left"
-                      >
+                        className={`flex items-center gap-4 p-3 hover:bg-white/5 transition-colors cursor-pointer rounded-md mx-1 w-full text-left border-l-2 ${
+                          i === selectedIndex
+                            ? 'bg-white/10 border-l-red-600'
+                            : 'border-l-transparent'
+                        }`
+                      }>
                         <div className="w-12 h-12 rounded-md bg-[#111] flex items-center justify-center flex-shrink-0">
                           <Tag className="size-5 text-neutral-500" />
                         </div>
@@ -235,11 +287,17 @@ export default function SearchCommandPalette() {
             {/* Bottom Bar */}
             <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#1a1a1a]">
               <div className="flex items-center gap-3 text-[10px] text-neutral-500">
-                <span className="flex items-center gap-1">
+                <span className={`flex items-center gap-1 transition-colors ${selectedIndex >= 0 ? 'text-white' : ''}`}>
                   <kbd className="bg-[#1a1a1a] px-1.5 py-0.5 rounded text-[10px] font-mono">
                     ↵
                   </kbd>
                   Abrir
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="bg-[#1a1a1a] px-1.5 py-0.5 rounded text-[10px] font-mono">
+                    ↑↓
+                  </kbd>
+                  Navegar
                 </span>
                 <span className="flex items-center gap-1">
                   <kbd className="bg-[#1a1a1a] px-1.5 py-0.5 rounded text-[10px] font-mono">

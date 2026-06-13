@@ -102,7 +102,7 @@ export default function Footer() {
   const isDisabled = status === 'loading' || status === 'success';
 
   return (
-    <footer className="bg-[#0a0a0a] border-t border-[#262626] relative overflow-hidden">
+    <footer className="safe-area-bottom bg-[#0a0a0a] border-t border-[#262626] relative overflow-hidden">
       {/* Large KOP watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
         <span className="text-[8rem] font-black text-white/[0.02] tracking-tighter leading-none">KOP</span>
@@ -125,7 +125,7 @@ export default function Footer() {
               definan tu estilo urbano sin importar las reglas.
             </p>
             {/* Social Media Icons Row */}
-            <div className="flex gap-3 pt-1">
+            <div className="flex gap-3 pt-1 md:justify-start justify-center">
               <a
                 href="https://instagram.com/"
                 target="_blank"
@@ -292,7 +292,7 @@ export default function Footer() {
       {/* Payment Methods */}
       <div className="border-t border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <span className="text-neutral-600 text-xs uppercase tracking-wider mr-1 flex items-center gap-1.5">
               <Lock className="size-3" />
               Métodos de pago:

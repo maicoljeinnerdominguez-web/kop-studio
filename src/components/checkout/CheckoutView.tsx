@@ -510,17 +510,23 @@ function StepHeading({ children }: { children: React.ReactNode }) {
 function SecurityBadges() {
   return (
     <div className="mt-6 space-y-3 border-t border-[#1a1a1a] pt-5">
-      <div className="flex items-center gap-2.5">
-        <Lock className="w-4 h-4 text-green-500/50 flex-shrink-0" />
-        <span className="text-neutral-500 text-xs">
-          Tus datos están protegidos con encriptación SSL
-        </span>
-      </div>
-      <div className="flex items-center gap-2.5">
-        <ShieldCheck className="w-4 h-4 text-green-500/50 flex-shrink-0" />
-        <span className="text-neutral-500 text-xs">
-          Garantía de devolución por 30 días
-        </span>
+      <h4 className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold flex items-center gap-2">
+        <Lock className="w-3.5 h-3.5 text-green-500" />
+        PAGO SEGURO
+      </h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex items-center gap-2.5 bg-[#111] border border-[#1a1a1a] p-3 rounded-sm">
+          <Lock className="w-4 h-4 text-green-500/70 flex-shrink-0" />
+          <span className="text-neutral-400 text-xs leading-relaxed">
+            Encriptación SSL de 256 bits
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 bg-[#111] border border-[#1a1a1a] p-3 rounded-sm">
+          <ShieldCheck className="w-4 h-4 text-green-500/70 flex-shrink-0" />
+          <span className="text-neutral-400 text-xs leading-relaxed">
+            Garantía de devolución 30 días
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -693,20 +699,47 @@ export default function CheckoutView() {
           transition={{ type: 'spring', stiffness: 200, damping: 15 }}
           className="flex flex-col items-center"
         >
-          <div className="w-20 h-20 rounded-full bg-green-600/20 flex items-center justify-center mb-6">
-            <CheckCircle2 className="w-10 h-10 text-green-500" />
+          <div className="w-20 h-20 rounded-full bg-green-600/20 flex items-center justify-center mb-6 relative">
+            <motion.div
+              initial={{ scale: 0, opacity: 1 }}
+              animate={{ scale: 0, opacity: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
+            </motion.div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.8 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <CheckCircle2 className="w-10 h-10 text-green-500" />
+            </motion.div>
           </div>
-          <h2 className="text-white text-2xl font-bold uppercase tracking-wider mb-2">
-            ¡Pedido Confirmado!
-          </h2>
-          <p className="text-neutral-400 text-sm text-center max-w-sm">
-            Gracias por tu compra. Recibirás un email de confirmación con los
-            detalles de tu pedido.
-          </p>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 1.2 }}
+          >
+            <h2 className="text-white text-2xl font-bold uppercase tracking-wider mb-2">
+              ¡Pedido Confirmado!
+            </h2>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5 }}
+          >
+            <p className="text-neutral-400 text-sm text-center max-w-sm">
+              Gracias por tu compra. Recibirás un email de confirmación con los
+              detalles de tu pedido.
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2 }}
             className="mt-6"
           >
             <p className="text-neutral-600 text-xs uppercase tracking-wider">
@@ -719,9 +752,12 @@ export default function CheckoutView() {
   }
 
   const darkInput =
-    'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600 focus-visible:ring-red-600/20 h-12';
+    'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600 focus-visible:ring-red-600/20 h-12 transition-colors duration-200';
   const darkSelect =
-    'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600 data-[placeholder]:text-neutral-600 h-12';
+    'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600 data-[placeholder]:text-neutral-600 h-12 transition-colors duration-200';
+
+  const fieldWrapper =
+    'space-y-1.5 pl-0 border-l-2 border-transparent focus-within:border-red-600 focus-within:pl-3 transition-all duration-200';
 
   return (
     <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
@@ -770,7 +806,7 @@ export default function CheckoutView() {
                 >
                   <StepHeading>Información de Contacto</StepHeading>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
+                    <div className={fieldWrapper}>
                       <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Nombre *
                       </Label>
@@ -780,13 +816,21 @@ export default function CheckoutView() {
                         placeholder="Juan"
                         autoComplete="given-name"
                       />
-                      {contactForm.formState.errors.firstName && (
-                        <p className="text-red-500 text-xs">
-                          {contactForm.formState.errors.firstName.message}
-                        </p>
-                      )}
+                      <AnimatePresence>
+                        {contactForm.formState.errors.firstName && (
+                          <motion.p
+                            initial={{ opacity: 0, x: -8, height: 0 }}
+                            animate={{ opacity: 1, x: 0, height: 'auto' }}
+                            exit={{ opacity: 0, x: -8, height: 0 }}
+                            className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                            {contactForm.formState.errors.firstName.message}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className={fieldWrapper}>
                       <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Apellido *
                       </Label>
@@ -796,13 +840,21 @@ export default function CheckoutView() {
                         placeholder="Pérez"
                         autoComplete="family-name"
                       />
-                      {contactForm.formState.errors.lastName && (
-                        <p className="text-red-500 text-xs">
-                          {contactForm.formState.errors.lastName.message}
-                        </p>
-                      )}
+                      <AnimatePresence>
+                        {contactForm.formState.errors.lastName && (
+                          <motion.p
+                            initial={{ opacity: 0, x: -8, height: 0 }}
+                            animate={{ opacity: 1, x: 0, height: 'auto' }}
+                            exit={{ opacity: 0, x: -8, height: 0 }}
+                            className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                            {contactForm.formState.errors.lastName.message}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className={fieldWrapper}>
                       <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Email *
                       </Label>
@@ -814,13 +866,21 @@ export default function CheckoutView() {
                         placeholder="juan@email.com"
                         autoComplete="email"
                       />
-                      {contactForm.formState.errors.email && (
-                        <p className="text-red-500 text-xs">
-                          {contactForm.formState.errors.email.message}
-                        </p>
-                      )}
+                      <AnimatePresence>
+                        {contactForm.formState.errors.email && (
+                          <motion.p
+                            initial={{ opacity: 0, x: -8, height: 0 }}
+                            animate={{ opacity: 1, x: 0, height: 'auto' }}
+                            exit={{ opacity: 0, x: -8, height: 0 }}
+                            className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                            {contactForm.formState.errors.email.message}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className={fieldWrapper}>
                       <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Teléfono *
                       </Label>
@@ -831,11 +891,19 @@ export default function CheckoutView() {
                         placeholder="+57 300 123 4567"
                         autoComplete="tel"
                       />
-                      {contactForm.formState.errors.phone && (
-                        <p className="text-red-500 text-xs">
-                          {contactForm.formState.errors.phone.message}
-                        </p>
-                      )}
+                      <AnimatePresence>
+                        {contactForm.formState.errors.phone && (
+                          <motion.p
+                            initial={{ opacity: 0, x: -8, height: 0 }}
+                            animate={{ opacity: 1, x: 0, height: 'auto' }}
+                            exit={{ opacity: 0, x: -8, height: 0 }}
+                            className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                            {contactForm.formState.errors.phone.message}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                   <Button
@@ -860,7 +928,7 @@ export default function CheckoutView() {
                 >
                   <StepHeading>Dirección de Envío</StepHeading>
                   <div className="space-y-4">
-                    <div className="space-y-1.5">
+                    <div className={fieldWrapper}>
                       <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Dirección *
                       </Label>
@@ -870,14 +938,22 @@ export default function CheckoutView() {
                         placeholder="Calle 100 #15-20, Apto 302"
                         autoComplete="street-address"
                       />
-                      {addressForm.formState.errors.address && (
-                        <p className="text-red-500 text-xs">
-                          {addressForm.formState.errors.address.message}
-                        </p>
-                      )}
+                      <AnimatePresence>
+                        {addressForm.formState.errors.address && (
+                          <motion.p
+                            initial={{ opacity: 0, x: -8, height: 0 }}
+                            animate={{ opacity: 1, x: 0, height: 'auto' }}
+                            exit={{ opacity: 0, x: -8, height: 0 }}
+                            className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                            {addressForm.formState.errors.address.message}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
+                      <div className={fieldWrapper}>
                         <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Ciudad *
                         </Label>
@@ -887,13 +963,21 @@ export default function CheckoutView() {
                           placeholder="Bogotá"
                           autoComplete="address-level2"
                         />
-                        {addressForm.formState.errors.city && (
-                          <p className="text-red-500 text-xs">
-                            {addressForm.formState.errors.city.message}
-                          </p>
-                        )}
+                        <AnimatePresence>
+                          {addressForm.formState.errors.city && (
+                            <motion.p
+                              initial={{ opacity: 0, x: -8, height: 0 }}
+                              animate={{ opacity: 1, x: 0, height: 'auto' }}
+                              exit={{ opacity: 0, x: -8, height: 0 }}
+                              className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                            >
+                              <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                              {addressForm.formState.errors.city.message}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className={fieldWrapper}>
                         <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Departamento *
                         </Label>
@@ -916,15 +1000,23 @@ export default function CheckoutView() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {addressForm.formState.errors.department && (
-                          <p className="text-red-500 text-xs">
-                            {addressForm.formState.errors.department.message}
-                          </p>
-                        )}
+                        <AnimatePresence>
+                          {addressForm.formState.errors.department && (
+                            <motion.p
+                              initial={{ opacity: 0, x: -8, height: 0 }}
+                              animate={{ opacity: 1, x: 0, height: 'auto' }}
+                              exit={{ opacity: 0, x: -8, height: 0 }}
+                              className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                            >
+                              <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                              {addressForm.formState.errors.department.message}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
+                      <div className={fieldWrapper}>
                         <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Barrio *
                         </Label>
@@ -934,13 +1026,21 @@ export default function CheckoutView() {
                           placeholder="Chapinero"
                           autoComplete="address-level3"
                         />
-                        {addressForm.formState.errors.neighborhood && (
-                          <p className="text-red-500 text-xs">
-                            {addressForm.formState.errors.neighborhood.message}
-                          </p>
-                        )}
+                        <AnimatePresence>
+                          {addressForm.formState.errors.neighborhood && (
+                            <motion.p
+                              initial={{ opacity: 0, x: -8, height: 0 }}
+                              animate={{ opacity: 1, x: 0, height: 'auto' }}
+                              exit={{ opacity: 0, x: -8, height: 0 }}
+                              className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                            >
+                              <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                              {addressForm.formState.errors.neighborhood.message}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className={fieldWrapper}>
                         <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Código Postal *
                         </Label>
@@ -950,11 +1050,19 @@ export default function CheckoutView() {
                           className={darkInput}
                           placeholder="110231"
                         />
-                        {addressForm.formState.errors.postalCode && (
-                          <p className="text-red-500 text-xs">
-                            {addressForm.formState.errors.postalCode.message}
-                          </p>
-                        )}
+                        <AnimatePresence>
+                          {addressForm.formState.errors.postalCode && (
+                            <motion.p
+                              initial={{ opacity: 0, x: -8, height: 0 }}
+                              animate={{ opacity: 1, x: 0, height: 'auto' }}
+                              exit={{ opacity: 0, x: -8, height: 0 }}
+                              className="text-red-500 text-xs flex items-center gap-1.5 overflow-hidden"
+                            >
+                              <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                              {addressForm.formState.errors.postalCode.message}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
                   </div>
@@ -1121,7 +1229,7 @@ export default function CheckoutView() {
                         className="overflow-hidden"
                       >
                         <div className="space-y-4">
-                          <div className="space-y-1.5">
+                          <div className={fieldWrapper}>
                             <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                               Número de tarjeta
                             </Label>
@@ -1135,7 +1243,7 @@ export default function CheckoutView() {
                               }}
                             />
                           </div>
-                          <div className="space-y-1.5">
+                          <div className={fieldWrapper}>
                             <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                               Nombre en la tarjeta
                             </Label>
@@ -1146,7 +1254,7 @@ export default function CheckoutView() {
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
+                            <div className={fieldWrapper}>
                               <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                                 Vencimiento (MM/YY)
                               </Label>
@@ -1160,7 +1268,7 @@ export default function CheckoutView() {
                                 }}
                               />
                             </div>
-                            <div className="space-y-1.5">
+                            <div className={fieldWrapper}>
                               <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                                 CVC
                               </Label>

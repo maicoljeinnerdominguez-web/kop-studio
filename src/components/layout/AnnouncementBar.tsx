@@ -50,7 +50,7 @@ export default function AnnouncementBar() {
       </div>
       <button
         onClick={dismiss}
-        className="absolute right-4 text-white/40 hover:text-white transition-colors z-10"
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors z-10 touch-target flex items-center justify-center p-1"
         aria-label="Cerrar anuncio"
       >
         <X className="size-3.5" />

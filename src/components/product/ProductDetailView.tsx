@@ -15,6 +15,7 @@ import {
   X,
   Copy,
   MessageCircle,
+  Maximize2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -60,6 +61,7 @@ import { useCartStore } from '@/stores/useCartStore'
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
 import ProductCard from '@/components/product/ProductCard'
 import ProductReviews from '@/components/product/ProductReviews'
+import ImageLightbox from '@/components/product/ImageLightbox'
 import type { Product, ProductVariant } from '@/types'
 
 const SIZE_CHART = [
@@ -240,6 +242,8 @@ function ProductDetailInner({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [addedToCart, setAddedToCart] = useState(false)
 
   useEffect(() => {
     fetch('/api/products')
@@ -308,6 +312,8 @@ function ProductDetailInner({ slug }: { slug: string }) {
   const handleAddToCart = () => {
     if (!product || !selectedVariant) return
     addItem(product, selectedVariant)
+    setAddedToCart(true)
+    setTimeout(() => setAddedToCart(false), 1500)
     toast.success('Producto añadido al carrito')
     openCart()
   }
@@ -353,7 +359,10 @@ function ProductDetailInner({ slug }: { slug: string }) {
     const url = window.location.href
     try {
       await navigator.clipboard.writeText(url)
-      toast.success('Enlace copiado al portapapeles')
+      toast.success('¡Enlace copiado!', {
+        icon: <Copy className="size-4" />,
+        duration: 2000,
+      })
     } catch {
       toast.error('No se pudo copiar el enlace')
     }
@@ -456,16 +465,23 @@ function ProductDetailInner({ slug }: { slug: string }) {
         {/* Back button */}
         <button
           onClick={goBack}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 text-sm"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 sm:mb-8 text-sm touch-target min-h-11"
         >
-          <ChevronLeft className="size-4" />
-          Volver
+          <ChevronLeft className="size-5" />
+          <span>Volver</span>
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           {/* Image Gallery */}
           <div>
-            <div className="relative aspect-square overflow-hidden rounded-md bg-[#111] mb-3">
+            <div
+              className="group relative aspect-square md:aspect-[4/5] overflow-hidden rounded-md bg-[#111] mb-3 cursor-zoom-in"
+              onClick={() => setLightboxOpen(true)}
+              role="button"
+              tabIndex={0}
+              aria-label="Open image lightbox"
+              onKeyDown={(e) => { if (e.key === 'Enter') setLightboxOpen(true) }}
+            >
               <AnimatePresence mode="wait">
                 {product.images.map((image, i) => (
                   <ImageZoom
@@ -478,7 +494,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
               </AnimatePresence>
 
               {/* Badges */}
-              <div className="absolute top-3 left-3 flex flex-col gap-2">
+              <div className="absolute top-3 left-3 flex flex-col gap-2 pointer-events-none">
                 {product.isNew && (
                   <Badge className="bg-white text-black text-[10px] font-bold uppercase tracking-wider rounded-none px-2.5 py-1 hover:bg-gray-200">
                     Nuevo
@@ -489,6 +505,11 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     Best Seller
                   </Badge>
                 )}
+              </div>
+
+              {/* Expand/lightbox hint */}
+              <div className="absolute bottom-3 right-3 bg-black/50 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <Maximize2 className="size-5 text-white" />
               </div>
             </div>
 
@@ -503,12 +524,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
             {/* Thumbnails */}
             {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2 sm:gap-2.5 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
                 {product.images.map((image, i) => (
                   <button
                     key={image.id}
                     onClick={() => setSelectedImageIndex(i)}
-                    className={`shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden border-2 transition-colors ${
+                    className={`shrink-0 w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-md overflow-hidden border-2 transition-colors ${
                       selectedImageIndex === i
                         ? 'border-white'
                         : 'border-[#333] hover:border-gray-500'
@@ -613,11 +634,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   const inStock = variant.stockQuantity > 0
                   const isSelected = selectedVariant?.id === variant.id
                   return (
-                    <button
+                    <motion.button
                       key={variant.id}
+                      whileTap={inStock ? { scale: 0.9 } : undefined}
                       onClick={() => inStock && handleSizeSelect(variant)}
                       disabled={!inStock}
-                      className={`min-w-[3.5rem] h-11 px-4 text-sm font-medium uppercase tracking-wider border-2 transition-all ${
+                      className={`min-w-[3.5rem] h-11 px-4 text-sm font-medium uppercase tracking-wider border-2 transition-all duration-200 ${
                         isSelected
                           ? 'bg-white text-black border-white'
                           : inStock
@@ -626,7 +648,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                       }`}
                     >
                       {variant.size}
-                    </button>
+                    </motion.button>
                   )
                 })}
               </div>
@@ -646,21 +668,25 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     </span>
                   )}
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                   {availableColors.map((variant) => {
                     const isSelected = effectiveColor === variant.color
                     return (
-                      <button
+                      <motion.button
                         key={variant.color}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => handleColorSelect(variant.color)}
-                        className={`h-9 px-4 text-xs font-medium uppercase tracking-wider border-2 transition-all ${
-                          isSelected
-                            ? 'bg-white text-black border-white'
-                            : 'bg-transparent text-neutral-300 border-[#404040] hover:border-white'
-                        }`}
+                        className="flex items-center gap-2 h-9 px-3 text-xs font-medium uppercase tracking-wider transition-all duration-200"
                       >
-                        {variant.color}
-                      </button>
+                        <span
+                          className={`w-5 h-5 rounded-full bg-neutral-800 border-2 transition-all duration-200 ${
+                            isSelected ? 'border-red-600 ring-2 ring-red-600/30' : 'border-[#404040] hover:border-white'
+                          }`}
+                        />
+                        <span className={`transition-colors ${isSelected ? 'text-white' : 'text-neutral-300'}`}>
+                          {variant.color}
+                        </span>
+                      </motion.button>
                     )
                   })}
                 </div>
@@ -688,12 +714,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
               <motion.div
                 animate={
-                  selectedVariant && !isOutOfStock
+                  selectedVariant && !isOutOfStock && !addedToCart
                     ? { scale: [1, 1.015, 1] }
                     : { scale: 1 }
                 }
                 transition={
-                  selectedVariant && !isOutOfStock
+                  selectedVariant && !isOutOfStock && !addedToCart
                     ? { repeat: Infinity, duration: 2, ease: 'easeInOut' }
                     : {}
                 }
@@ -701,10 +727,27 @@ function ProductDetailInner({ slug }: { slug: string }) {
                 <Button
                   onClick={handleAddToCart}
                   disabled={!canAddToCart || isOutOfStock}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed"
+                  className={`w-full text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-300 ${
+                    addedToCart
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
                 >
-                  <ShoppingBag className="size-5 mr-2" />
-                  Añadir al Carrito
+                  {addedToCart ? (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex items-center gap-2"
+                    >
+                      <Check className="size-5" />
+                      AÑADIDO
+                    </motion.span>
+                  ) : (
+                    <>
+                      <ShoppingBag className="size-5 mr-2" />
+                      AGREGAR AL CARRITO
+                    </>
+                  )}
                 </Button>
               </motion.div>
 
@@ -848,6 +891,14 @@ function ProductDetailInner({ slug }: { slug: string }) {
         {/* Reviews */}
         <ProductReviews productId={product.id} />
       </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={product.images.map((img) => ({ url: img.url, altText: img.altText }))}
+        initialIndex={selectedImageIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </main>
   )
 }

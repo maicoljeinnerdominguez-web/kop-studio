@@ -536,3 +536,43 @@ body::before {
 .animate-\[pulse-red_2s_ease-in-out_infinite\] {
   animation: pulse-red 2s ease-in-out infinite;
 }
+
+/* ────────────────────────────────────────────
+   Mobile-Specific Improvements
+   ──────────────────────────────────────────── */
+
+/* Safe area padding for iOS */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Better touch targets on mobile */
+@media (max-width: 768px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Smooth image loading for product images */
+.product-image-load {
+  background: linear-gradient(135deg, #111 0%, #0a0a0a 50%, #111 100%);
+  background-size: 200% 200%;
+  animation: productImageShimmer 1.5s ease-in-out infinite;
+}
+@keyframes productImageShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Hide scrollbar for thumbnail galleries on mobile */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
