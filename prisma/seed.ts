@@ -259,6 +259,7 @@ async function main() {
         status: "DELIVERED",
         totalAmount: firstProduct.price * 2 + 15000,
         shippingAddress: "Calle 72 #10-45, Bogotá, Cundinamarca",
+        customerEmail: admin.email,
         items: {
           create: {
             productVariantId: variant.id,

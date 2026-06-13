@@ -100,52 +100,59 @@ function StepIndicator({
 }) {
   const steps = [
     { num: 1, label: 'Contacto' },
-    { num: 2, label: 'Dirección' },
+    { num: 2, label: 'Envío' },
     { num: 3, label: 'Pago' },
   ];
 
   return (
-    <div className="flex items-center justify-center gap-0 mb-10 w-full max-w-md mx-auto">
+    <div className="flex items-center justify-center gap-0 mb-8 w-full max-w-md mx-auto">
       {steps.map((s, index) => {
         const isActive = s.num === currentStep;
         const isCompleted = s.num < currentStep;
 
         return (
           <div key={s.num} className="flex items-center">
-            <div className="flex flex-col items-center">
-              <div
-                className={`flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full transition-all duration-300 ${
+            <div className="flex flex-col items-center gap-1.5">
+              <motion.div
+                className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-colors duration-300 ${
                   isCompleted
                     ? 'bg-green-600 text-white'
                     : isActive
-                    ? 'bg-red-600 text-white'
-                    : 'bg-[#1a1a1a] text-neutral-500'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-[#1a1a1a] text-neutral-500 border border-[#333]'
                 }`}
+                animate={{
+                  scale: isActive ? 1.1 : 1,
+                }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
               >
                 {isCompleted ? (
                   <Check className="w-4 h-4" />
                 ) : (
                   <span className="text-[10px] sm:text-xs font-bold">{s.num}</span>
                 )}
-              </div>
+              </motion.div>
               <span
-                className={`text-[10px] mt-2 uppercase tracking-wider font-medium hidden sm:block ${
+                className={`text-[10px] uppercase tracking-widest font-bold ${
                   isCompleted
                     ? 'text-green-500'
                     : isActive
-                    ? 'text-white'
-                    : 'text-neutral-500'
+                      ? 'text-white'
+                      : 'text-neutral-600'
                 }`}
               >
                 {s.label}
               </span>
             </div>
             {index < steps.length - 1 && (
-              <div
-                className={`w-12 sm:w-20 h-[2px] mx-2 mt-[-18px] transition-colors duration-300 ${
-                  s.num < currentStep ? 'bg-green-600' : 'bg-[#1a1a1a]'
-                }`}
-              />
+              <div className="w-16 sm:w-24 h-px mx-2 mt-[-16px] relative overflow-hidden bg-[#1a1a1a]">
+                <motion.div
+                  className="absolute inset-y-0 left-0 bg-red-600"
+                  initial={{ width: '0%' }}
+                  animate={{ width: isCompleted ? '100%' : '0%' }}
+                  transition={{ duration: 0.5, ease: 'easeInOut' }}
+                />
+              </div>
             )}
           </div>
         );
@@ -216,7 +223,7 @@ function PromoCodeSection({
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               onKeyDown={(e) => e.key === 'Enter' && handleApply()}
-              placeholder="INGRESA TU CÓDIGO"
+              placeholder="¿Tienes un código? Prueba KOP10"
               className="bg-[#111] border border-[#333] text-white text-sm placeholder:text-neutral-600 h-10 px-3 flex-1 uppercase tracking-wider font-medium focus:outline-none focus:border-neutral-500 transition-colors"
             />
             <button
@@ -614,6 +621,7 @@ export default function CheckoutView() {
         userId: 'guest-checkout',
         totalAmount: finalTotal,
         shippingAddress,
+        customerEmail: contact.email,
         notes: '',
         paymentMethod,
         contact,

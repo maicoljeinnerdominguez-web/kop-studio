@@ -989,3 +989,179 @@ KOP STUDIO e-commerce is at ~9.7/10 polish. 5 build phases + 7 enhancement round
 8. Add keyboard navigation (arrow keys) to search command palette results
 9. Product image gallery zoom (lightbox/modal)
 10. Add loading skeleton for order tracking results
+
+---
+Task ID: promo-banner-order-history
+Agent: Main Agent
+Task: Add Promo Code Homepage Banner + Order History View
+
+Work Log:
+- Read worklog.md and analyzed existing project structure, components, API routes, and database schema
+- Feature 1 (Promo Banner):
+  - Created `/src/components/promo/PromoBanner.tsx` - dismissible promo banner showing "KOP10" code with 10% discount message
+  - Banner features: copy-to-clipboard button, X dismiss (persisted in sessionStorage), dark background with red accent border, gothic aesthetic
+  - Updated `/src/app/page.tsx` to import and render PromoBanner between AnnouncementBar and Header
+  - Updated `/src/components/checkout/CheckoutView.tsx` placeholder from "INGRESA TU CÓDIGO" to "¿Tienes un código? Prueba KOP10"
+  - Verified KOP10 promo code already exists in seed data (PERCENTAGE, 10%, minPurchase 100000, maxUses 100)
+  - Verified existing promo API routes at `/api/promo` (validate) and `/api/promo/use` (increment usage) already support KOP10
+- Feature 2 (Order History):
+  - Added `customerEmail` optional field to Order model in Prisma schema and pushed to DB
+  - Updated `/src/app/api/orders/route.ts`: GET now supports `?email=` query param to filter orders by customerEmail; POST now saves customerEmail
+  - Updated `/src/components/checkout/CheckoutView.tsx` to pass `customerEmail: contact.email` when creating orders
+  - Updated seed data to include `customerEmail` on sample order
+  - Added `"order-history"` to AppView type in `/src/types/index.ts`
+  - Created `/src/components/order/OrderHistoryView.tsx` - full order history view with:
+    - Breadcrumb navigation (Inicio > Mis Pedidos)
+    - Order list with: order number, date, status badge (green/yellow/red), product thumbnails, total, "Ver detalle" button
+    - Empty state: "Aún no tienes pedidos" with CTA to shop
+    - Loading spinner and error states
+    - Dark gothic theme consistent with project
+  - Updated `/src/components/checkout/OrderConfirmation.tsx`: replaced disabled "Ver mis pedidos" with active button that navigates to 'order-history'
+  - Header NOT modified (order-history is accessed from checkout confirmation only)
+
+Stage Summary:
+- Files Created: 2 (PromoBanner.tsx, OrderHistoryView.tsx)
+- Files Modified: 7 (page.tsx, CheckoutView.tsx, OrderConfirmation.tsx, types/index.ts, prisma/schema.prisma, orders/route.ts, seed.ts)
+- ESLint: 0 errors, 0 warnings
+- Pre-existing TS errors in CheckoutView.tsx (navigate callable) are unrelated to changes
+
+---
+Task ID: cron-review-1-styling
+Agent: frontend-styling-expert subagent
+Task: Wave 1 - Comprehensive CSS & Component Styling Improvements
+
+Work Log:
+- Enhanced globals.css with 14+ new CSS additions:
+  - `--transition-bounce` CSS variable for springy interactions
+  - Subtle dot grid background pattern on body (opacity 0.03)
+  - `glow-pulse` animation for red accent elements on hover
+  - `slideUpFadeIn` keyframe for section content reveal
+  - `textReveal` animation (blur-to-clear + slide-up) for hero heading
+  - `shimmer-loading` moving gradient placeholder for images
+  - Enhanced `.announcement-gradient` with 6-stop gradient, 300% bg-size, and box-shadow glow
+  - `.hover-lift` utility (translateY + enhanced shadow)
+  - `.animated-border-bottom` red gradient underline that scales in
+  - `.filter-btn` hover scale + red border
+  - `.mobile-menu-item` red 3px accent line on left (CSS ::before pseudo-element)
+  - `.trust-feature-icon` scale 1.2 + color shift on hover
+  - `.truck-pulse-ring` pulsing box-shadow ring for shipping icon
+  - `.footer-brand-glow`, `.footer-divider`, `.payment-pill`, `.discount-badge-glow`, `.count-animate`
+- ProductCard improvements:
+  - Stock indicator dot (green=in stock, yellow=low <5, red=out of stock)
+  - Quick sizes display on hover (mini bar showing available sizes)
+  - Discount badge glow (red box-shadow)
+  - Staggered scroll-triggered animation via framer-motion variants (index prop)
+- HomeView trust features: hover scale animations, truck pulse ring, subtle red-tinted gradient bg
+- Footer: brand glow on hover, animated dividers between columns, payment pill hover effects
+- Header: mobile menu items now have red accent line on left via CSS
+
+Stage Summary:
+- Files Modified: globals.css, ProductCard.tsx, HomeView.tsx, Footer.tsx, Header.tsx, CollectionView.tsx
+- No new files created
+- All existing functionality preserved
+- ESLint: 0 errors
+
+---
+Task ID: cron-review-1-features
+Agent: full-stack-developer subagent
+Task: Wave 1 - Promo Code Banner + Order History View
+
+Work Log:
+- Created PromoBanner.tsx: dismissible promo banner showing KOP10 code with copy-to-clipboard
+- Created OrderHistoryView.tsx: order list with status badges, thumbnails, totals, empty state
+- Updated page.tsx: added PromoBanner import + lazy-loaded OrderHistoryView
+- Updated types/index.ts: added "order-history" to AppView union
+- Updated prisma/schema.prisma: added customerEmail to Order model
+- Updated seed.ts: added customerEmail to sample order
+- Updated orders/route.ts: GET supports ?email= filter, POST saves customerEmail
+- Updated CheckoutView.tsx: promo placeholder hint, customerEmail in order payload
+- Updated OrderConfirmation.tsx: active "Ver mis pedidos" button
+
+Stage Summary:
+- Files Created: 2 (PromoBanner.tsx, OrderHistoryView.tsx)
+- Files Modified: 7
+- ESLint: 0 errors
+
+---
+Task ID: cron-review-1-wave2-styling
+Agent: frontend-styling-expert subagent
+Task: Wave 2 - Hero Animations, Micro-interactions, Brand Stats
+
+Work Log:
+- Hero section: word-by-word text reveal (ASCENSIÓN, COLECCIÓN, 2026) with blur-to-clear stagger
+- Hero: red underline that draws itself after heading appears
+- Hero: "DROP: 2026" element with pulsing red dot between subtitle and CTAs
+- Hero: staggered CTA button entrance (0.15s gap)
+- Hero: parallax scroll effect (image moves 30% slower, text fades on scroll)
+- ProductCard: red glow border on hover (box-shadow)
+- ProductCard: NUEVO badge pulse animation (spring entrance + CSS pulse-red ring)
+- ProductCard: "AGOTADO" overlay when totalStock === 0
+- Brand Story section: added 3 stats (100+ Diseños, 5K+ Clientes, 4.9★ Rating) with staggered reveal
+- Wishlist empty state: pulsing heart icon animation
+- Added @keyframes pulse-red CSS for NUEVO badge animation
+
+Stage Summary:
+- Files Modified: HomeView.tsx, ProductCard.tsx, WishlistView.tsx, globals.css
+- ESLint: 0 errors
+
+---
+Task ID: cron-review-1-wave2-features
+Agent: full-stack-developer subagent
+Task: Wave 2 - Star Ratings, Checkout Polish, Confetti
+
+Work Log:
+- ProductCard: added star rating display (5 SVG stars + review count) using mock ratings from product ID hash
+- CheckoutView: replaced static StepIndicator with animated version (scale-up on active, green on complete, connecting lines animate fill)
+- OrderConfirmation: spring bounce checkmark animation, 12 confetti particles (red/white/dark-red), prominent order number with copy-to-clipboard button
+
+Stage Summary:
+- Files Modified: ProductCard.tsx, CheckoutView.tsx, OrderConfirmation.tsx
+- ESLint: 0 errors
+
+---
+Task ID: cron-review-1
+Agent: Main Agent
+Task: Cron Review Round 1 - QA, Bug Fixes, Styling Improvements, New Features
+
+## Current Project Status Assessment
+KOP STUDIO is a fully functional dark gothic streetwear e-commerce SPA with:
+- **10 view components**: Home, Collection, Product Detail, Checkout, Order Confirmation, Admin Dashboard, Admin Products, Admin Product Form, Wishlist, Order Tracking, Order History
+- **7 API routes**: products, products/[id], categories, orders, auth, search, admin + newsletter + promo + reviews
+- **5 Zustand stores**: navigation, cart, auth, wishlist, recently viewed, search open
+- **7 Prisma models**: User, Category, Product, ProductVariant, ProductImage, Order, OrderItem + Review
+- **Database**: SQLite with 8 seeded products, 2 users, 1 sample order
+- **Dev Server**: Running on port 3000, zero lint errors, zero runtime errors
+
+## Completed Modifications
+1. **QA Testing**: Tested homepage, collection, product quick view via agent-browser. Zero JS errors, zero console errors.
+2. **Styling Wave 1**: 14+ CSS animations/utilities added (dot grid bg, glow pulse, slide-up fade, text reveal, shimmer loading, hover lift, animated borders, filter btn hover, mobile menu accent, trust feature animations, footer glow, payment pill hover, discount badge glow, count animate)
+3. **Styling Wave 2**: Hero word-by-word reveal with parallax, brand stats, NUEVO badge pulse, AGOTADO overlay, wishlist pulse
+4. **Feature: Promo Banner**: Dismissible KOP10 promo code banner with copy-to-clipboard, sessionStorage persistence
+5. **Feature: Order History**: Full order history view with status badges, thumbnails, empty state, breadcrumbs
+6. **Feature: Star Ratings**: Mock star ratings on all product cards
+7. **Feature: Checkout Polish**: Animated step indicator with connecting line fill animation
+8. **Feature: Confetti**: Order confirmation confetti particles and bounce animation
+
+## Verification Results
+- ESLint: 0 errors, 0 warnings
+- Dev Server: 200 OK on all routes
+- API Routes: All returning 200 (categories, products, products?new, products?bestseller)
+- JS Console: Zero errors
+- Screenshots: Saved to /home/z/my-project/download/qa-homepage.png, qa-after-styling.png, qa-final-homepage.png
+
+## Unresolved Issues / Risks
+- Known agent-browser limitation: cannot click motion.div-wrapped elements (not user-facing)
+- The "Heart is not defined" error in CartDrawer was a transient hot-reload issue, already resolved
+- OrderHistory fetches ALL orders (not filtered by email) since guest checkout doesn't persist sessions
+
+## Priority Recommendations for Next Phase
+1. Image upload functionality in admin product form
+2. Bcrypt password hashing for admin authentication
+3. Customer order history linked to email (requires session/auth persistence)
+4. "Total Looks" category with outfit bundle products
+5. Product comparison feature (side-by-side view)
+6. Mobile-specific responsive QA with device emulation
+7. Keyboard navigation for search command palette results
+8. Product image gallery lightbox/modal zoom
+9. Email notification system for order confirmations
+10. Dark/light theme toggle

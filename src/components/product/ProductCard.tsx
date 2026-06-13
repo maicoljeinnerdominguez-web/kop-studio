@@ -10,11 +10,33 @@ import { useWishlistStore } from '@/stores/useWishlistStore'
 import ProductQuickView from '@/components/product/ProductQuickView'
 import type { Product } from '@/types'
 
-interface ProductCardProps {
-  product: Product
+function getProductRating(productId: string): { rating: number; count: number } {
+  let hash = 0
+  for (let i = 0; i < productId.length; i++) {
+    hash = ((hash << 5) - hash) + productId.charCodeAt(i)
+    hash |= 0
+  }
+  const absHash = Math.abs(hash)
+  const rating = 4 + (absHash % 10) / 10
+  const count = 5 + (absHash % 25)
+  return { rating: Math.round(rating * 10) / 10, count }
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+interface ProductCardProps {
+  product: Product
+  index?: number
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.05, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+  }),
+}
+
+export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
   const navigate = useNavigationStore((s) => s.navigate)
@@ -32,6 +54,14 @@ export default function ProductCard({ product }: ProductCardProps) {
       return () => clearTimeout(timer)
     }
   }, [addedToCart])
+
+  const totalStock = product.variants.reduce((sum, v) => sum + v.stockQuantity, 0)
+  const availableSizes = product.variants.filter((v) => v.stockQuantity > 0).map((v) => v.size)
+
+  const stockStatus = totalStock === 0 ? 'out' : totalStock < 5 ? 'low' : 'in'
+  const stockDotColor = stockStatus === 'in' ? 'bg-green-500' : stockStatus === 'low' ? 'bg-yellow-500' : 'bg-red-500'
+
+  const { rating: productRating, count: reviewCount } = getProductRating(product.id)
 
   const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0]
   const secondaryImage = product.images.find((img) => !img.isPrimary) || product.images[1]
@@ -66,11 +96,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <motion.div
       className="product-card group cursor-pointer"
+      variants={cardVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+      custom={index}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
       onClick={handleClick}
     >
-      <div className={`relative overflow-hidden rounded-md bg-[#0a0a0a] border transition-all duration-300 hover:shadow-lg hover:shadow-red-600/5 ${wishlisted ? 'border-red-600/40' : 'border-[#1a1a1a] hover:border-red-600/30'}`}>
+      <div className={`relative overflow-hidden rounded-md bg-[#0a0a0a] border transition-all duration-300 hover:shadow-lg hover:shadow-red-600/20 ${wishlisted ? 'border-red-600/40' : 'border-[#1a1a1a] hover:border-red-600/50 hover:shadow-[0_0_15px_rgba(220,38,38,0.15)]'}`}>
         {/* Image container */}
         <div className="relative aspect-[3/4] overflow-hidden bg-[#111] shine-effect">
           {!imageError && primaryImage ? (
@@ -95,27 +130,43 @@ export default function ProductCard({ product }: ProductCardProps) {
             />
           )}
 
-          {/* Discount badge */}
-          {hasDiscount && (
-            <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-sm uppercase tracking-wider">
-              {discountPercent}% OFF
-            </div>
+          {/* Stock indicator dot */}
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
+            {hasDiscount && (
+              <span className="discount-badge-glow bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-sm uppercase tracking-wider">
+                {discountPercent}% OFF
+              </span>
+            )}
+            <span className={`w-2 h-2 rounded-full ${stockDotColor} ${stockStatus === 'low' ? 'animate-pulse' : ''}`} title={stockStatus === 'in' ? 'En stock' : stockStatus === 'low' ? 'Pocas unidades' : 'Agotado'} />
+          </div>
+
+          {/* New badge */}
+          {product.isNew && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.2, type: 'spring', stiffness: 300, damping: 15 }}
+              className="absolute top-2 right-2 z-10"
+            >
+              <span className="block bg-white text-black text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-widest animate-[pulse-red_2s_ease-in-out_infinite]">
+                NUEVO
+              </span>
+            </motion.div>
           )}
 
-          {/* New badge — below discount badge if both exist */}
-          {product.isNew && (
-            <div
-              className={`absolute z-10 bg-white text-black text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-widest ${
-                hasDiscount ? 'top-10 right-2' : 'top-2 right-2'
-              }`}
-            >
-              NUEVO
+          {/* Quick sizes mini-display on hover */}
+          <div className="absolute top-9 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="bg-black/70 backdrop-blur-sm px-2 py-1 rounded-sm flex gap-1">
+              {availableSizes.slice(0, 5).map((size) => (
+                <span key={size} className="text-[9px] font-bold text-white/70 uppercase tracking-wider">{size}</span>
+              ))}
+              {availableSizes.length > 5 && <span className="text-[9px] text-red-500 font-bold">+{availableSizes.length - 5}</span>}
             </div>
-          )}
+          </div>
 
           {/* Action icons — heart + quick view */}
           <div className={`absolute z-20 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-            product.isNew && !hasDiscount ? 'top-10 right-2' : 'top-2 right-2'
+            product.isNew ? 'top-10 right-2' : 'top-2 right-2'
           }`}>
             <button
               onClick={(e) => {
@@ -143,6 +194,15 @@ export default function ProductCard({ product }: ProductCardProps) {
             </button>
           </div>
 
+          {/* Sold out overlay */}
+          {totalStock === 0 && (
+            <div className="absolute inset-0 z-30 bg-black/70 flex items-center justify-center">
+              <span className="text-white text-sm font-black uppercase tracking-widest border border-white/30 px-4 py-2">
+                AGOTADO
+              </span>
+            </div>
+          )}
+
           {/* Quick add button with slide-up effect */}
           <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
             <button
@@ -166,6 +226,14 @@ export default function ProductCard({ product }: ProductCardProps) {
           <p className="text-xs text-neutral-500 mt-0.5">
             {product.category?.name || ''}
           </p>
+          <div className="flex items-center gap-1 mt-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <svg key={star} className={`size-3 ${star <= Math.round(productRating) ? 'text-yellow-500' : 'text-neutral-700'}`} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            ))}
+            <span className="text-[10px] text-neutral-500 ml-0.5">({reviewCount})</span>
+          </div>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="text-base font-bold text-white">
               {formatPrice(product.price)}

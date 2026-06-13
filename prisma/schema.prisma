@@ -73,6 +73,7 @@ model Order {
   status          String      @default("PENDING")
   totalAmount     Float
   shippingAddress String
+  customerEmail   String?
   createdAt       DateTime    @default(now())
   items           OrderItem[]
 }

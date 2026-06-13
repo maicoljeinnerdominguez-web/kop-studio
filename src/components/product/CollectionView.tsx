@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SlidersHorizontal, X, ShoppingBag, ArrowUp } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -84,11 +85,7 @@ function FilterSidebar({
               <button
                 key={size}
                 onClick={() => toggleSize(size)}
-                className={`min-w-[2.5rem] h-9 border text-xs uppercase tracking-wider transition-colors ${
-                  isSelected
-                    ? 'bg-white text-black border-white'
-                    : 'border-[#333] text-neutral-400 hover:border-white hover:text-white'
-                }`}
+                className={`min-w-[2.5rem] h-9 border text-xs uppercase tracking-wider filter-btn ${isSelected ? 'active bg-white text-black border-white' : 'border-[#333] text-neutral-400'}`}
               >
                 {size}
               </button>
@@ -112,11 +109,7 @@ function FilterSidebar({
               <button
                 key={range.value}
                 onClick={() => setPriceRange(range.value)}
-                className={`h-9 px-3 border text-xs uppercase tracking-wider transition-colors whitespace-nowrap ${
-                  isSelected
-                    ? 'bg-white text-black border-white'
-                    : 'border-[#333] text-neutral-400 hover:border-white hover:text-white'
-                }`}
+                className={`h-9 px-3 border text-xs uppercase tracking-wider filter-btn whitespace-nowrap ${isSelected ? 'active bg-white text-black border-white' : 'border-[#333] text-neutral-400'}`}
               >
                 {range.label}
               </button>
@@ -386,12 +379,18 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
         {/* Header with product count */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white uppercase tracking-wider">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white uppercase tracking-wider animated-border-bottom">
               {categoryName}
               {!loading && (
-                <span className="text-neutral-500 font-normal text-lg sm:text-xl ml-2">
+                <motion.span
+                  className="text-neutral-500 font-normal text-lg sm:text-xl ml-2"
+                  key={filteredProducts.length}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                >
                   ({filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''})
-                </span>
+                </motion.span>
               )}
             </h1>
           </div>
@@ -497,14 +496,20 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
                 {/* Product count header */}
                 <div className="border-t border-[#1a1a1a] pt-6 mb-6">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-neutral-400">
-                      <span className="text-white font-medium">{filteredProducts.length}</span> productos
+                    <p className="text-sm text-neutral-400 count-animate">
+                      <motion.span
+                        key={filteredProducts.length}
+                        className="text-white font-medium"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >{filteredProducts.length}</motion.span> productos
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
-                  {filteredProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                  {filteredProducts.map((product, i) => (
+                    <ProductCard key={product.id} product={product} index={i} />
                   ))}
                 </div>
               </>

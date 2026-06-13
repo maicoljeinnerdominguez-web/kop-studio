@@ -88,7 +88,7 @@ export default function Header() {
                         }
                         setMobileMenuOpen(false);
                       }}
-                      className="text-left text-sm text-neutral-300 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md transition-colors tracking-wide uppercase font-medium flex items-center gap-2"
+                      className="text-left text-sm text-neutral-300 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md tracking-wide uppercase font-medium flex items-center gap-2 mobile-menu-item"
                     >
                       {'icon' in link && link.icon && <link.icon className="size-4" />}
                       {link.label}
@@ -100,7 +100,7 @@ export default function Header() {
                       navigate('admin-dashboard');
                       setMobileMenuOpen(false);
                     }}
-                    className="text-left text-sm text-neutral-400 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md transition-colors tracking-wide uppercase font-medium"
+                    className="text-left text-sm text-neutral-400 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md tracking-wide uppercase font-medium mobile-menu-item"
                   >
                     Admin
                   </button>

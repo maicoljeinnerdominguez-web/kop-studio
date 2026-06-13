@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ChevronDown, Truck, RotateCcw, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -11,6 +11,14 @@ import ProductCard from '@/components/product/ProductCard'
 import type { Product, Category } from '@/types'
 
 
+
+const HERO_WORDS = ['ASCENSIÓN', 'COLECCIÓN', '2026']
+
+const brandStats = [
+  { value: '100+', label: 'Diseños' },
+  { value: '5K+', label: 'Clientes' },
+  { value: '4.9★', label: 'Rating' },
+]
 
 const CATEGORIES_DISPLAY: { name: string; slug: string; image: string }[] = [
   { name: 'New Merch', slug: 'new-merch', image: '/images/products/hoodie-mandala-2.png' },
@@ -47,6 +55,11 @@ export default function HomeView() {
   const carouselRef1 = useRef<HTMLDivElement>(null)
   const carouselRef2 = useRef<HTMLDivElement>(null)
   const carouselRef3 = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
+
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const heroImageY = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
 
   useEffect(() => {
     fetch('/api/categories')
@@ -93,15 +106,15 @@ export default function HomeView() {
   return (
     <main>
       {/* ===== HERO SECTION ===== */}
-      <section className="relative min-h-[70vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0">
+      <section ref={heroRef} className="relative min-h-[70vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden">
+        <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
           <img
             src="/images/hero/hero-main.png"
             alt="KOP STUDIO - Ascensión Colección 2026"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-black/60" />
-        </div>
+        </motion.div>
 
         {/* Grain/noise texture overlay */}
         <div
@@ -116,44 +129,84 @@ export default function HomeView() {
         {/* Bottom gradient fade to black */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black to-transparent z-[6]" />
 
-        <div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16">
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-widest uppercase"
-          >
-            ASCENSIÓN COLECCIÓN 2026
-          </motion.h1>
+        <motion.div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16" style={{ opacity: heroOpacity }}>
+          <h1 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-widest uppercase">
+            {HERO_WORDS.map((word, i) => (
+              <span key={word}>
+                <motion.span
+                  initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  transition={{ duration: 0.8, delay: 0.1 + i * 0.15, ease: 'easeOut' }}
+                  className="inline-block"
+                >
+                  {word}
+                </motion.span>{' '}
+              </span>
+            ))}
+          </h1>
+
+          {/* Red line that draws itself under the heading */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.8, delay: 0.65, ease: 'easeOut' }}
+            className="mt-4 mx-auto h-[2px] w-24 bg-[#dc2626] origin-center"
+          />
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+            transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
             className="mt-4 text-lg sm:text-2xl text-white/80 italic tracking-[0.2em]"
           >
             Built in Silence
           </motion.p>
+
+          {/* Drop date with pulsing red dot */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
-            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
+            transition={{ duration: 0.6, delay: 0.7, ease: 'easeOut' }}
+            className="mt-4 flex items-center justify-center gap-2"
           >
-            <Button
-              onClick={() => navigate('collection', { category: 'new-merch' })}
-              className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none"
-            >
-              Explorar Colección
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('collection', { category: 'bestsellers' })}
-              className="border-white text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none bg-transparent"
-            >
-              Ver Bestsellers
-            </Button>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600" />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-500">
+              DROP: 2026
+            </span>
           </motion.div>
-        </div>
+
+          {/* CTA buttons staggered */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.85, ease: 'easeOut' }}
+            >
+              <Button
+                onClick={() => navigate('collection', { category: 'new-merch' })}
+                className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none"
+              >
+                Explorar Colección
+              </Button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.0, ease: 'easeOut' }}
+            >
+              <Button
+                variant="outline"
+                onClick={() => navigate('collection', { category: 'bestsellers' })}
+                className="border-white text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none bg-transparent"
+              >
+                Ver Bestsellers
+              </Button>
+            </motion.div>
+          </div>
+        </motion.div>
 
         {/* Scroll-down indicator (mobile) */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 sm:hidden">
@@ -162,18 +215,25 @@ export default function HomeView() {
       </section>
 
       {/* ===== TRUST / FEATURES STRIP ===== */}
-      <section className="border-y border-[#1a1a1a] py-4 px-4">
+      <section className="border-y border-[#1a1a1a] py-4 px-4" style={{ background: 'linear-gradient(180deg, rgba(220,38,38,0.03) 0%, transparent 100%)' }}>
         <div className="max-w-5xl mx-auto flex justify-around items-center">
-          {trustFeatures.map((feature) => (
-            <div key={feature.title} className="flex flex-col items-center gap-1">
-              <feature.icon className="size-5 text-red-600 mb-0.5" />
+          {trustFeatures.map((feature, idx) => (
+            <motion.div
+              key={feature.title}
+              className="flex flex-col items-center gap-1"
+              whileHover={{ scale: 1.08 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            >
+              <div className={`p-2 rounded-full ${idx === 0 ? 'truck-pulse-ring' : ''}`}>
+                <feature.icon className={`size-5 text-red-600 mb-0.5 trust-feature-icon`} />
+              </div>
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-neutral-400">
                 {feature.title}
               </span>
               <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 hidden sm:block">
                 {feature.desc}
               </span>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -286,12 +346,12 @@ export default function HomeView() {
               className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {newProducts.map((product) => (
+              {newProducts.map((product, i) => (
                 <div
                   key={product.id}
                   className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
                 >
-                  <ProductCard product={product} />
+                  <ProductCard product={product} index={i} />
                 </div>
               ))}
             </div>
@@ -360,12 +420,12 @@ export default function HomeView() {
               className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {bestsellerProducts.map((product) => (
+              {bestsellerProducts.map((product, i) => (
                 <div
                   key={product.id}
                   className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
                 >
-                  <ProductCard product={product} />
+                  <ProductCard product={product} index={i} />
                 </div>
               ))}
             </div>
@@ -414,6 +474,23 @@ export default function HomeView() {
               encuentra con el arte. Cada prenda cuenta una historia de resistencia,
               identidad y estilo propio. No seguimos tendencias — las creamos.
             </p>
+            {/* Brand stats */}
+            <div className="flex items-center gap-8 mt-2">
+              {brandStats.map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.3 }}
+                  variants={fadeInUp}
+                  custom={i + 2}
+                  className="flex flex-col"
+                >
+                  <span className="text-xl font-bold text-red-600">{stat.value}</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">{stat.label}</span>
+                </motion.div>
+              ))}
+            </div>
             <div>
               <Button
                 variant="outline"
@@ -463,12 +540,12 @@ export default function HomeView() {
               className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {recentlyViewed.map((item) => (
+              {recentlyViewed.map((item, i) => (
                 <div
                   key={item.id}
                   className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
                 >
-                  <ProductCard product={item as unknown as Product} />
+                  <ProductCard product={item as unknown as Product} index={i} />
                 </div>
               ))}
             </div>

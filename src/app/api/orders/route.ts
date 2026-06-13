@@ -1,8 +1,14 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const email = searchParams.get('email');
+
+  const where = email ? { customerEmail: email.toLowerCase().trim() } : {};
+
   const orders = await db.order.findMany({
+    where,
     include: {
       items: {
         include: {
@@ -21,13 +27,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { items, totalAmount, shippingAddress, userId } = body;
+  const { items, totalAmount, shippingAddress, userId, customerEmail } = body;
 
   const order = await db.order.create({
     data: {
       userId,
       totalAmount,
       shippingAddress,
+      customerEmail: customerEmail || null,
       status: "PENDING",
       items: {
         create: items.map(

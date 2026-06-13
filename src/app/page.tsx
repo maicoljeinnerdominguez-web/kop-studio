@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { MessageCircle, ArrowUp } from 'lucide-react';
 import AnnouncementBar from '@/components/layout/AnnouncementBar';
+import PromoBanner from '@/components/promo/PromoBanner';
 import Header from '@/components/layout/Header';
 import CartDrawer from '@/components/layout/CartDrawer';
 import Footer from '@/components/layout/Footer';
@@ -19,6 +20,7 @@ const AdminDashboard = lazy(() => import('@/components/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('@/components/admin/AdminProducts'));
 const AdminProductForm = lazy(() => import('@/components/admin/AdminProductForm'));
 const OrderTrackingView = lazy(() => import('@/components/order/OrderTrackingView'));
+const OrderHistoryView = lazy(() => import('@/components/order/OrderHistoryView'));
 const WishlistView = lazy(() => import('@/components/wishlist/WishlistView'));
 
 function LoadingFallback() {
@@ -47,6 +49,7 @@ function ViewRouter() {
     'admin-products-edit': <AdminProductForm />,
     wishlist: <WishlistView />,
     'order-tracking': <OrderTrackingView />,
+    'order-history': <OrderHistoryView />,
   };
 
   return (
@@ -84,6 +87,7 @@ export default function Page() {
       {!isAdmin && (
         <>
           <AnnouncementBar />
+          <PromoBanner />
           <Header />
         </>
       )}

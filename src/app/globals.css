@@ -49,6 +49,7 @@
   --radius: 0.625rem;
   --background: #000000;
   --foreground: #f5f5f5;
+  --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --card: #0a0a0a;
   --card-foreground: #f5f5f5;
   --popover: #111111;
@@ -119,12 +120,7 @@ html {
   background: #525252;
 }
 
-/* Announcement bar gradient */
-.announcement-gradient {
-  background: linear-gradient(90deg, #dc2626, #991b1b, #dc2626);
-  background-size: 200% 100%;
-  animation: shimmer 3s ease infinite;
-}
+/* Announcement bar gradient — enhanced version at bottom of file */
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
@@ -298,4 +294,245 @@ html {
 @keyframes slideInLeft {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
+}
+
+/* ===== NEW ENHANCEMENTS ===== */
+
+/* Subtle dot grid background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glow pulse animation for red accent elements */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0px rgba(220, 38, 38, 0); }
+  50% { box-shadow: 0 0 12px rgba(220, 38, 38, 0.35), 0 0 24px rgba(220, 38, 38, 0.1); }
+}
+.glow-pulse:hover {
+  animation: glowPulse 1.5s ease-in-out infinite;
+}
+
+/* Slide up fade in animation */
+@keyframes slideUpFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.slide-up-fade-in {
+  animation: slideUpFadeIn 0.6s ease-out both;
+}
+
+/* Text reveal animation for hero heading */
+@keyframes textReveal {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.text-reveal {
+  animation: textReveal 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Shimmer loading placeholder */
+@keyframes shimmerLoad {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-loading {
+  background: linear-gradient(
+    90deg,
+    #111 0%,
+    #1a1a1a 20%,
+    #222 40%,
+    #1a1a1a 60%,
+    #111 80%,
+    #111 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerLoad 2s ease-in-out infinite;
+}
+
+/* Improved announcement bar - vibrant animated gradient */
+.announcement-gradient {
+  background: linear-gradient(90deg, #dc2626, #b91c1c, #991b1b, #dc2626, #ef4444, #dc2626);
+  background-size: 300% 100%;
+  animation: announcementFlow 4s linear infinite;
+  box-shadow: 0 1px 0 0 rgba(220, 38, 38, 0.4), inset 0 -1px 0 0 rgba(220, 38, 38, 0.3);
+}
+@keyframes announcementFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+/* Hover lift utility class */
+.hover-lift {
+  transition: transform 0.3s var(--transition-bounce), box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.5), 0 4px 8px -4px rgba(220, 38, 38, 0.08);
+}
+
+/* Animated border-bottom for headings */
+@keyframes borderExpand {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.animated-border-bottom {
+  position: relative;
+}
+.animated-border-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #dc2626, #991b1b, transparent);
+  transform-origin: left;
+  animation: borderExpand 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Filter button hover animation */
+.filter-btn {
+  transition: all 0.2s var(--transition-bounce);
+}
+.filter-btn:hover {
+  transform: scale(1.05);
+  border-color: #dc2626;
+  color: #f5f5f5;
+}
+.filter-btn.active {
+  transform: scale(1);
+}
+
+/* Mobile menu accent line */
+.mobile-menu-item {
+  position: relative;
+  transition: all 0.2s ease;
+}
+.mobile-menu-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  background: #dc2626;
+  border-radius: 0 2px 2px 0;
+  transition: transform 0.25s var(--transition-bounce);
+}
+.mobile-menu-item:hover::before,
+.mobile-menu-item.active::before {
+  transform: translateY(-50%) scaleY(1);
+}
+
+/* Trust feature hover */
+.trust-feature-icon {
+  transition: transform 0.3s var(--transition-bounce), color 0.3s ease;
+}
+.trust-feature-icon:hover {
+  transform: scale(1.2);
+  color: #ef4444;
+}
+
+/* Pulsing ring on truck icon */
+@keyframes truckPulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+.truck-pulse-ring {
+  animation: truckPulseRing 2s ease-in-out infinite;
+}
+
+/* Footer brand glow on hover */
+.footer-brand-glow:hover {
+  text-shadow: 0 0 20px rgba(220, 38, 38, 0.5), 0 0 40px rgba(220, 38, 38, 0.2);
+  transition: text-shadow 0.3s ease;
+}
+
+/* Footer divider animation */
+.footer-divider {
+  position: relative;
+  height: 1px;
+  background: transparent;
+}
+.footer-divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #dc2626, transparent);
+  transform: translateX(-50%);
+  animation: dividerGlow 3s ease-in-out infinite;
+}
+@keyframes dividerGlow {
+  0%, 100% { opacity: 0.3; width: 60px; }
+  50% { opacity: 0.8; width: 120px; }
+}
+
+/* Payment method pill hover */
+.payment-pill {
+  transition: all 0.2s var(--transition-bounce);
+}
+.payment-pill:hover {
+  border-color: #dc2626;
+  color: #f5f5f5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+}
+
+/* Discount badge glow */
+.discount-badge-glow {
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.5), 0 0 16px rgba(220, 38, 38, 0.2);
+}
+
+/* Results count animation */
+@keyframes countFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.count-animate {
+  animation: countFadeIn 0.4s ease-out both;
+}
+
+/* NUEVO badge red pulse */
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+  }
+}
+.animate-\[pulse-red_2s_ease-in-out_infinite\] {
+  animation: pulse-red 2s ease-in-out infinite;
 }

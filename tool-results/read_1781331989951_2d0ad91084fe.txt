@@ -1,0 +1,1283 @@
+     1→'use client';
+     2→
+     3→import { useState } from 'react';
+     4→import { useForm } from 'react-hook-form';
+     5→import { z } from 'zod';
+     6→import { zodResolver } from '@hookform/resolvers/zod';
+     7→import { motion, AnimatePresence } from 'framer-motion';
+     8→import { toast } from 'sonner';
+     9→import {
+    10→  ArrowLeft,
+    11→  ArrowRight,
+    12→  CreditCard,
+    13→  Smartphone,
+    14→  Building2,
+    15→  Check,
+    16→  CheckCircle2,
+    17→  ChevronDown,
+    18→  ChevronUp,
+    19→  Lock,
+    20→  Loader2,
+    21→  ShieldCheck,
+    22→  Tag,
+    23→  X,
+    24→} from 'lucide-react';
+    25→
+    26→import { Input } from '@/components/ui/input';
+    27→import { Label } from '@/components/ui/label';
+    28→import { Button } from '@/components/ui/button';
+    29→import {
+    30→  Select,
+    31→  SelectContent,
+    32→  SelectItem,
+    33→  SelectTrigger,
+    34→  SelectValue,
+    35→} from '@/components/ui/select';
+    36→import { useNavigationStore } from '@/stores/useNavigationStore';
+    37→import { useCartStore } from '@/stores/useCartStore';
+    38→
+    39→/* ────────────────────────────────────────────
+    40→   Promo Code Types
+    41→   ──────────────────────────────────────────── */
+    42→interface PromoData {
+    43→  code: string;
+    44→  type: string;
+    45→  value: number;
+    46→  discountAmount: number;
+    47→}
+    48→
+    49→const contactSchema = z.object({
+    50→  firstName: z.string().min(1, 'Nombre es requerido'),
+    51→  lastName: z.string().min(1, 'Apellido es requerido'),
+    52→  email: z.string().email('Email inválido'),
+    53→  phone: z.string().min(1, 'Teléfono es requerido'),
+    54→});
+    55→
+    56→const addressSchema = z.object({
+    57→  address: z.string().min(1, 'Dirección es requerida'),
+    58→  city: z.string().min(1, 'Ciudad es requerida'),
+    59→  department: z.string().min(1, 'Departamento es requerido'),
+    60→  neighborhood: z.string().min(1, 'Barrio es requerido'),
+    61→  postalCode: z.string().min(1, 'Código postal es requerido'),
+    62→});
+    63→
+    64→type ContactData = z.infer<typeof contactSchema>;
+    65→type AddressData = z.infer<typeof addressSchema>;
+    66→
+    67→const DEPARTMENTS = [
+    68→  'Bogotá',
+    69→  'Medellín',
+    70→  'Cali',
+    71→  'Barranquilla',
+    72→  'Cartagena',
+    73→  'Otro',
+    74→];
+    75→
+    76→const PSE_BANKS = [
+    77→  'Bancolombia',
+    78→  'Davivienda',
+    79→  'BBVA',
+    80→  'Banco de Bogotá',
+    81→  'Banco Popular',
+    82→  'Itaú',
+    83→  'Scotiabank Colpatria',
+    84→  'Occidente',
+    85→  'Banco Agrario',
+    86→  'Av Villas',
+    87→];
+    88→
+    89→function formatPrice(amount: number) {
+    90→  return `$${Math.round(amount).toLocaleString('es-CO')}`;
+    91→}
+    92→
+    93→/* ────────────────────────────────────────────
+    94→   Enhanced Step Indicator
+    95→   ──────────────────────────────────────────── */
+    96→function StepIndicator({
+    97→  currentStep,
+    98→}: {
+    99→  currentStep: number;
+   100→}) {
+   101→  const steps = [
+   102→    { num: 1, label: 'Contacto' },
+   103→    { num: 2, label: 'Dirección' },
+   104→    { num: 3, label: 'Pago' },
+   105→  ];
+   106→
+   107→  return (
+   108→    <div className="flex items-center justify-center gap-0 mb-10 w-full max-w-md mx-auto">
+   109→      {steps.map((s, index) => {
+   110→        const isActive = s.num === currentStep;
+   111→        const isCompleted = s.num < currentStep;
+   112→
+   113→        return (
+   114→          <div key={s.num} className="flex items-center">
+   115→            <div className="flex flex-col items-center">
+   116→              <div
+   117→                className={`flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full transition-all duration-300 ${
+   118→                  isCompleted
+   119→                    ? 'bg-green-600 text-white'
+   120→                    : isActive
+   121→                    ? 'bg-red-600 text-white'
+   122→                    : 'bg-[#1a1a1a] text-neutral-500'
+   123→                }`}
+   124→              >
+   125→                {isCompleted ? (
+   126→                  <Check className="w-4 h-4" />
+   127→                ) : (
+   128→                  <span className="text-[10px] sm:text-xs font-bold">{s.num}</span>
+   129→                )}
+   130→              </div>
+   131→              <span
+   132→                className={`text-[10px] mt-2 uppercase tracking-wider font-medium hidden sm:block ${
+   133→                  isCompleted
+   134→                    ? 'text-green-500'
+   135→                    : isActive
+   136→                    ? 'text-white'
+   137→                    : 'text-neutral-500'
+   138→                }`}
+   139→              >
+   140→                {s.label}
+   141→              </span>
+   142→            </div>
+   143→            {index < steps.length - 1 && (
+   144→              <div
+   145→                className={`w-12 sm:w-20 h-[2px] mx-2 mt-[-18px] transition-colors duration-300 ${
+   146→                  s.num < currentStep ? 'bg-green-600' : 'bg-[#1a1a1a]'
+   147→                }`}
+   148→              />
+   149→            )}
+   150→          </div>
+   151→        );
+   152→      })}
+   153→    </div>
+   154→  );
+   155→}
+   156→
+   157→/* ────────────────────────────────────────────
+   158→   Promo Code Section (reusable)
+   159→   ──────────────────────────────────────────── */
+   160→function PromoCodeSection({
+   161→  promoApplied,
+   162→  onApply,
+   163→  onRemove,
+   164→}: {
+   165→  promoApplied: PromoData | null;
+   166→  onApply: (data: PromoData) => void;
+   167→  onRemove: () => void;
+   168→}) {
+   169→  const [code, setCode] = useState('');
+   170→  const [promoLoading, setPromoLoading] = useState(false);
+   171→  const [promoError, setPromoError] = useState('');
+   172→  const subtotal = useCartStore((s) => s.getSubtotal());
+   173→
+   174→  const handleApply = async () => {
+   175→    const trimmed = code.trim().toUpperCase();
+   176→    if (!trimmed) return;
+   177→
+   178→    setPromoLoading(true);
+   179→    setPromoError('');
+   180→
+   181→    try {
+   182→      const res = await fetch('/api/promo', {
+   183→        method: 'POST',
+   184→        headers: { 'Content-Type': 'application/json' },
+   185→        body: JSON.stringify({ code: trimmed, subtotal }),
+   186→      });
+   187→      const data = await res.json();
+   188→
+   189→      if (data.valid) {
+   190→        onApply(data);
+   191→        setCode('');
+   192→        toast.success('Código aplicado correctamente');
+   193→      } else {
+   194→        setPromoError(data.error);
+   195→        setTimeout(() => setPromoError(''), 3000);
+   196→      }
+   197→    } catch {
+   198→      setPromoError('Error de conexión');
+   199→      setTimeout(() => setPromoError(''), 3000);
+   200→    } finally {
+   201→      setPromoLoading(false);
+   202→    }
+   203→  };
+   204→
+   205→  return (
+   206→    <div className="border-t border-[#1a1a1a] pt-4 mt-4">
+   207→      <h4 className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold mb-3">
+   208→        CÓDIGO DE DESCUENTO
+   209→      </h4>
+   210→
+   211→      {!promoApplied ? (
+   212→        <div>
+   213→          <div className="flex gap-2">
+   214→            <input
+   215→              type="text"
+   216→              value={code}
+   217→              onChange={(e) => setCode(e.target.value.toUpperCase())}
+   218→              onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+   219→              placeholder="¿Tienes un código? Prueba KOP10"
+   220→              className="bg-[#111] border border-[#333] text-white text-sm placeholder:text-neutral-600 h-10 px-3 flex-1 uppercase tracking-wider font-medium focus:outline-none focus:border-neutral-500 transition-colors"
+   221→            />
+   222→            <button
+   223→              type="button"
+   224→              onClick={handleApply}
+   225→              disabled={promoLoading || !code.trim()}
+   226→              className="bg-white text-black hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider h-10 px-4 transition-colors flex items-center gap-1.5"
+   227→            >
+   228→              {promoLoading ? (
+   229→                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+   230→              ) : (
+   231→                'Aplicar'
+   232→              )}
+   233→            </button>
+   234→          </div>
+   235→          {promoError && (
+   236→            <p className="text-red-400 text-[11px] mt-2">{promoError}</p>
+   237→          )}
+   238→        </div>
+   239→      ) : (
+   240→        <div className="bg-[#111] border border-[#333] flex items-center justify-between px-3 py-2">
+   241→          <div className="flex items-center gap-2.5">
+   242→            <Tag className="w-3.5 h-3.5 text-green-400" />
+   243→            <span className="text-white text-xs uppercase font-bold">
+   244→              {promoApplied.code}
+   245→            </span>
+   246→            <span className="text-green-400 text-xs">
+   247→              {promoApplied.type === 'PERCENTAGE'
+   248→                ? `${promoApplied.value}% de descuento`
+   249→                : `${formatPrice(promoApplied.value)} de descuento`}
+   250→            </span>
+   251→          </div>
+   252→          <button
+   253→            type="button"
+   254→            onClick={() => {
+   255→              onRemove();
+   256→              toast.success('Código eliminado');
+   257→            }}
+   258→            className="text-neutral-500 hover:text-white transition-colors"
+   259→          >
+   260→            <X className="w-4 h-4" />
+   261→          </button>
+   262→        </div>
+   263→      )}
+   264→    </div>
+   265→  );
+   266→}
+   267→
+   268→/* ────────────────────────────────────────────
+   269→   Order Summary Sidebar (Desktop sticky + Mobile collapsible)
+   270→   ──────────────────────────────────────────── */
+   271→function OrderSummarySidebar({
+   272→  promoApplied,
+   273→  onApplyPromo,
+   274→  onRemovePromo,
+   275→}: {
+   276→  promoApplied: PromoData | null;
+   277→  onApplyPromo: (data: PromoData) => void;
+   278→  onRemovePromo: () => void;
+   279→}) {
+   280→  const { items, getSubtotal, hasFreeShipping, getItemCount } = useCartStore();
+   281→  const subtotal = getSubtotal();
+   282→  const discount = promoApplied?.discountAmount ?? 0;
+   283→  const freeShipping = hasFreeShipping();
+   284→  const shipping = freeShipping ? 0 : 15000;
+   285→  const total = subtotal + shipping - discount;
+   286→
+   287→  const primaryImage = (product: { images: { url: string; isPrimary: boolean }[] }) =>
+   288→    product.images.find((img) => img.isPrimary)?.url || product.images[0]?.url || '';
+   289→
+   290→  return (
+   291→    <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-6">
+   292→      <h3 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
+   293→        Resumen del Pedido
+   294→      </h3>
+   295→      <div className="space-y-3 max-h-96 overflow-y-auto mb-4 pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent">
+   296→        {items.map((item) => {
+   297→          const img = primaryImage(item.product);
+   298→          return (
+   299→            <div key={item.variant.id} className="flex gap-3">
+   300→              <div className="w-14 h-14 flex-shrink-0 bg-[#1a1a1a] overflow-hidden">
+   301→                {img && (
+   302→                  <img
+   303→                    src={img}
+   304→                    alt={item.product.title}
+   305→                    className="w-full h-full object-cover"
+   306→                  />
+   307→                )}
+   308→              </div>
+   309→              <div className="flex-1 min-w-0">
+   310→                <p className="text-white text-xs font-medium truncate">
+   311→                  {item.product.title}
+   312→                </p>
+   313→                <p className="text-neutral-500 text-[11px] mt-0.5">
+   314→                  {item.variant.size} / {item.variant.color} — Cantidad: {item.quantity}
+   315→                </p>
+   316→                <p className="text-white text-xs font-bold mt-0.5">
+   317→                  {formatPrice(item.product.price * item.quantity)}
+   318→                </p>
+   319→              </div>
+   320→            </div>
+   321→          );
+   322→        })}
+   323→      </div>
+   324→      <PromoCodeSection
+   325→        promoApplied={promoApplied}
+   326→        onApply={onApplyPromo}
+   327→        onRemove={onRemovePromo}
+   328→      />
+   329→      <div className="border-t border-[#1a1a1a] pt-3 space-y-2">
+   330→        <div className="flex justify-between text-xs">
+   331→          <span className="text-neutral-400">Subtotal</span>
+   332→          <span className="text-white">{formatPrice(subtotal)}</span>
+   333→        </div>
+   334→        {discount > 0 && (
+   335→          <div className="flex justify-between text-xs">
+   336→            <span className="text-green-400">Descuento</span>
+   337→            <span className="text-green-400">-{formatPrice(discount)}</span>
+   338→          </div>
+   339→        )}
+   340→        <div className="flex justify-between text-xs items-center">
+   341→          <span className="text-neutral-400">Envío</span>
+   342→          <span className={freeShipping ? 'text-green-500' : 'text-white'}>
+   343→            {freeShipping ? 'GRATIS' : formatPrice(shipping)}
+   344→          </span>
+   345→        </div>
+   346→        {freeShipping && (
+   347→          <p className="text-green-500/70 text-[10px] uppercase tracking-wider">
+   348→            ✓ Envío gratis activado
+   349→          </p>
+   350→        )}
+   351→        <div className="flex justify-between text-sm font-bold border-t border-[#1a1a1a] pt-2 mt-2">
+   352→          <span className="text-white">Total</span>
+   353→          <span className="text-red-500">{formatPrice(total)}</span>
+   354→        </div>
+   355→      </div>
+   356→    </div>
+   357→  );
+   358→}
+   359→
+   360→function MobileOrderSummary({
+   361→  promoApplied,
+   362→  onApplyPromo,
+   363→  onRemovePromo,
+   364→}: {
+   365→  promoApplied: PromoData | null;
+   366→  onApplyPromo: (data: PromoData) => void;
+   367→  onRemovePromo: () => void;
+   368→}) {
+   369→  const [expanded, setExpanded] = useState(false);
+   370→  const { items, getSubtotal, hasFreeShipping } = useCartStore();
+   371→  const subtotal = getSubtotal();
+   372→  const discount = promoApplied?.discountAmount ?? 0;
+   373→  const freeShipping = hasFreeShipping();
+   374→  const shipping = freeShipping ? 0 : 15000;
+   375→  const total = subtotal + shipping - discount;
+   376→
+   377→  const primaryImage = (product: { images: { url: string; isPrimary: boolean }[] }) =>
+   378→    product.images.find((img) => img.isPrimary)?.url || product.images[0]?.url || '';
+   379→
+   380→  return (
+   381→    <div className="mb-6 border border-[#1a1a1a] bg-[#0a0a0a]">
+   382→      {/* Toggle header */}
+   383→      <button
+   384→        type="button"
+   385→        onClick={() => setExpanded(!expanded)}
+   386→        className="w-full flex items-center justify-between p-4 text-left"
+   387→      >
+   388→        <div>
+   389→          <span className="text-white text-xs font-bold uppercase tracking-wider">
+   390→            Resumen del Pedido
+   391→          </span>
+   392→          <span className="text-neutral-500 text-xs ml-2">
+   393→            ({items.length} {items.length === 1 ? 'producto' : 'productos'})
+   394→          </span>
+   395→        </div>
+   396→        <div className="flex items-center gap-3">
+   397→          <span className="text-red-500 text-sm font-bold">{formatPrice(total)}</span>
+   398→          {discount > 0 && (
+   399→            <span className="text-green-400 text-[11px] ml-2">
+   400→              -{formatPrice(discount)}
+   401→            </span>
+   402→          )}
+   403→          {expanded ? (
+   404→            <ChevronUp className="w-4 h-4 text-neutral-500" />
+   405→          ) : (
+   406→            <ChevronDown className="w-4 h-4 text-neutral-500" />
+   407→          )}
+   408→        </div>
+   409→      </button>
+   410→
+   411→      {/* Expandable content */}
+   412→      <AnimatePresence>
+   413→        {expanded && (
+   414→          <motion.div
+   415→            initial={{ height: 0, opacity: 0 }}
+   416→            animate={{ height: 'auto', opacity: 1 }}
+   417→            exit={{ height: 0, opacity: 0 }}
+   418→            transition={{ duration: 0.2 }}
+   419→            className="overflow-hidden"
+   420→          >
+   421→            <div className="px-4 pb-4 border-t border-[#1a1a1a] pt-3">
+   422→              <div className="space-y-3 max-h-64 overflow-y-auto mb-3 pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent">
+   423→                {items.map((item) => {
+   424→                  const img = primaryImage(item.product);
+   425→                  return (
+   426→                    <div key={item.variant.id} className="flex gap-3">
+   427→                      <div className="w-14 h-14 flex-shrink-0 bg-[#1a1a1a] overflow-hidden">
+   428→                        {img && (
+   429→                          <img
+   430→                            src={img}
+   431→                            alt={item.product.title}
+   432→                            className="w-full h-full object-cover"
+   433→                          />
+   434→                        )}
+   435→                      </div>
+   436→                      <div className="flex-1 min-w-0">
+   437→                        <p className="text-white text-xs font-medium truncate">
+   438→                          {item.product.title}
+   439→                        </p>
+   440→                        <p className="text-neutral-500 text-[11px] mt-0.5">
+   441→                          {item.variant.size} / {item.variant.color} — Cantidad: {item.quantity}
+   442→                        </p>
+   443→                        <p className="text-white text-xs font-bold mt-0.5">
+   444→                          {formatPrice(item.product.price * item.quantity)}
+   445→                        </p>
+   446→                      </div>
+   447→                    </div>
+   448→                  );
+   449→                })}
+   450→              </div>
+   451→              <PromoCodeSection
+   452→                promoApplied={promoApplied}
+   453→                onApply={onApplyPromo}
+   454→                onRemove={onRemovePromo}
+   455→              />
+   456→              <div className="border-t border-[#1a1a1a] pt-3 space-y-2">
+   457→                <div className="flex justify-between text-xs">
+   458→                  <span className="text-neutral-400">Subtotal</span>
+   459→                  <span className="text-white">{formatPrice(subtotal)}</span>
+   460→                </div>
+   461→                {discount > 0 && (
+   462→                  <div className="flex justify-between text-xs">
+   463→                    <span className="text-green-400">Descuento</span>
+   464→                    <span className="text-green-400">-{formatPrice(discount)}</span>
+   465→                  </div>
+   466→                )}
+   467→                <div className="flex justify-between text-xs">
+   468→                  <span className="text-neutral-400">Envío</span>
+   469→                  <span className={freeShipping ? 'text-green-500' : 'text-white'}>
+   470→                    {freeShipping ? 'GRATIS' : formatPrice(shipping)}
+   471→                  </span>
+   472→                </div>
+   473→                <div className="flex justify-between text-sm font-bold border-t border-[#1a1a1a] pt-2 mt-2">
+   474→                  <span className="text-white">Total</span>
+   475→                  <span className="text-red-500">{formatPrice(total)}</span>
+   476→                </div>
+   477→              </div>
+   478→            </div>
+   479→          </motion.div>
+   480→        )}
+   481→      </AnimatePresence>
+   482→    </div>
+   483→  );
+   484→}
+   485→
+   486→/* ────────────────────────────────────────────
+   487→   Step Heading with Red Accent Line
+   488→   ──────────────────────────────────────────── */
+   489→function StepHeading({ children }: { children: React.ReactNode }) {
+   490→  return (
+   491→    <div className="mb-6">
+   492→      <h2 className="text-white text-sm font-bold uppercase tracking-wider">
+   493→        {children}
+   494→      </h2>
+   495→      <div className="h-0.5 w-8 bg-red-600 mt-2" />
+   496→    </div>
+   497→  );
+   498→}
+   499→
+   500→/* ────────────────────────────────────────────
+   501→   Security Badges
+   502→   ──────────────────────────────────────────── */
+   503→function SecurityBadges() {
+   504→  return (
+   505→    <div className="mt-6 space-y-3 border-t border-[#1a1a1a] pt-5">
+   506→      <div className="flex items-center gap-2.5">
+   507→        <Lock className="w-4 h-4 text-green-500/50 flex-shrink-0" />
+   508→        <span className="text-neutral-500 text-xs">
+   509→          Tus datos están protegidos con encriptación SSL
+   510→        </span>
+   511→      </div>
+   512→      <div className="flex items-center gap-2.5">
+   513→        <ShieldCheck className="w-4 h-4 text-green-500/50 flex-shrink-0" />
+   514→        <span className="text-neutral-500 text-xs">
+   515→          Garantía de devolución por 30 días
+   516→        </span>
+   517→      </div>
+   518→    </div>
+   519→  );
+   520→}
+   521→
+   522→/* ────────────────────────────────────────────
+   523→   Main Checkout View
+   524→   ──────────────────────────────────────────── */
+   525→export default function CheckoutView() {
+   526→  const [step, setStep] = useState(1);
+   527→  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pse' | 'nequi'>('card');
+   528→  const [pseBank, setPseBank] = useState('');
+   529→  const [nequiPhone, setNequiPhone] = useState('');
+   530→  const [submitting, setSubmitting] = useState(false);
+   531→  const [orderPlaced, setOrderPlaced] = useState(false);
+   532→  const [promoApplied, setPromoApplied] = useState<PromoData | null>(null);
+   533→  const navigate = useNavigationStore();
+   534→  const cart = useCartStore();
+   535→
+   536→  const contactForm = useForm<ContactData>({
+   537→    resolver: zodResolver(contactSchema),
+   538→    defaultValues: {
+   539→      firstName: '',
+   540→      lastName: '',
+   541→      email: '',
+   542→      phone: '',
+   543→    },
+   544→  });
+   545→
+   546→  const addressForm = useForm<AddressData>({
+   547→    resolver: zodResolver(addressSchema),
+   548→    defaultValues: {
+   549→      address: '',
+   550→      city: '',
+   551→      department: '',
+   552→      neighborhood: '',
+   553→      postalCode: '',
+   554→    },
+   555→  });
+   556→
+   557→  const cardForm = useForm({
+   558→    defaultValues: {
+   559→      cardNumber: '',
+   560→      cardName: '',
+   561→      cardExpiry: '',
+   562→      cardCvc: '',
+   563→    },
+   564→  });
+   565→
+   566→  const formatCardNumber = (value: string) => {
+   567→    const v = value.replace(/\D/g, '').slice(0, 16);
+   568→    return v.replace(/(\d{4})(?=\d)/g, '$1 ');
+   569→  };
+   570→
+   571→  const formatExpiry = (value: string) => {
+   572→    const v = value.replace(/\D/g, '').slice(0, 4);
+   573→    if (v.length >= 2) return v.slice(0, 2) + '/' + v.slice(2);
+   574→    return v;
+   575→  };
+   576→
+   577→  const handleContactNext = () => {
+   578→    const valid = contactForm.formState.isValid;
+   579→    contactForm.trigger();
+   580→    if (!contactForm.formState.isValid) return;
+   581→    setStep(2);
+   582→  };
+   583→
+   584→  const handleAddressNext = () => {
+   585→    addressForm.trigger();
+   586→    if (!addressForm.formState.isValid) return;
+   587→    setStep(3);
+   588→  };
+   589→
+   590→  const handleBack = () => {
+   591→    if (step > 1) setStep(step - 1);
+   592→    else navigate('home');
+   593→  };
+   594→
+   595→  const handleSubmitOrder = async () => {
+   596→    if (cart.items.length === 0) {
+   597→      toast.error('Tu carrito está vacío');
+   598→      return;
+   599→    }
+   600→
+   601→    setSubmitting(true);
+   602→
+   603→    try {
+   604→      const contact = contactForm.getValues();
+   605→      const address = addressForm.getValues();
+   606→      const card = cardForm.getValues();
+   607→
+   608→      const shippingAddress = `${address.address}, ${address.neighborhood}, ${address.city} - ${address.department}, CP: ${address.postalCode}`;
+   609→
+   610→      const discount = promoApplied?.discountAmount ?? 0;
+   611→      const finalTotal = Math.max(0, cart.getTotal() - discount);
+   612→
+   613→      const orderData = {
+   614→        userId: 'guest-checkout',
+   615→        totalAmount: finalTotal,
+   616→        shippingAddress,
+   617→        customerEmail: contact.email,
+   618→        notes: '',
+   619→        paymentMethod,
+   620→        contact,
+   621→        card: paymentMethod === 'card' ? card : null,
+   622→        pseBank: paymentMethod === 'pse' ? pseBank : null,
+   623→        nequiPhone: paymentMethod === 'nequi' ? nequiPhone : null,
+   624→        items: cart.items.map((item) => ({
+   625→          variantId: item.variant.id,
+   626→          quantity: item.quantity,
+   627→          price: item.product.price,
+   628→        })),
+   629→      };
+   630→
+   631→      const res = await fetch('/api/orders', {
+   632→        method: 'POST',
+   633→        headers: { 'Content-Type': 'application/json' },
+   634→        body: JSON.stringify(orderData),
+   635→      });
+   636→
+   637→      if (!res.ok) {
+   638→        throw new Error('Error al procesar el pedido');
+   639→      }
+   640→
+   641→      setOrderPlaced(true);
+   642→      toast.success('¡Pedido confirmado exitosamente!');
+   643→
+   644→      // Fire-and-forget: increment promo code usage
+   645→      if (promoApplied) {
+   646→        fetch('/api/promo/use', {
+   647→          method: 'POST',
+   648→          headers: { 'Content-Type': 'application/json' },
+   649→          body: JSON.stringify({ code: promoApplied.code }),
+   650→        });
+   651→      }
+   652→
+   653→      setTimeout(() => {
+   654→        cart.clearCart();
+   655→        navigate('order-confirmation');
+   656→      }, 1500);
+   657→    } catch {
+   658→      toast.error('Hubo un error al procesar tu pedido. Intenta de nuevo.');
+   659→    } finally {
+   660→      setSubmitting(false);
+   661→    }
+   662→  };
+   663→
+   664→  if (cart.items.length === 0 && !orderPlaced) {
+   665→    return (
+   666→      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+   667→        <p className="text-neutral-500 text-sm uppercase tracking-wider mb-6">
+   668→          Tu carrito está vacío
+   669→        </p>
+   670→        <Button
+   671→          onClick={() => navigate('home')}
+   672→          className="bg-white text-black hover:bg-neutral-200 uppercase text-xs tracking-wider font-bold rounded-none px-6 h-10"
+   673→        >
+   674→          EXPLORAR TIENDA
+   675→        </Button>
+   676→      </div>
+   677→    );
+   678→  }
+   679→
+   680→  if (orderPlaced) {
+   681→    return (
+   682→      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+   683→        <motion.div
+   684→          initial={{ scale: 0, opacity: 0 }}
+   685→          animate={{ scale: 1, opacity: 1 }}
+   686→          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+   687→          className="flex flex-col items-center"
+   688→        >
+   689→          <div className="w-20 h-20 rounded-full bg-green-600/20 flex items-center justify-center mb-6">
+   690→            <CheckCircle2 className="w-10 h-10 text-green-500" />
+   691→          </div>
+   692→          <h2 className="text-white text-2xl font-bold uppercase tracking-wider mb-2">
+   693→            ¡Pedido Confirmado!
+   694→          </h2>
+   695→          <p className="text-neutral-400 text-sm text-center max-w-sm">
+   696→            Gracias por tu compra. Recibirás un email de confirmación con los
+   697→            detalles de tu pedido.
+   698→          </p>
+   699→          <motion.div
+   700→            initial={{ opacity: 0, y: 10 }}
+   701→            animate={{ opacity: 1, y: 0 }}
+   702→            transition={{ delay: 0.8 }}
+   703→            className="mt-6"
+   704→          >
+   705→            <p className="text-neutral-600 text-xs uppercase tracking-wider">
+   706→              Redirigiendo a la tienda...
+   707→            </p>
+   708→          </motion.div>
+   709→        </motion.div>
+   710→      </div>
+   711→    );
+   712→  }
+   713→
+   714→  const darkInput =
+   715→    'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600 focus-visible:ring-red-600/20 h-12';
+   716→  const darkSelect =
+   717→    'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600 data-[placeholder]:text-neutral-600 h-12';
+   718→
+   719→  return (
+   720→    <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
+   721→      <div className="max-w-6xl mx-auto">
+   722→        {/* Header */}
+   723→        <div className="flex items-center justify-between mb-8">
+   724→          <button
+   725→            onClick={handleBack}
+   726→            className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors text-xs uppercase tracking-wider"
+   727→          >
+   728→            <ArrowLeft className="w-4 h-4" />
+   729→            <span>VOLVER</span>
+   730→          </button>
+   731→          <h1 className="text-white text-lg md:text-xl font-bold uppercase tracking-wider">
+   732→            Checkout
+   733→          </h1>
+   734→          <div className="w-20" />
+   735→        </div>
+   736→
+   737→        {/* Step Indicator */}
+   738→        <StepIndicator currentStep={step} />
+   739→
+   740→        {/* Mobile Collapsible Order Summary (above steps) */}
+   741→        <div className="lg:hidden">
+   742→          <MobileOrderSummary
+   743→            promoApplied={promoApplied}
+   744→            onApplyPromo={setPromoApplied}
+   745→            onRemovePromo={() => setPromoApplied(null)}
+   746→          />
+   747→        </div>
+   748→
+   749→        {/* 2-Column Layout: Form (left) + Sidebar (right) */}
+   750→        <div className="flex flex-col lg:flex-row gap-8">
+   751→          {/* Left: Form Steps (2/3 width on desktop) */}
+   752→          <div className="w-full lg:w-2/3">
+   753→            <AnimatePresence mode="wait">
+   754→              {/* ── Step 1: Contacto ── */}
+   755→              {step === 1 && (
+   756→                <motion.div
+   757→                  key="step1"
+   758→                  initial={{ opacity: 0, x: 30 }}
+   759→                  animate={{ opacity: 1, x: 0 }}
+   760→                  exit={{ opacity: 0, x: -30 }}
+   761→                  transition={{ duration: 0.25 }}
+   762→                  className="bg-[#0a0a0a] border border-[#1a1a1a] p-6"
+   763→                >
+   764→                  <StepHeading>Información de Contacto</StepHeading>
+   765→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   766→                    <div className="space-y-1.5">
+   767→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   768→                        Nombre *
+   769→                      </Label>
+   770→                      <Input
+   771→                        {...contactForm.register('firstName')}
+   772→                        className={darkInput}
+   773→                        placeholder="Juan"
+   774→                        autoComplete="given-name"
+   775→                      />
+   776→                      {contactForm.formState.errors.firstName && (
+   777→                        <p className="text-red-500 text-xs">
+   778→                          {contactForm.formState.errors.firstName.message}
+   779→                        </p>
+   780→                      )}
+   781→                    </div>
+   782→                    <div className="space-y-1.5">
+   783→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   784→                        Apellido *
+   785→                      </Label>
+   786→                      <Input
+   787→                        {...contactForm.register('lastName')}
+   788→                        className={darkInput}
+   789→                        placeholder="Pérez"
+   790→                        autoComplete="family-name"
+   791→                      />
+   792→                      {contactForm.formState.errors.lastName && (
+   793→                        <p className="text-red-500 text-xs">
+   794→                          {contactForm.formState.errors.lastName.message}
+   795→                        </p>
+   796→                      )}
+   797→                    </div>
+   798→                    <div className="space-y-1.5">
+   799→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   800→                        Email *
+   801→                      </Label>
+   802→                      <Input
+   803→                        {...contactForm.register('email')}
+   804→                        type="email"
+   805→                        inputMode="email"
+   806→                        className={darkInput}
+   807→                        placeholder="juan@email.com"
+   808→                        autoComplete="email"
+   809→                      />
+   810→                      {contactForm.formState.errors.email && (
+   811→                        <p className="text-red-500 text-xs">
+   812→                          {contactForm.formState.errors.email.message}
+   813→                        </p>
+   814→                      )}
+   815→                    </div>
+   816→                    <div className="space-y-1.5">
+   817→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   818→                        Teléfono *
+   819→                      </Label>
+   820→                      <Input
+   821→                        {...contactForm.register('phone')}
+   822→                        inputMode="tel"
+   823→                        className={darkInput}
+   824→                        placeholder="+57 300 123 4567"
+   825→                        autoComplete="tel"
+   826→                      />
+   827→                      {contactForm.formState.errors.phone && (
+   828→                        <p className="text-red-500 text-xs">
+   829→                          {contactForm.formState.errors.phone.message}
+   830→                        </p>
+   831→                      )}
+   832→                    </div>
+   833→                  </div>
+   834→                  <Button
+   835→                    onClick={handleContactNext}
+   836→                    className="w-full mt-8 bg-white text-black hover:bg-neutral-200 uppercase text-xs tracking-widest font-bold rounded-none h-12"
+   837→                  >
+   838→                    CONTINUAR
+   839→                    <ArrowRight className="w-4 h-4 ml-2" />
+   840→                  </Button>
+   841→                </motion.div>
+   842→              )}
+   843→
+   844→              {/* ── Step 2: Dirección ── */}
+   845→              {step === 2 && (
+   846→                <motion.div
+   847→                  key="step2"
+   848→                  initial={{ opacity: 0, x: 30 }}
+   849→                  animate={{ opacity: 1, x: 0 }}
+   850→                  exit={{ opacity: 0, x: -30 }}
+   851→                  transition={{ duration: 0.25 }}
+   852→                  className="bg-[#0a0a0a] border border-[#1a1a1a] p-6"
+   853→                >
+   854→                  <StepHeading>Dirección de Envío</StepHeading>
+   855→                  <div className="space-y-4">
+   856→                    <div className="space-y-1.5">
+   857→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   858→                        Dirección *
+   859→                      </Label>
+   860→                      <Input
+   861→                        {...addressForm.register('address')}
+   862→                        className={darkInput}
+   863→                        placeholder="Calle 100 #15-20, Apto 302"
+   864→                        autoComplete="street-address"
+   865→                      />
+   866→                      {addressForm.formState.errors.address && (
+   867→                        <p className="text-red-500 text-xs">
+   868→                          {addressForm.formState.errors.address.message}
+   869→                        </p>
+   870→                      )}
+   871→                    </div>
+   872→                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   873→                      <div className="space-y-1.5">
+   874→                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   875→                          Ciudad *
+   876→                        </Label>
+   877→                        <Input
+   878→                          {...addressForm.register('city')}
+   879→                          className={darkInput}
+   880→                          placeholder="Bogotá"
+   881→                          autoComplete="address-level2"
+   882→                        />
+   883→                        {addressForm.formState.errors.city && (
+   884→                          <p className="text-red-500 text-xs">
+   885→                            {addressForm.formState.errors.city.message}
+   886→                          </p>
+   887→                        )}
+   888→                      </div>
+   889→                      <div className="space-y-1.5">
+   890→                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   891→                          Departamento *
+   892→                        </Label>
+   893→                        <Select
+   894→                          value={addressForm.watch('department')}
+   895→                          onValueChange={(val) =>
+   896→                            addressForm.setValue('department', val, {
+   897→                              shouldValidate: true,
+   898→                            })
+   899→                          }
+   900→                        >
+   901→                          <SelectTrigger className={darkSelect}>
+   902→                            <SelectValue placeholder="Seleccionar" />
+   903→                          </SelectTrigger>
+   904→                          <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
+   905→                            {DEPARTMENTS.map((dept) => (
+   906→                              <SelectItem key={dept} value={dept} className="text-white focus:bg-[#262626] focus:text-white">
+   907→                                {dept}
+   908→                              </SelectItem>
+   909→                            ))}
+   910→                          </SelectContent>
+   911→                        </Select>
+   912→                        {addressForm.formState.errors.department && (
+   913→                          <p className="text-red-500 text-xs">
+   914→                            {addressForm.formState.errors.department.message}
+   915→                          </p>
+   916→                        )}
+   917→                      </div>
+   918→                    </div>
+   919→                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   920→                      <div className="space-y-1.5">
+   921→                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   922→                          Barrio *
+   923→                        </Label>
+   924→                        <Input
+   925→                          {...addressForm.register('neighborhood')}
+   926→                          className={darkInput}
+   927→                          placeholder="Chapinero"
+   928→                          autoComplete="address-level3"
+   929→                        />
+   930→                        {addressForm.formState.errors.neighborhood && (
+   931→                          <p className="text-red-500 text-xs">
+   932→                            {addressForm.formState.errors.neighborhood.message}
+   933→                          </p>
+   934→                        )}
+   935→                      </div>
+   936→                      <div className="space-y-1.5">
+   937→                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   938→                          Código Postal *
+   939→                        </Label>
+   940→                        <Input
+   941→                          {...addressForm.register('postalCode')}
+   942→                          inputMode="numeric"
+   943→                          className={darkInput}
+   944→                          placeholder="110231"
+   945→                        />
+   946→                        {addressForm.formState.errors.postalCode && (
+   947→                          <p className="text-red-500 text-xs">
+   948→                            {addressForm.formState.errors.postalCode.message}
+   949→                          </p>
+   950→                        )}
+   951→                      </div>
+   952→                    </div>
+   953→                  </div>
+   954→                  <div className="flex flex-col sm:flex-row gap-3 mt-8">
+   955→                    <Button
+   956→                      variant="outline"
+   957→                      onClick={handleBack}
+   958→                      className="sm:flex-1 w-full border-neutral-700 text-white hover:bg-neutral-800 uppercase text-xs tracking-widest font-bold rounded-none h-12"
+   959→                    >
+   960→                      <ArrowLeft className="w-4 h-4 mr-2" />
+   961→                      VOLVER
+   962→                    </Button>
+   963→                    <Button
+   964→                      onClick={handleAddressNext}
+   965→                      className="sm:flex-1 w-full bg-white text-black hover:bg-neutral-200 uppercase text-xs tracking-widest font-bold rounded-none h-12"
+   966→                    >
+   967→                      CONTINUAR
+   968→                      <ArrowRight className="w-4 h-4 ml-2" />
+   969→                    </Button>
+   970→                  </div>
+   971→                </motion.div>
+   972→              )}
+   973→
+   974→              {/* ── Step 3: Pago ── */}
+   975→              {step === 3 && (
+   976→                <motion.div
+   977→                  key="step3"
+   978→                  initial={{ opacity: 0, x: 30 }}
+   979→                  animate={{ opacity: 1, x: 0 }}
+   980→                  exit={{ opacity: 0, x: -30 }}
+   981→                  transition={{ duration: 0.25 }}
+   982→                  className="bg-[#0a0a0a] border border-[#1a1a1a] p-6"
+   983→                >
+   984→                  <StepHeading>Método de Pago</StepHeading>
+   985→
+   986→                  {/* Payment Method Cards */}
+   987→                  <div className="space-y-3 mb-6">
+   988→                    {/* Card */}
+   989→                    <motion.button
+   990→                      type="button"
+   991→                      whileTap={{ scale: 0.98 }}
+   992→                      onClick={() => setPaymentMethod('card')}
+   993→                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+   994→                        paymentMethod === 'card'
+   995→                          ? 'border-red-600 bg-red-600/10'
+   996→                          : 'border-[#262626] bg-[#111] hover:border-neutral-600'
+   997→                      }`}
+   998→                    >
+   999→                      <div
+  1000→                        className={`w-10 h-10 flex items-center justify-center rounded-full ${
+  1001→                          paymentMethod === 'card'
+  1002→                            ? 'bg-red-600 text-white'
+  1003→                            : 'bg-[#1a1a1a] text-neutral-500'
+  1004→                        }`}
+  1005→                      >
+  1006→                        <CreditCard className="w-5 h-5" />
+  1007→                      </div>
+  1008→                      <div className="text-left flex-1">
+  1009→                        <p className="text-white text-sm font-medium">
+  1010→                          Tarjeta de crédito/débito
+  1011→                        </p>
+  1012→                        <p className="text-neutral-500 text-xs">Visa, Mastercard, American Express</p>
+  1013→                      </div>
+  1014→                      <div
+  1015→                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+  1016→                          paymentMethod === 'card'
+  1017→                            ? 'border-red-600'
+  1018→                            : 'border-neutral-600'
+  1019→                        }`}
+  1020→                      >
+  1021→                        {paymentMethod === 'card' && (
+  1022→                          <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+  1023→                        )}
+  1024→                      </div>
+  1025→                    </motion.button>
+  1026→
+  1027→                    {/* PSE */}
+  1028→                    <motion.button
+  1029→                      type="button"
+  1030→                      whileTap={{ scale: 0.98 }}
+  1031→                      onClick={() => setPaymentMethod('pse')}
+  1032→                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+  1033→                        paymentMethod === 'pse'
+  1034→                          ? 'border-red-600 bg-red-600/10'
+  1035→                          : 'border-[#262626] bg-[#111] hover:border-neutral-600'
+  1036→                      }`}
+  1037→                    >
+  1038→                      <div
+  1039→                        className={`w-10 h-10 flex items-center justify-center rounded-full ${
+  1040→                          paymentMethod === 'pse'
+  1041→                            ? 'bg-red-600 text-white'
+  1042→                            : 'bg-[#1a1a1a] text-neutral-500'
+  1043→                        }`}
+  1044→                      >
+  1045→                        <Building2 className="w-5 h-5" />
+  1046→                      </div>
+  1047→                      <div className="text-left flex-1">
+  1048→                        <p className="text-white text-sm font-medium">PSE</p>
+  1049→                        <p className="text-neutral-500 text-xs">
+  1050→                          Pago por banco en línea
+  1051→                        </p>
+  1052→                      </div>
+  1053→                      <div
+  1054→                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+  1055→                          paymentMethod === 'pse'
+  1056→                            ? 'border-red-600'
+  1057→                            : 'border-neutral-600'
+  1058→                        }`}
+  1059→                      >
+  1060→                        {paymentMethod === 'pse' && (
+  1061→                          <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+  1062→                        )}
+  1063→                      </div>
+  1064→                    </motion.button>
+  1065→
+  1066→                    {/* Nequi */}
+  1067→                    <motion.button
+  1068→                      type="button"
+  1069→                      whileTap={{ scale: 0.98 }}
+  1070→                      onClick={() => setPaymentMethod('nequi')}
+  1071→                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+  1072→                        paymentMethod === 'nequi'
+  1073→                          ? 'border-red-600 bg-red-600/10'
+  1074→                          : 'border-[#262626] bg-[#111] hover:border-neutral-600'
+  1075→                      }`}
+  1076→                    >
+  1077→                      <div
+  1078→                        className={`w-10 h-10 flex items-center justify-center rounded-full ${
+  1079→                          paymentMethod === 'nequi'
+  1080→                            ? 'bg-red-600 text-white'
+  1081→                            : 'bg-[#1a1a1a] text-neutral-500'
+  1082→                        }`}
+  1083→                      >
+  1084→                        <Smartphone className="w-5 h-5" />
+  1085→                      </div>
+  1086→                      <div className="text-left flex-1">
+  1087→                        <p className="text-white text-sm font-medium">Nequi</p>
+  1088→                        <p className="text-neutral-500 text-xs">
+  1089→                          Paga con tu Nequi
+  1090→                        </p>
+  1091→                      </div>
+  1092→                      <div
+  1093→                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+  1094→                          paymentMethod === 'nequi'
+  1095→                            ? 'border-red-600'
+  1096→                            : 'border-neutral-600'
+  1097→                        }`}
+  1098→                      >
+  1099→                        {paymentMethod === 'nequi' && (
+  1100→                          <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+  1101→                        )}
+  1102→                      </div>
+  1103→                    </motion.button>
+  1104→                  </div>
+  1105→
+  1106→                  {/* Payment Details */}
+  1107→                  <AnimatePresence mode="wait">
+  1108→                    {paymentMethod === 'card' && (
+  1109→                      <motion.div
+  1110→                        key="card-fields"
+  1111→                        initial={{ opacity: 0, height: 0 }}
+  1112→                        animate={{ opacity: 1, height: 'auto' }}
+  1113→                        exit={{ opacity: 0, height: 0 }}
+  1114→                        className="overflow-hidden"
+  1115→                      >
+  1116→                        <div className="space-y-4">
+  1117→                          <div className="space-y-1.5">
+  1118→                            <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+  1119→                              Número de tarjeta
+  1120→                            </Label>
+  1121→                            <Input
+  1122→                              {...cardForm.register('cardNumber')}
+  1123→                              className={darkInput}
+  1124→                              placeholder="1234 5678 9012 3456"
+  1125→                              maxLength={19}
+  1126→                              onChange={(e) => {
+  1127→                                e.target.value = formatCardNumber(e.target.value);
+  1128→                              }}
+  1129→                            />
+  1130→                          </div>
+  1131→                          <div className="space-y-1.5">
+  1132→                            <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+  1133→                              Nombre en la tarjeta
+  1134→                            </Label>
+  1135→                            <Input
+  1136→                              {...cardForm.register('cardName')}
+  1137→                              className={darkInput}
+  1138→                              placeholder="JUAN PÉREZ"
+  1139→                            />
+  1140→                          </div>
+  1141→                          <div className="grid grid-cols-2 gap-4">
+  1142→                            <div className="space-y-1.5">
+  1143→                              <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+  1144→                                Vencimiento (MM/YY)
+  1145→                              </Label>
+  1146→                              <Input
+  1147→                                {...cardForm.register('cardExpiry')}
+  1148→                                className={darkInput}
+  1149→                                placeholder="12/26"
+  1150→                                maxLength={5}
+  1151→                                onChange={(e) => {
+  1152→                                  e.target.value = formatExpiry(e.target.value);
+  1153→                                }}
+  1154→                              />
+  1155→                            </div>
+  1156→                            <div className="space-y-1.5">
+  1157→                              <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+  1158→                                CVC
+  1159→                              </Label>
+  1160→                              <Input
+  1161→                                {...cardForm.register('cardCvc')}
+  1162→                                className={darkInput}
+  1163→                                placeholder="123"
+  1164→                                maxLength={4}
+  1165→                              />
+  1166→                            </div>
+  1167→                          </div>
+  1168→                        </div>
+  1169→                      </motion.div>
+  1170→                    )}
+  1171→
+  1172→                    {paymentMethod === 'pse' && (
+  1173→                      <motion.div
+  1174→                        key="pse-fields"
+  1175→                        initial={{ opacity: 0, height: 0 }}
+  1176→                        animate={{ opacity: 1, height: 'auto' }}
+  1177→                        exit={{ opacity: 0, height: 0 }}
+  1178→                        className="overflow-hidden"
+  1179→                      >
+  1180→                        <div className="bg-[#111] border border-[#1a1a1a] p-4 mb-4">
+  1181→                          <p className="text-neutral-400 text-xs leading-relaxed">
+  1182→                            Serás redirigido a <span className="text-white font-medium">PSE</span> para
+  1183→                            completar el pago de forma segura a través de tu banco.
+  1184→                          </p>
+  1185→                        </div>
+  1186→                        <div className="space-y-1.5">
+  1187→                          <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+  1188→                            Banco
+  1189→                          </Label>
+  1190→                          <Select value={pseBank} onValueChange={setPseBank}>
+  1191→                            <SelectTrigger className={darkSelect}>
+  1192→                              <SelectValue placeholder="Selecciona tu banco" />
+  1193→                            </SelectTrigger>
+  1194→                            <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
+  1195→                              {PSE_BANKS.map((bank) => (
+  1196→                                <SelectItem key={bank} value={bank} className="text-white focus:bg-[#262626] focus:text-white">
+  1197→                                  {bank}
+  1198→                                </SelectItem>
+  1199→                              ))}
+  1200→                            </SelectContent>
+  1201→                          </Select>
+  1202→                        </div>
+  1203→                      </motion.div>
+  1204→                    )}
+  1205→
+  1206→                    {paymentMethod === 'nequi' && (
+  1207→                      <motion.div
+  1208→                        key="nequi-fields"
+  1209→                        initial={{ opacity: 0, height: 0 }}
+  1210→                        animate={{ opacity: 1, height: 'auto' }}
+  1211→                        exit={{ opacity: 0, height: 0 }}
+  1212→                        className="overflow-hidden"
+  1213→                      >
+  1214→                        <div className="bg-[#111] border border-[#1a1a1a] p-4 mb-4">
+  1215→                          <p className="text-neutral-400 text-xs leading-relaxed">
+  1216→                            Paga con <span className="text-white font-medium">Nequi</span>. Recibirás
+  1217→                            una notificación en tu app para confirmar el pago.
+  1218→                          </p>
+  1219→                        </div>
+  1220→                        <div className="space-y-1.5">
+  1221→                          <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+  1222→                            Número de celular Nequi
+  1223→                          </Label>
+  1224→                          <Input
+  1225→                            value={nequiPhone}
+  1226→                            onChange={(e) => setNequiPhone(e.target.value)}
+  1227→                            inputMode="tel"
+  1228→                            className={darkInput}
+  1229→                            placeholder="+57 300 123 4567"
+  1230→                          />
+  1231→                        </div>
+  1232→                      </motion.div>
+  1233→                    )}
+  1234→                  </AnimatePresence>
+  1235→
+  1236→                  {/* Security Badges */}
+  1237→                  <SecurityBadges />
+  1238→
+  1239→                  {/* Actions */}
+  1240→                  <div className="flex flex-col sm:flex-row gap-3 mt-6">
+  1241→                    <Button
+  1242→                      variant="outline"
+  1243→                      onClick={handleBack}
+  1244→                      className="sm:flex-1 w-full border-neutral-700 text-white hover:bg-neutral-800 uppercase text-xs tracking-widest font-bold rounded-none h-12"
+  1245→                    >
+  1246→                      <ArrowLeft className="w-4 h-4 mr-2" />
+  1247→                      VOLVER
+  1248→                    </Button>
+  1249→                    <Button
+  1250→                      onClick={handleSubmitOrder}
+  1251→                      disabled={submitting}
+  1252→                      className="sm:flex-[2] w-full bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-widest font-bold rounded-none h-12 disabled:opacity-50"
+  1253→                    >
+  1254→                      {submitting ? (
+  1255→                        <>
+  1256→                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+  1257→                          PROCESANDO...
+  1258→                        </>
+  1259→                      ) : (
+  1260→                        'CONFIRMAR PEDIDO'
+  1261→                      )}
+  1262→                    </Button>
+  1263→                  </div>
+  1264→                </motion.div>
+  1265→              )}
+  1266→            </AnimatePresence>
+  1267→          </div>
+  1268→
+  1269→          {/* Right: Order Summary Sidebar (desktop only, sticky) */}
+  1270→          <div className="hidden lg:block w-1/3 flex-shrink-0">
+  1271→            <div className="sticky top-24">
+  1272→              <OrderSummarySidebar
+  1273→                promoApplied={promoApplied}
+  1274→                onApplyPromo={setPromoApplied}
+  1275→                onRemovePromo={() => setPromoApplied(null)}
+  1276→              />
+  1277→            </div>
+  1278→          </div>
+  1279→        </div>
+  1280→      </div>
+  1281→    </section>
+  1282→  );
+  1283→}

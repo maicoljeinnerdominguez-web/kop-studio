@@ -57,7 +57,12 @@ export default function WishlistView() {
         ) : productCount === 0 ? (
           /* Empty State */
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-            <Heart className="size-20 text-neutral-700 mb-6" />
+            <motion.div
+              animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Heart className="size-20 text-neutral-700 mb-6" />
+            </motion.div>
             <h2 className="text-white text-xl sm:text-2xl font-bold tracking-wider uppercase mb-3">
               TU LISTA DE DESEOS EST&Aacute; VAC&Iacute;A
             </h2>
