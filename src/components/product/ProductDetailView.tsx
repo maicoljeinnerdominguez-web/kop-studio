@@ -16,6 +16,7 @@ import {
   Copy,
   MessageCircle,
   Maximize2,
+  Scale,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -59,6 +60,7 @@ import {
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useCartStore } from '@/stores/useCartStore'
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
+import { useCompareStore } from '@/stores/useCompareStore'
 import ProductCard from '@/components/product/ProductCard'
 import ProductReviews from '@/components/product/ProductReviews'
 import ImageLightbox from '@/components/product/ImageLightbox'
@@ -163,7 +165,7 @@ function ImageZoom({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="w-full h-full object-cover transition-transform duration-200 ease-out"
+        className="w-full h-full object-cover transition-transform duration-200 ease-out img-blur-up"
         style={
           isZoomed
             ? {
@@ -236,6 +238,9 @@ function ProductDetailInner({ slug }: { slug: string }) {
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
   const addViewedProduct = useRecentlyViewedStore((s) => s.addViewedProduct)
+  const compareIds = useCompareStore((s) => s.productIds)
+  const addCompare = useCompareStore((s) => s.addProduct)
+  const removeCompare = useCompareStore((s) => s.removeProduct)
 
   const [product, setProduct] = useState<Product | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
@@ -465,7 +470,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
         {/* Back button */}
         <button
           onClick={goBack}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 sm:mb-8 text-sm touch-target min-h-11"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 sm:mb-8 text-sm touch-target min-h-11 hover-scale"
         >
           <ChevronLeft className="size-5" />
           <span>Volver</span>
@@ -538,7 +543,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     <img
                       src={image.url}
                       alt={image.altText}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover img-blur-up"
                     />
                   </button>
                 ))}
@@ -559,7 +564,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
             {/* Price */}
             <div className="flex items-baseline gap-3 mt-4">
-              <span className="text-2xl font-bold text-white">
+              <span className={`text-2xl font-bold ${hasDiscount ? 'text-white price-flash' : 'text-white'}`}>
                 {formatPrice(product.price)}
               </span>
               {hasDiscount && (
@@ -758,6 +763,34 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     : 'Selecciona una talla'
                   }
                 </p>
+              )}
+
+              {/* Compare Button */}
+              {product && (
+                <button
+                  onClick={() => {
+                    const isAdded = compareIds.includes(product.id)
+                    if (isAdded) {
+                      removeCompare(product.id)
+                      toast.info('Producto eliminado de la comparación')
+                    } else {
+                      if (compareIds.length >= 3) {
+                        toast.error('Máximo 3 productos para comparar')
+                        return
+                      }
+                      addCompare(product.id)
+                      toast.success('Producto agregado a la comparación')
+                    }
+                  }}
+                  className={`w-full mt-3 text-[11px] font-bold uppercase tracking-widest h-11 rounded-none border transition-colors duration-200 flex items-center justify-center gap-2 ${
+                    compareIds.includes(product.id)
+                      ? 'bg-red-600/10 border-red-600 text-red-500'
+                      : 'bg-transparent border-[#333] text-neutral-300 hover:border-white hover:text-white'
+                  }`}
+                >
+                  <Scale className="size-4" />
+                  {compareIds.includes(product.id) ? 'EN COMPARACIÓN' : 'COMPARAR'}
+                </button>
               )}
             </div>
 

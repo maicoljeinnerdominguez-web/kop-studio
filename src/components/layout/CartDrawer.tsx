@@ -107,7 +107,7 @@ export default function CartDrawer() {
             </div>
             <Button
               onClick={handleExploreStore}
-              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold px-8 h-11 rounded-none"
+              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold px-8 h-11 rounded-none btn-press"
             >
               EXPLORAR TIENDA
             </Button>
@@ -168,7 +168,7 @@ export default function CartDrawer() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -30, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
-                        className={`flex gap-3 bg-[#111] rounded-lg p-3 ${
+                        className={`flex gap-3 bg-[#111] rounded-lg p-3 card-shine ${
                           isLast ? '' : 'border-b border-[#1a1a1a] pb-4 mb-4'
                         }`}
                       >
@@ -205,7 +205,7 @@ export default function CartDrawer() {
                                 onClick={() =>
                                   updateQuantity(item.variant.id, item.quantity - 1)
                                 }
-                                className="w-6 h-6 rounded bg-[#1a1a1a] hover:bg-[#262626] flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+                                className="w-6 h-6 rounded bg-[#1a1a1a] hover:bg-[#262626] flex items-center justify-center text-neutral-400 hover:text-white transition-colors btn-press"
                                 aria-label="Disminuir cantidad"
                               >
                                 <Minus className="size-3" />
@@ -217,7 +217,7 @@ export default function CartDrawer() {
                                 onClick={() =>
                                   updateQuantity(item.variant.id, item.quantity + 1)
                                 }
-                                className="w-6 h-6 rounded bg-[#1a1a1a] hover:bg-[#262626] flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+                                className="w-6 h-6 rounded bg-[#1a1a1a] hover:bg-[#262626] flex items-center justify-center text-neutral-400 hover:text-white transition-colors btn-press"
                                 aria-label="Aumentar cantidad"
                               >
                                 <Plus className="size-3" />
@@ -230,7 +230,7 @@ export default function CartDrawer() {
                               </span>
                               <button
                                 onClick={() => removeItem(item.variant.id)}
-                                className="text-neutral-500 hover:text-red-500 transition-colors p-0.5"
+                                className="text-neutral-500 hover:text-red-500 transition-colors p-0.5 btn-press"
                                 aria-label="Eliminar producto"
                               >
                                 <Trash2 className="size-3.5" />
@@ -253,7 +253,7 @@ export default function CartDrawer() {
                     exit={{ opacity: 0, height: 0 }}
                     className="mx-5 mb-3 overflow-hidden"
                   >
-                    <div className="border-2 border-dashed border-red-600/50 bg-red-600/5 rounded-lg p-3 flex items-center gap-3">
+                    <div className="border-2 border-dashed border-red-600/50 bg-red-600/5 rounded-lg p-3 flex items-center gap-3 skeleton-shine">
                       <Package className="size-5 text-red-600 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-white text-xs font-semibold leading-tight">
@@ -267,7 +267,7 @@ export default function CartDrawer() {
                       </div>
                       <Button
                         onClick={toggleUpsell}
-                        className="bg-red-600 hover:bg-red-700 text-white uppercase text-[10px] tracking-wider font-bold px-3 h-7 rounded-none flex-shrink-0"
+                        className="bg-red-600 hover:bg-red-700 text-white uppercase text-[10px] tracking-wider font-bold px-3 h-7 rounded-none flex-shrink-0 btn-press"
                       >
                         AGREGAR
                       </Button>
@@ -312,7 +312,7 @@ export default function CartDrawer() {
 
               <Button
                 onClick={handleCheckout}
-                className="w-full bg-red-600 hover:bg-red-700 text-white uppercase text-sm font-black tracking-widest h-12 rounded-none gap-2"
+                className="w-full bg-red-600 hover:bg-red-700 text-white uppercase text-sm font-black tracking-widest h-12 rounded-none gap-2 btn-press"
               >
                 IR A PAGAR
                 <ArrowRight className="size-4" />

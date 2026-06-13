@@ -114,7 +114,7 @@ export default function Header() {
               aria-label="Ir al inicio"
             >
               <motion.span
-                className="text-white font-bold text-xl tracking-wider"
+                className="text-white font-bold text-xl tracking-wider text-shadow-red"
                 whileHover={{ scale: 1.03 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 style={{ '--hover-shadow': '0 0 20px rgba(220, 38, 38, 0.3)' } as React.CSSProperties}
@@ -141,7 +141,7 @@ export default function Header() {
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               >
                 {'icon' in link && link.icon && <link.icon className="size-3.5" />}
-                {link.label}
+                <span className="hover-underline-red">{link.label}</span>
                 {link.slug === 'new-merch' && (
                   <span className="relative flex h-1.5 w-1.5 ml-0.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />

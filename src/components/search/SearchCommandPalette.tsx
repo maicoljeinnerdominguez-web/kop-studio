@@ -29,6 +29,8 @@ export default function SearchCommandPalette() {
   const quickLinkRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const showResults = query.length >= 2;
+
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
@@ -118,8 +120,6 @@ export default function SearchCommandPalette() {
     },
     [close, navigate]
   );
-
-  const showResults = query.length >= 2;
 
   return (
     <AnimatePresence>

@@ -129,7 +129,7 @@ export default function HomeView() {
         {/* Bottom gradient fade to black */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black to-transparent z-[6]" />
 
-        <motion.div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16" style={{ opacity: heroOpacity }}>
+        <motion.div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16 text-shadow-red" style={{ opacity: heroOpacity }}>
           <h1 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-widest uppercase">
             {HERO_WORDS.map((word, i) => (
               <span key={word}>
@@ -260,7 +260,7 @@ export default function HomeView() {
               variants={fadeInUp}
               custom={i}
               onClick={() => navigate('collection', { category: cat.slug })}
-              className="group cursor-pointer relative overflow-hidden rounded-md border border-[#1a1a1a] hover:border-transparent hover:border-b-red-600 border-b-0 transition-colors duration-300"
+              className="group cursor-pointer relative overflow-hidden rounded-md border border-[#1a1a1a] hover:border-transparent hover:border-b-red-600 border-b-0 transition-colors duration-300 hover-scale"
               style={{ borderBottom: '2px solid transparent' }}
             >
               <div className="aspect-[3/4] overflow-hidden bg-[#0a0a0a]">
@@ -297,7 +297,7 @@ export default function HomeView() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-white">
-                  Lo Nuevo
+                  <span className="gradient-text-red">Lo Nuevo</span>
                 </h2>
                 <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
               </div>
@@ -359,7 +359,7 @@ export default function HomeView() {
 
           {/* Subtle divider */}
           {!loadingNew && newProducts.length > 0 && (
-            <div className="mt-10 border-t border-[#1a1a1a]" />
+            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
           )}
         </div>
       </section>
@@ -371,7 +371,7 @@ export default function HomeView() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-white">
-                  Best Sellers
+                  <span className="gradient-text-red">Best Sellers</span>
                 </h2>
                 <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
               </div>
@@ -433,7 +433,7 @@ export default function HomeView() {
 
           {/* Subtle divider */}
           {!loadingBest && bestsellerProducts.length > 0 && (
-            <div className="mt-10 border-t border-[#1a1a1a]" />
+            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
           )}
         </div>
       </section>
@@ -550,7 +550,7 @@ export default function HomeView() {
               ))}
             </div>
 
-            <div className="mt-10 border-t border-[#1a1a1a]" />
+            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
           </div>
         </section>
       )}

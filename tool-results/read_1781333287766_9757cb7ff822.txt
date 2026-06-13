@@ -1,0 +1,909 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
+     4→     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→     5→import {
+     6→     6→  ChevronLeft,
+     7→     7→  Check,
+     8→     8→  ShoppingBag,
+     9→     9→  Heart,
+    10→    10→  Share2,
+    11→    11→  Truck,
+    12→    12→  RotateCcw,
+    13→    13→  Shield,
+    14→    14→  Ruler,
+    15→    15→  X,
+    16→    16→  Copy,
+    17→    17→  MessageCircle,
+    18→    18→  Maximize2,
+    19→    19→} from 'lucide-react'
+    20→    20→import { toast } from 'sonner'
+    21→    21→import { Button } from '@/components/ui/button'
+    22→    22→import { Badge } from '@/components/ui/badge'
+    23→    23→import { Skeleton } from '@/components/ui/skeleton'
+    24→    24→import {
+    25→    25→  Dialog,
+    26→    26→  DialogContent,
+    27→    27→  DialogHeader,
+    28→    28→  DialogTitle,
+    29→    29→  DialogTrigger,
+    30→    30→  DialogDescription,
+    31→    31→} from '@/components/ui/dialog'
+    32→    32→import {
+    33→    33→  Table,
+    34→    34→  TableBody,
+    35→    35→  TableCell,
+    36→    36→  TableHead,
+    37→    37→  TableHeader,
+    38→    38→  TableRow,
+    39→    39→} from '@/components/ui/table'
+    40→    40→import {
+    41→    41→  Accordion,
+    42→    42→  AccordionContent,
+    43→    43→  AccordionItem,
+    44→    44→  AccordionTrigger,
+    45→    45→} from '@/components/ui/accordion'
+    46→    46→import {
+    47→    47→  Breadcrumb,
+    48→    48→  BreadcrumbItem,
+    49→    49→  BreadcrumbLink,
+    50→    50→  BreadcrumbList,
+    51→    51→  BreadcrumbPage,
+    52→    52→  BreadcrumbSeparator,
+    53→    53→} from '@/components/ui/breadcrumb'
+    54→    54→import {
+    55→    55→  Popover,
+    56→    56→  PopoverContent,
+    57→    57→  PopoverTrigger,
+    58→    58→} from '@/components/ui/popover'
+    59→    59→import { useNavigationStore } from '@/stores/useNavigationStore'
+    60→    60→import { useCartStore } from '@/stores/useCartStore'
+    61→    61→import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
+    62→    62→import ProductCard from '@/components/product/ProductCard'
+    63→    63→import ProductReviews from '@/components/product/ProductReviews'
+    64→    64→import ImageLightbox from '@/components/product/ImageLightbox'
+    65→    65→import type { Product, ProductVariant } from '@/types'
+    66→    66→
+    67→    67→const SIZE_CHART = [
+    68→    68→  { size: 'S', pecho: 48, largo: 68, hombro: 43 },
+    69→    69→  { size: 'M', pecho: 52, largo: 71, hombro: 45 },
+    70→    70→  { size: 'L', pecho: 56, largo: 74, hombro: 48 },
+    71→    71→  { size: 'XL', pecho: 60, largo: 77, hombro: 50 },
+    72→    72→  { size: 'OS', pecho: 64, largo: 80, hombro: 52 },
+    73→    73→]
+    74→    74→
+    75→    75→function SizeGuideDialog() {
+    76→    76→  return (
+    77→    77→    <Dialog>
+    78→    78→      <DialogTrigger asChild>
+    79→    79→        <button className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors ml-3">
+    80→    80→          <Ruler className="size-3.5" />
+    81→    81→          <span className="text-[11px] uppercase tracking-wider font-medium">Guía de tallas</span>
+    82→    82→        </button>
+    83→    83→      </DialogTrigger>
+    84→    84→      <DialogContent className="bg-[#0a0a0a] border-[#1a1a1a] text-white sm:max-w-md rounded-none p-0 overflow-hidden">
+    85→    85→        <DialogHeader className="p-6 pb-0">
+    86→    86→          <DialogTitle className="text-sm font-bold uppercase tracking-widest text-white">
+    87→    87→            Guía de Tallas
+    88→    88→          </DialogTitle>
+    89→    89→          <DialogDescription className="text-neutral-500 text-xs">
+    90→    90→            Medidas en centímetros (cm)
+    91→    91→          </DialogDescription>
+    92→    92→        </DialogHeader>
+    93→    93→        <div className="px-6 pb-6 pt-4">
+    94→    94→          <Table>
+    95→    95→            <TableHeader>
+    96→    96→              <TableRow className="border-[#1a1a1a] hover:bg-transparent">
+    97→    97→                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3">Talla</TableHead>
+    98→    98→                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Pecho</TableHead>
+    99→    99→                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Largo</TableHead>
+   100→   100→                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Hombro</TableHead>
+   101→   101→              </TableRow>
+   102→   102→            </TableHeader>
+   103→   103→            <TableBody>
+   104→   104→              {SIZE_CHART.map((row) => (
+   105→   105→                <TableRow key={row.size} className="border-[#1a1a1a] hover:bg-white/5">
+   106→   106→                  <TableCell className="px-3 py-3 text-sm font-bold text-white">{row.size}</TableCell>
+   107→   107→                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.pecho} cm</TableCell>
+   108→   108→                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.largo} cm</TableCell>
+   109→   109→                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.hombro} cm</TableCell>
+   110→   110→                </TableRow>
+   111→   111→              ))}
+   112→   112→            </TableBody>
+   113→   113→          </Table>
+   114→   114→          <p className="text-[11px] text-neutral-500 mt-4 leading-relaxed">
+   115→   115→            Las medidas pueden variar ±2cm. Para un fit oversizado, recomendamos subir una talla.
+   116→   116→          </p>
+   117→   117→        </div>
+   118→   118→      </DialogContent>
+   119→   119→    </Dialog>
+   120→   120→  )
+   121→   121→}
+   122→   122→
+   123→   123→function ImageZoom({
+   124→   124→  src,
+   125→   125→  alt,
+   126→   126→  isSelected,
+   127→   127→}: {
+   128→   128→  src: string
+   129→   129→  alt: string
+   130→   130→  isSelected: boolean
+   131→   131→}) {
+   132→   132→  const containerRef = useRef<HTMLDivElement>(null)
+   133→   133→  const [isZoomed, setIsZoomed] = useState(false)
+   134→   134→  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
+   135→   135→
+   136→   136→  const handleMouseMove = useCallback(
+   137→   137→    (e: React.MouseEvent<HTMLDivElement>) => {
+   138→   138→      if (!containerRef.current) return
+   139→   139→      const rect = containerRef.current.getBoundingClientRect()
+   140→   140→      const x = ((e.clientX - rect.left) / rect.width) * 100
+   141→   141→      const y = ((e.clientY - rect.top) / rect.height) * 100
+   142→   142→      setZoomPosition({ x, y })
+   143→   143→    },
+   144→   144→    []
+   145→   145→  )
+   146→   146→
+   147→   147→  const handleMouseEnter = useCallback(() => setIsZoomed(true), [])
+   148→   148→  const handleMouseLeave = useCallback(() => setIsZoomed(false), [])
+   149→   149→
+   150→   150→  if (!isSelected) return null
+   151→   151→
+   152→   152→  return (
+   153→   153→    <div
+   154→   154→      ref={containerRef}
+   155→   155→      className="w-full h-full overflow-hidden cursor-zoom-in"
+   156→   156→      onMouseMove={handleMouseMove}
+   157→   157→      onMouseEnter={handleMouseEnter}
+   158→   158→      onMouseLeave={handleMouseLeave}
+   159→   159→    >
+   160→   160→      <motion.img
+   161→   161→        src={src}
+   162→   162→        alt={alt}
+   163→   163→        initial={{ opacity: 0 }}
+   164→   164→        animate={{ opacity: 1 }}
+   165→   165→        transition={{ duration: 0.3 }}
+   166→   166→        className="w-full h-full object-cover transition-transform duration-200 ease-out"
+   167→   167→        style={
+   168→   168→          isZoomed
+   169→   169→            ? {
+   170→   170→                transform: 'scale(1.5)',
+   171→   171→                transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+   172→   172→              }
+   173→   173→            : {
+   174→   174→                transform: 'scale(1)',
+   175→   175→              }
+   176→   176→        }
+   177→   177→      />
+   178→   178→    </div>
+   179→   179→  )
+   180→   180→}
+   181→   181→
+   182→   182→function RecentlyViewedSection({ currentProductId }: { currentProductId: string }) {
+   183→   183→  const recentlyViewed = useRecentlyViewedStore((s) => s.recentlyViewed)
+   184→   184→  const navigate = useNavigationStore((s) => s.navigate)
+   185→   185→
+   186→   186→  const filtered = recentlyViewed.filter((p) => p.id !== currentProductId)
+   187→   187→
+   188→   188→  if (filtered.length < 2) return null
+   189→   189→
+   190→   190→  return (
+   191→   191→    <section className="mt-16 pb-8">
+   192→   192→      <div className="flex items-center mb-6">
+   193→   193→        <div>
+   194→   194→          <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   195→   195→            Vistos Recientemente
+   196→   196→          </h2>
+   197→   197→          <div className="h-0.5 w-12 bg-red-600 mt-2" />
+   198→   198→        </div>
+   199→   199→      </div>
+   200→   200→      <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
+   201→   201→        {filtered.map((item) => (
+   202→   202→          <button
+   203→   203→            key={item.id}
+   204→   204→            onClick={() => navigate('product', { slug: item.slug })}
+   205→   205→            className="shrink-0 w-24 snap-start group"
+   206→   206→          >
+   207→   207→            <div className="w-24 h-32 overflow-hidden rounded-sm border border-[#1a1a1a] bg-[#111] group-hover:border-[#333] transition-colors">
+   208→   208→              {item.images[0] ? (
+   209→   209→                <img
+   210→   210→                  src={item.images[0].url}
+   211→   211→                  alt={item.images[0].altText}
+   212→   212→                  className="w-full h-full object-cover"
+   213→   213→                />
+   214→   214→              ) : (
+   215→   215→                <div className="w-full h-full flex items-center justify-center">
+   216→   216→                  <ShoppingBag className="size-5 text-[#333]" />
+   217→   217→                </div>
+   218→   218→              )}
+   219→   219→            </div>
+   220→   220→            <p className="text-[11px] text-neutral-400 mt-2 leading-tight line-clamp-2 text-left">
+   221→   221→              {item.title}
+   222→   222→            </p>
+   223→   223→            <p className="text-[11px] font-medium text-white mt-0.5 text-left">
+   224→   224→              ${item.price.toLocaleString('es-CO')}
+   225→   225→            </p>
+   226→   226→          </button>
+   227→   227→        ))}
+   228→   228→      </div>
+   229→   229→    </section>
+   230→   230→  )
+   231→   231→}
+   232→   232→
+   233→   233→function ProductDetailInner({ slug }: { slug: string }) {
+   234→   234→  const navigate = useNavigationStore((s) => s.navigate)
+   235→   235→  const goBack = useNavigationStore((s) => s.goBack)
+   236→   236→  const addItem = useCartStore((s) => s.addItem)
+   237→   237→  const openCart = useCartStore((s) => s.openCart)
+   238→   238→  const addViewedProduct = useRecentlyViewedStore((s) => s.addViewedProduct)
+   239→   239→
+   240→   240→  const [product, setProduct] = useState<Product | null>(null)
+   241→   241→  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
+   242→   242→  const [loading, setLoading] = useState(true)
+   243→   243→  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+   244→   244→  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+   245→   245→  const [lightboxOpen, setLightboxOpen] = useState(false)
+   246→   246→  const [addedToCart, setAddedToCart] = useState(false)
+   247→   247→
+   248→   248→  useEffect(() => {
+   249→   249→    fetch('/api/products')
+   250→   250→      .then((r) => r.json())
+   251→   251→      .then((data: Product[]) => {
+   252→   252→        const found = data.find((p) => p.slug === slug) || null
+   253→   253→        setProduct(found)
+   254→   254→        if (found) {
+   255→   255→          addViewedProduct({
+   256→   256→            id: found.id,
+   257→   257→            title: found.title,
+   258→   258→            slug: found.slug,
+   259→   259→            price: found.price,
+   260→   260→            images: found.images.map((img) => ({ url: img.url, altText: img.altText })),
+   261→   261→          })
+   262→   262→          const related = data
+   263→   263→            .filter((p) => p.categoryId === found.categoryId && p.id !== found.id)
+   264→   264→            .slice(0, 4)
+   265→   265→          setRelatedProducts(related)
+   266→   266→        } else {
+   267→   267→          setRelatedProducts([])
+   268→   268→        }
+   269→   269→      })
+   270→   270→      .catch(() => {
+   271→   271→        setProduct(null)
+   272→   272→        setRelatedProducts([])
+   273→   273→      })
+   274→   274→      .finally(() => setLoading(false))
+   275→   275→  }, [slug])
+   276→   276→
+   277→   277→  const formatPrice = (price: number) =>
+   278→   278→    `$${price.toLocaleString('es-CO')}`
+   279→   279→
+   280→   280→  const hasDiscount = product?.compareAtPrice && product.compareAtPrice > product.price
+   281→   281→  const discountPercent = hasDiscount
+   282→   282→    ? Math.round(((product!.compareAtPrice! - product!.price) / product!.compareAtPrice!) * 100)
+   283→   283→    : 0
+   284→   284→
+   285→   285→  const availableSizes = useMemo(() => {
+   286→   286→    if (!product) return []
+   287→   287→    const seen = new Set<string>()
+   288→   288→    return product.variants.filter((v) => {
+   289→   289→      if (seen.has(v.size)) return false
+   290→   290→      seen.add(v.size)
+   291→   291→      return true
+   292→   292→    })
+   293→   293→  }, [product])
+   294→   294→
+   295→   295→  const availableColors = useMemo(() => {
+   296→   296→    if (!product) return []
+   297→   297→    const seen = new Set<string>()
+   298→   298→    return product.variants.filter((v) => {
+   299→   299→      if (seen.has(v.color)) return false
+   300→   300→      seen.add(v.color)
+   301→   301→      return true
+   302→   302→    })
+   303→   303→  }, [product])
+   304→   304→
+   305→   305→  const isOutOfStock = product
+   306→   306→    ? product.variants.every((v) => v.stockQuantity === 0)
+   307→   307→    : false
+   308→   308→
+   309→   309→  const selectedVariantStock = selectedVariant?.stockQuantity ?? 0
+   310→   310→  const isLowStock = selectedVariantStock > 0 && selectedVariantStock < 5
+   311→   311→
+   312→   312→  const handleAddToCart = () => {
+   313→   313→    if (!product || !selectedVariant) return
+   314→   314→    addItem(product, selectedVariant)
+   315→   315→    setAddedToCart(true)
+   316→   316→    setTimeout(() => setAddedToCart(false), 1500)
+   317→   317→    toast.success('Producto añadido al carrito')
+   318→   318→    openCart()
+   319→   319→  }
+   320→   320→
+   321→   321→  const [selectedColor, setSelectedColor] = useState<string | null>(null)
+   322→   322→
+   323→   323→  // Derived effective color: auto-select if only one, or validate current selection
+   324→   324→  const effectiveColor = useMemo(() => {
+   325→   325→    if (availableColors.length === 1) return availableColors[0].color
+   326→   326→    if (selectedColor && availableColors.find(c => c.color === selectedColor)) return selectedColor
+   327→   327→    return null
+   328→   328→  }, [availableColors, selectedColor])
+   329→   329→
+   330→   330→  const handleColorSelect = (color: string) => {
+   331→   331→    setSelectedColor(color)
+   332→   332→    // Re-evaluate variant when color changes
+   333→   333→    if (selectedVariant) {
+   334→   334→      const size = selectedVariant.size
+   335→   335→      const newVariant = product?.variants.find(
+   336→   336→        (v) => v.size === size && v.color === color && v.stockQuantity > 0
+   337→   337→      )
+   338→   338→      setSelectedVariant(newVariant || null)
+   339→   339→    }
+   340→   340→  }
+   341→   341→
+   342→   342→  // Update size selection to consider color
+   343→   343→  const handleSizeSelect = (variant: ProductVariant) => {
+   344→   344→    if (variant.stockQuantity <= 0) return
+   345→   345→    if (effectiveColor && variant.color !== effectiveColor) {
+   346→   346→      // Find same size in selected color
+   347→   347→      const colorVariant = product?.variants.find(
+   348→   348→        (v) => v.size === variant.size && v.color === effectiveColor && v.stockQuantity > 0
+   349→   349→      )
+   350→   350→      setSelectedVariant(colorVariant || null)
+   351→   351→    } else {
+   352→   352→      setSelectedVariant(variant)
+   353→   353→    }
+   354→   354→  }
+   355→   355→
+   356→   356→  const canAddToCart = selectedVariant && (!effectiveColor || (effectiveColor && selectedVariant.color === effectiveColor))
+   357→   357→
+   358→   358→  const handleCopyLink = async () => {
+   359→   359→    const url = window.location.href
+   360→   360→    try {
+   361→   361→      await navigator.clipboard.writeText(url)
+   362→   362→      toast.success('¡Enlace copiado!', {
+   363→   363→        icon: <Copy className="size-4" />,
+   364→   364→        duration: 2000,
+   365→   365→      })
+   366→   366→    } catch {
+   367→   367→      toast.error('No se pudo copiar el enlace')
+   368→   368→    }
+   369→   369→  }
+   370→   370→
+   371→   371→  const handleShareWhatsApp = () => {
+   372→   372→    const text = encodeURIComponent(`Mira este producto de KOP STUDIO: ${product?.title} - ${formatPrice(product?.price || 0)}`)
+   373→   373→    const url = encodeURIComponent(window.location.href)
+   374→   374→    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank')
+   375→   375→  }
+   376→   376→
+   377→   377→  const handleShareTwitter = () => {
+   378→   378→    const text = encodeURIComponent(`Mira este producto de KOP STUDIO: ${product?.title} - ${formatPrice(product?.price || 0)}`)
+   379→   379→    const url = encodeURIComponent(window.location.href)
+   380→   380→    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank')
+   381→   381→  }
+   382→   382→
+   383→   383→  const generateSku = (title: string) => {
+   384→   384→    const words = title.split(' ').slice(0, 2)
+   385→   385→    const prefix = words.map((w) => w.substring(0, 3).toUpperCase()).join('-')
+   386→   386→    const hash = title.length.toString().padStart(3, '0')
+   387→   387→    const suffix = slug.slice(-3).toUpperCase()
+   388→   388→    return `KOP-${prefix}-${hash}-${suffix}`
+   389→   389→  }
+   390→   390→
+   391→   391→  if (loading) {
+   392→   392→    return (
+   393→   393→      <main className="min-h-screen max-w-7xl mx-auto px-4 py-8">
+   394→   394→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+   395→   395→          <Skeleton className="aspect-square w-full bg-[#111] rounded-md" />
+   396→   396→          <div className="space-y-4">
+   397→   397→            <Skeleton className="h-8 w-3/4 bg-[#111]" />
+   398→   398→            <Skeleton className="h-6 w-1/4 bg-[#111]" />
+   399→   399→            <Skeleton className="h-24 w-full bg-[#111] rounded-md" />
+   400→   400→            <Skeleton className="h-12 w-full bg-[#111] rounded-md" />
+   401→   401→            <Skeleton className="h-12 w-full bg-[#111] rounded-md" />
+   402→   402→          </div>
+   403→   403→        </div>
+   404→   404→      </main>
+   405→   405→    )
+   406→   406→  }
+   407→   407→
+   408→   408→  if (!product) {
+   409→   409→    return (
+   410→   410→      <main className="min-h-screen flex flex-col items-center justify-center px-4">
+   411→   411→        <p className="text-gray-400 text-lg mb-4">Producto no encontrado</p>
+   412→   412→        <Button
+   413→   413→          variant="outline"
+   414→   414→          onClick={goBack}
+   415→   415→          className="border-[#404040] text-white hover:border-white rounded-none bg-transparent"
+   416→   416→        >
+   417→   417→          Volver
+   418→   418→        </Button>
+   419→   419→      </main>
+   420→   420→    )
+   421→   421→  }
+   422→   422→
+   423→   423→  return (
+   424→   424→    <main className="min-h-screen">
+   425→   425→      {/* Breadcrumb */}
+   426→   426→      <div className="border-b border-[#1a1a1a]">
+   427→   427→        <div className="max-w-7xl mx-auto px-4 py-4">
+   428→   428→          <Breadcrumb>
+   429→   429→            <BreadcrumbList>
+   430→   430→              <BreadcrumbItem>
+   431→   431→                <BreadcrumbLink
+   432→   432→                  className="cursor-pointer text-gray-500 hover:text-white"
+   433→   433→                  onClick={() => navigate('home')}
+   434→   434→                >
+   435→   435→                  Inicio
+   436→   436→                </BreadcrumbLink>
+   437→   437→              </BreadcrumbItem>
+   438→   438→              <BreadcrumbSeparator className="text-gray-600" />
+   439→   439→              {product.category && (
+   440→   440→                <>
+   441→   441→                  <BreadcrumbItem>
+   442→   442→                    <BreadcrumbLink
+   443→   443→                      className="cursor-pointer text-gray-500 hover:text-white"
+   444→   444→                      onClick={() =>
+   445→   445→                        navigate('collection', { category: product.category!.slug })
+   446→   446→                      }
+   447→   447→                    >
+   448→   448→                      {product.category.name}
+   449→   449→                    </BreadcrumbLink>
+   450→   450→                  </BreadcrumbItem>
+   451→   451→                  <BreadcrumbSeparator className="text-gray-600" />
+   452→   452→                </>
+   453→   453→              )}
+   454→   454→              <BreadcrumbItem>
+   455→   455→                <BreadcrumbPage className="text-white font-medium truncate max-w-[200px] sm:max-w-none">
+   456→   456→                  {product.title}
+   457→   457→                </BreadcrumbPage>
+   458→   458→              </BreadcrumbItem>
+   459→   459→            </BreadcrumbList>
+   460→   460→          </Breadcrumb>
+   461→   461→        </div>
+   462→   462→      </div>
+   463→   463→
+   464→   464→      <div className="max-w-7xl mx-auto px-4 py-8">
+   465→   465→        {/* Back button */}
+   466→   466→        <button
+   467→   467→          onClick={goBack}
+   468→   468→          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 sm:mb-8 text-sm touch-target min-h-11"
+   469→   469→        >
+   470→   470→          <ChevronLeft className="size-5" />
+   471→   471→          <span>Volver</span>
+   472→   472→        </button>
+   473→   473→
+   474→   474→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+   475→   475→          {/* Image Gallery */}
+   476→   476→          <div>
+   477→   477→            <div
+   478→   478→              className="group relative aspect-square md:aspect-[4/5] overflow-hidden rounded-md bg-[#111] mb-3 cursor-zoom-in"
+   479→   479→              onClick={() => setLightboxOpen(true)}
+   480→   480→              role="button"
+   481→   481→              tabIndex={0}
+   482→   482→              aria-label="Open image lightbox"
+   483→   483→              onKeyDown={(e) => { if (e.key === 'Enter') setLightboxOpen(true) }}
+   484→   484→            >
+   485→   485→              <AnimatePresence mode="wait">
+   486→   486→                {product.images.map((image, i) => (
+   487→   487→                  <ImageZoom
+   488→   488→                    key={image.id}
+   489→   489→                    src={image.url}
+   490→   490→                    alt={image.altText}
+   491→   491→                    isSelected={i === selectedImageIndex}
+   492→   492→                  />
+   493→   493→                ))}
+   494→   494→              </AnimatePresence>
+   495→   495→
+   496→   496→              {/* Badges */}
+   497→   497→              <div className="absolute top-3 left-3 flex flex-col gap-2 pointer-events-none">
+   498→   498→                {product.isNew && (
+   499→   499→                  <Badge className="bg-white text-black text-[10px] font-bold uppercase tracking-wider rounded-none px-2.5 py-1 hover:bg-gray-200">
+   500→   500→                    Nuevo
+   501→   501→                  </Badge>
+   502→   502→                )}
+   503→   503→                {product.isBestseller && (
+   504→   504→                  <Badge className="bg-[#dc2626] text-white text-[10px] font-bold uppercase tracking-wider rounded-none px-2.5 py-1">
+   505→   505→                    Best Seller
+   506→   506→                  </Badge>
+   507→   507→                )}
+   508→   508→              </div>
+   509→   509→
+   510→   510→              {/* Expand/lightbox hint */}
+   511→   511→              <div className="absolute bottom-3 right-3 bg-black/50 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+   512→   512→                <Maximize2 className="size-5 text-white" />
+   513→   513→              </div>
+   514→   514→            </div>
+   515→   515→
+   516→   516→            {/* Image counter */}
+   517→   517→            <div className="flex items-center justify-between mb-3">
+   518→   518→              <p className="text-xs text-neutral-500">
+   519→   519→                <span className="text-white font-medium">{selectedImageIndex + 1}</span>
+   520→   520→                {' / '}
+   521→   521→                {product.images.length}
+   522→   522→              </p>
+   523→   523→            </div>
+   524→   524→
+   525→   525→            {/* Thumbnails */}
+   526→   526→            {product.images.length > 1 && (
+   527→   527→              <div className="flex gap-2 sm:gap-2.5 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
+   528→   528→                {product.images.map((image, i) => (
+   529→   529→                  <button
+   530→   530→                    key={image.id}
+   531→   531→                    onClick={() => setSelectedImageIndex(i)}
+   532→   532→                    className={`shrink-0 w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-md overflow-hidden border-2 transition-colors ${
+   533→   533→                      selectedImageIndex === i
+   534→   534→                        ? 'border-white'
+   535→   535→                        : 'border-[#333] hover:border-gray-500'
+   536→   536→                    }`}
+   537→   537→                  >
+   538→   538→                    <img
+   539→   539→                      src={image.url}
+   540→   540→                      alt={image.altText}
+   541→   541→                      className="w-full h-full object-cover"
+   542→   542→                    />
+   543→   543→                  </button>
+   544→   544→                ))}
+   545→   545→              </div>
+   546→   546→            )}
+   547→   547→          </div>
+   548→   548→
+   549→   549→          {/* Product Info */}
+   550→   550→          <div>
+   551→   551→            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+   552→   552→              {product.title}
+   553→   553→            </h1>
+   554→   554→
+   555→   555→            {/* SKU */}
+   556→   556→            <p className="text-neutral-500 text-xs font-mono mt-2">
+   557→   557→              SKU: {product.sku || generateSku(product.title)}
+   558→   558→            </p>
+   559→   559→
+   560→   560→            {/* Price */}
+   561→   561→            <div className="flex items-baseline gap-3 mt-4">
+   562→   562→              <span className="text-2xl font-bold text-white">
+   563→   563→                {formatPrice(product.price)}
+   564→   564→              </span>
+   565→   565→              {hasDiscount && (
+   566→   566→                <>
+   567→   567→                  <span className="text-base text-neutral-500 line-through">
+   568→   568→                    {formatPrice(product.compareAtPrice!)}
+   569→   569→                  </span>
+   570→   570→                  <span className="text-sm font-bold text-red-600">
+   571→   571→                    -{discountPercent}%
+   572→   572→                  </span>
+   573→   573→                </>
+   574→   574→              )}
+   575→   575→            </div>
+   576→   576→
+   577→   577→            {/* Icons row */}
+   578→   578→            <div className="flex items-center gap-4 mt-6">
+   579→   579→              <button className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors">
+   580→   580→                <Heart className="size-5" />
+   581→   581→                <span className="text-xs">Favorito</span>
+   582→   582→              </button>
+   583→   583→              <Popover>
+   584→   584→                <PopoverTrigger asChild>
+   585→   585→                  <button className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors">
+   586→   586→                    <Share2 className="size-5" />
+   587→   587→                    <span className="text-xs">Compartir</span>
+   588→   588→                  </button>
+   589→   589→                </PopoverTrigger>
+   590→   590→                <PopoverContent side="bottom" align="start" className="bg-[#111] border-[#333] text-white p-2 rounded-none w-52">
+   591→   591→                  <button
+   592→   592→                    onClick={handleCopyLink}
+   593→   593→                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors rounded-sm"
+   594→   594→                  >
+   595→   595→                    <Copy className="size-4" />
+   596→   596→                    Copiar enlace
+   597→   597→                  </button>
+   598→   598→                  <button
+   599→   599→                    onClick={handleShareWhatsApp}
+   600→   600→                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors rounded-sm"
+   601→   601→                  >
+   602→   602→                    <MessageCircle className="size-4" />
+   603→   603→                    WhatsApp
+   604→   604→                  </button>
+   605→   605→                  <button
+   606→   606→                    onClick={handleShareTwitter}
+   607→   607→                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors rounded-sm"
+   608→   608→                  >
+   609→   609→                    <Share2 className="size-4" />
+   610→   610→                    Twitter/X
+   611→   611→                  </button>
+   612→   612→                </PopoverContent>
+   613→   613→              </Popover>
+   614→   614→            </div>
+   615→   615→
+   616→   616→            {/* Size selector */}
+   617→   617→            <div className="mt-8">
+   618→   618→              <div className="flex items-center">
+   619→   619→                <h3 className="text-xs font-bold uppercase tracking-widest text-white">
+   620→   620→                  Talla
+   621→   621→                  {selectedVariant && (
+   622→   622→                    <span className="text-neutral-500 font-normal normal-case tracking-normal ml-2">
+   623→   623→                      — {selectedVariant.size}
+   624→   624→                    </span>
+   625→   625→                  )}
+   626→   626→                </h3>
+   627→   627→                <div className="flex items-center ml-auto">
+   628→   628→                  <span className="text-[11px] text-neutral-500 mr-1">¿No sabes tu talla?</span>
+   629→   629→                  <SizeGuideDialog />
+   630→   630→                </div>
+   631→   631→              </div>
+   632→   632→              <div className="flex flex-wrap gap-3 mt-4">
+   633→   633→                {availableSizes.map((variant) => {
+   634→   634→                  const inStock = variant.stockQuantity > 0
+   635→   635→                  const isSelected = selectedVariant?.id === variant.id
+   636→   636→                  return (
+   637→   637→                    <motion.button
+   638→   638→                      key={variant.id}
+   639→   639→                      whileTap={inStock ? { scale: 0.9 } : undefined}
+   640→   640→                      onClick={() => inStock && handleSizeSelect(variant)}
+   641→   641→                      disabled={!inStock}
+   642→   642→                      className={`min-w-[3.5rem] h-11 px-4 text-sm font-medium uppercase tracking-wider border-2 transition-all duration-200 ${
+   643→   643→                        isSelected
+   644→   644→                          ? 'bg-white text-black border-white'
+   645→   645→                          : inStock
+   646→   646→                            ? 'bg-transparent text-white border-[#404040] hover:border-white'
+   647→   647→                            : 'bg-transparent text-[#333] border-[#1a1a1a] cursor-not-allowed'
+   648→   648→                      }`}
+   649→   649→                    >
+   650→   650→                      {variant.size}
+   651→   651→                    </motion.button>
+   652→   652→                  )
+   653→   653→                })}
+   654→   654→              </div>
+   655→   655→              {isOutOfStock && (
+   656→   656→                <p className="text-sm text-red-600 mt-3">Agotado</p>
+   657→   657→              )}
+   658→   658→            </div>
+   659→   659→
+   660→   660→            {/* Colors */}
+   661→   661→            {availableColors.length > 1 && (
+   662→   662→              <div className="mt-6">
+   663→   663→                <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-3">
+   664→   664→                  Color
+   665→   665→                  {effectiveColor && (
+   666→   666→                    <span className="text-neutral-500 font-normal normal-case tracking-normal ml-2">
+   667→   667→                      — {effectiveColor}
+   668→   668→                    </span>
+   669→   669→                  )}
+   670→   670→                </h3>
+   671→   671→                <div className="flex flex-wrap gap-3">
+   672→   672→                  {availableColors.map((variant) => {
+   673→   673→                    const isSelected = effectiveColor === variant.color
+   674→   674→                    return (
+   675→   675→                      <motion.button
+   676→   676→                        key={variant.color}
+   677→   677→                        whileTap={{ scale: 0.9 }}
+   678→   678→                        onClick={() => handleColorSelect(variant.color)}
+   679→   679→                        className="flex items-center gap-2 h-9 px-3 text-xs font-medium uppercase tracking-wider transition-all duration-200"
+   680→   680→                      >
+   681→   681→                        <span
+   682→   682→                          className={`w-5 h-5 rounded-full bg-neutral-800 border-2 transition-all duration-200 ${
+   683→   683→                            isSelected ? 'border-red-600 ring-2 ring-red-600/30' : 'border-[#404040] hover:border-white'
+   684→   684→                          }`}
+   685→   685→                        />
+   686→   686→                        <span className={`transition-colors ${isSelected ? 'text-white' : 'text-neutral-300'}`}>
+   687→   687→                          {variant.color}
+   688→   688→                        </span>
+   689→   689→                      </motion.button>
+   690→   690→                    )
+   691→   691→                  })}
+   692→   692→                </div>
+   693→   693→              </div>
+   694→   694→            )}
+   695→   695→
+   696→   696→            {/* Add to Cart */}
+   697→   697→            <div className="mt-8">
+   698→   698→              {/* Stock indicator */}
+   699→   699→              {selectedVariant && !isOutOfStock && (
+   700→   700→                <div className="flex items-center gap-2 mb-3">
+   701→   701→                  {isLowStock ? (
+   702→   702→                    <>
+   703→   703→                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
+   704→   704→                      <span className="text-xs text-yellow-500 font-medium">Últimas unidades</span>
+   705→   705→                    </>
+   706→   706→                  ) : (
+   707→   707→                    <>
+   708→   708→                      <span className="w-2 h-2 rounded-full bg-green-500" />
+   709→   709→                      <span className="text-xs text-green-500 font-medium">En stock</span>
+   710→   710→                    </>
+   711→   711→                  )}
+   712→   712→                </div>
+   713→   713→              )}
+   714→   714→
+   715→   715→              <motion.div
+   716→   716→                animate={
+   717→   717→                  selectedVariant && !isOutOfStock && !addedToCart
+   718→   718→                    ? { scale: [1, 1.015, 1] }
+   719→   719→                    : { scale: 1 }
+   720→   720→                }
+   721→   721→                transition={
+   722→   722→                  selectedVariant && !isOutOfStock && !addedToCart
+   723→   723→                    ? { repeat: Infinity, duration: 2, ease: 'easeInOut' }
+   724→   724→                    : {}
+   725→   725→                }
+   726→   726→              >
+   727→   727→                <Button
+   728→   728→                  onClick={handleAddToCart}
+   729→   729→                  disabled={!canAddToCart || isOutOfStock}
+   730→   730→                  className={`w-full text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-300 ${
+   731→   731→                    addedToCart
+   732→   732→                      ? 'bg-green-600 hover:bg-green-700'
+   733→   733→                      : 'bg-red-600 hover:bg-red-700'
+   734→   734→                  }`}
+   735→   735→                >
+   736→   736→                  {addedToCart ? (
+   737→   737→                    <motion.span
+   738→   738→                      initial={{ scale: 0 }}
+   739→   739→                      animate={{ scale: 1 }}
+   740→   740→                      className="flex items-center gap-2"
+   741→   741→                    >
+   742→   742→                      <Check className="size-5" />
+   743→   743→                      AÑADIDO
+   744→   744→                    </motion.span>
+   745→   745→                  ) : (
+   746→   746→                    <>
+   747→   747→                      <ShoppingBag className="size-5 mr-2" />
+   748→   748→                      AGREGAR AL CARRITO
+   749→   749→                    </>
+   750→   750→                  )}
+   751→   751→                </Button>
+   752→   752→              </motion.div>
+   753→   753→
+   754→   754→              {!canAddToCart && !isOutOfStock && (
+   755→   755→                <p className="text-xs text-neutral-500 mt-2 text-center">
+   756→   756→                  {availableColors.length > 1 && !effectiveColor
+   757→   757→                    ? 'Selecciona un color y una talla'
+   758→   758→                    : 'Selecciona una talla'
+   759→   759→                  }
+   760→   760→                </p>
+   761→   761→              )}
+   762→   762→            </div>
+   763→   763→
+   764→   764→            {/* Benefits */}
+   765→   765→            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+   766→   766→              <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
+   767→   767→                <Truck className="size-5 text-neutral-400 shrink-0" />
+   768→   768→                <div>
+   769→   769→                  <p className="text-xs font-medium text-white">Envío Express</p>
+   770→   770→                  <p className="text-[10px] text-neutral-500">2-4 días hábiles</p>
+   771→   771→                </div>
+   772→   772→              </div>
+   773→   773→              <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
+   774→   774→                <RotateCcw className="size-5 text-neutral-400 shrink-0" />
+   775→   775→                <div>
+   776→   776→                  <p className="text-xs font-medium text-white">Devoluciones</p>
+   777→   777→                  <p className="text-[10px] text-neutral-500">30 días para cambios</p>
+   778→   778→                </div>
+   779→   779→              </div>
+   780→   780→              <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
+   781→   781→                <Shield className="size-5 text-neutral-400 shrink-0" />
+   782→   782→                <div>
+   783→   783→                  <p className="text-xs font-medium text-white">Compra Segura</p>
+   784→   784→                  <p className="text-[10px] text-neutral-500">Pago protegido</p>
+   785→   785→                </div>
+   786→   786→              </div>
+   787→   787→            </div>
+   788→   788→
+   789→   789→            {/* Accordion */}
+   790→   790→            <div className="mt-8 border-t border-[#1a1a1a]">
+   791→   791→              <Accordion type="single" collapsible className="w-full">
+   792→   792→                <AccordionItem value="description" className="border-[#1a1a1a]">
+   793→   793→                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+   794→   794→                    Descripción
+   795→   795→                  </AccordionTrigger>
+   796→   796→                  <AccordionContent className="text-sm text-neutral-400 leading-relaxed">
+   797→   797→                    {product.description}
+   798→   798→                  </AccordionContent>
+   799→   799→                </AccordionItem>
+   800→   800→
+   801→   801→                <AccordionItem value="material" className="border-[#1a1a1a]">
+   802→   802→                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+   803→   803→                    Material y Cuidado
+   804→   804→                  </AccordionTrigger>
+   805→   805→                  <AccordionContent className="text-sm text-neutral-400 leading-relaxed">
+   806→   806→                    100% Algodón Premium de 240gsm. Lavar a máquina en ciclo frío. No usar blanqueador. Secar a temperatura baja. Planchar del revés.
+   807→   807→                  </AccordionContent>
+   808→   808→                </AccordionItem>
+   809→   809→
+   810→   810→                <AccordionItem value="details" className="border-[#1a1a1a]">
+   811→   811→                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+   812→   812→                    Detalles de la prenda
+   813→   813→                  </AccordionTrigger>
+   814→   814→                  <AccordionContent>
+   815→   815→                    <ul className="text-sm text-neutral-400 space-y-1.5">
+   816→   816→                      <li className="flex items-center gap-2">
+   817→   817→                        <Check className="size-3.5 text-red-600" />
+   818→   818→                        Algodón premium 240gsm
+   819→   819→                      </li>
+   820→   820→                      <li className="flex items-center gap-2">
+   821→   821→                        <Check className="size-3.5 text-red-600" />
+   822→   822→                        Corte oversize
+   823→   823→                      </li>
+   824→   824→                      <li className="flex items-center gap-2">
+   825→   825→                        <Check className="size-3.5 text-red-600" />
+   826→   826→                        Impresión serigrafía
+   827→   827→                      </li>
+   828→   828→                      <li className="flex items-center gap-2">
+   829→   829→                        <Check className="size-3.5 text-red-600" />
+   830→   830→                        Hecho en Colombia
+   831→   831→                      </li>
+   832→   832→                    </ul>
+   833→   833→                  </AccordionContent>
+   834→   834→                </AccordionItem>
+   835→   835→
+   836→   836→                <AccordionItem value="care" className="border-[#1a1a1a]">
+   837→   837→                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+   838→   838→                    Guía de lavado
+   839→   839→                  </AccordionTrigger>
+   840→   840→                  <AccordionContent>
+   841→   841→                    <ul className="text-sm text-neutral-400 space-y-1.5">
+   842→   842→                      <li className="flex items-center gap-2">
+   843→   843→                        <Check className="size-3.5 text-red-600" />
+   844→   844→                        Lavar a mano con agua fría
+   845→   845→                      </li>
+   846→   846→                      <li className="flex items-center gap-2">
+   847→   847→                        <Check className="size-3.5 text-red-600" />
+   848→   848→                        No usar blanqueador
+   849→   849→                      </li>
+   850→   850→                      <li className="flex items-center gap-2">
+   851→   851→                        <Check className="size-3.5 text-red-600" />
+   852→   852→                        Secar a la sombra
+   853→   853→                      </li>
+   854→   854→                      <li className="flex items-center gap-2">
+   855→   855→                        <Check className="size-3.5 text-red-600" />
+   856→   856→                        Planchar a baja temperatura
+   857→   857→                      </li>
+   858→   858→                    </ul>
+   859→   859→                  </AccordionContent>
+   860→   860→                </AccordionItem>
+   861→   861→              </Accordion>
+   862→   862→            </div>
+   863→   863→          </div>
+   864→   864→        </div>
+   865→   865→
+   866→   866→        {/* Recently Viewed Products */}
+   867→   867→        <RecentlyViewedSection currentProductId={product.id} />
+   868→   868→
+   869→   869→        {/* Related Products */}
+   870→   870→        {relatedProducts.length > 0 && (
+   871→   871→          <section className="mt-20 pb-12">
+   872→   872→            <div className="flex items-center mb-8">
+   873→   873→              <div>
+   874→   874→                <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   875→   875→                  También te puede interesar
+   876→   876→                </h2>
+   877→   877→                <div className="h-0.5 w-12 bg-red-600 mt-2" />
+   878→   878→              </div>
+   879→   879→            </div>
+   880→   880→            {/* Horizontal scrollable on mobile, grid on desktop */}
+   881→   881→            <div className="flex lg:grid lg:grid-cols-4 gap-4 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 snap-x snap-mandatory -mx-4 px-4 lg:mx-0 lg:px-0">
+   882→   882→              {relatedProducts.map((p) => (
+   883→   883→                <div key={p.id} className="min-w-[260px] sm:min-w-[280px] lg:min-w-0 snap-start">
+   884→   884→                  <ProductCard product={p} />
+   885→   885→                </div>
+   886→   886→              ))}
+   887→   887→            </div>
+   888→   888→          </section>
+   889→   889→        )}
+   890→   890→
+   891→   891→        {/* Reviews */}
+   892→   892→        <ProductReviews productId={product.id} />
+   893→   893→      </div>
+   894→   894→
+   895→   895→      {/* Image Lightbox */}
+   896→   896→      <ImageLightbox
+   897→   897→        images={product.images.map((img) => ({ url: img.url, altText: img.altText }))}
+   898→   898→        initialIndex={selectedImageIndex}
+   899→   899→        open={lightboxOpen}
+   900→   900→        onOpenChange={setLightboxOpen}
+   901→   901→      />
+   902→   902→    </main>
+   903→   903→  )
+   904→   904→}
+   905→   905→
+   906→   906→export default function ProductDetailView() {
+   907→   907→  const slug = useNavigationStore((s) => s.viewParams.slug || '')
+   908→   908→  return <ProductDetailInner key={slug} slug={slug} />
+   909→   909→}

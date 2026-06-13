@@ -10,6 +10,8 @@ import Header from '@/components/layout/Header';
 import CartDrawer from '@/components/layout/CartDrawer';
 import Footer from '@/components/layout/Footer';
 import SearchCommandPalette from '@/components/search/SearchCommandPalette';
+import SocialProofNotification from '@/components/social/SocialProofNotification';
+import CompareFloatingBar from '@/components/product/CompareFloatingBar';
 
 const HomeView = lazy(() => import('@/components/home/HomeView'));
 const CollectionView = lazy(() => import('@/components/product/CollectionView'));
@@ -22,6 +24,7 @@ const AdminProductForm = lazy(() => import('@/components/admin/AdminProductForm'
 const OrderTrackingView = lazy(() => import('@/components/order/OrderTrackingView'));
 const OrderHistoryView = lazy(() => import('@/components/order/OrderHistoryView'));
 const WishlistView = lazy(() => import('@/components/wishlist/WishlistView'));
+const ProductComparisonView = lazy(() => import('@/components/product/ProductComparisonView'));
 
 function LoadingFallback() {
   return (
@@ -50,6 +53,7 @@ function ViewRouter() {
     wishlist: <WishlistView />,
     'order-tracking': <OrderTrackingView />,
     'order-history': <OrderHistoryView />,
+    'product-comparison': <ProductComparisonView />,
   };
 
   return (
@@ -97,6 +101,12 @@ export default function Page() {
       {!isAdmin && <Footer />}
       <CartDrawer />
       <SearchCommandPalette />
+
+      {/* Social Proof Notification */}
+      {!isAdmin && <SocialProofNotification />}
+
+      {/* Compare Floating Bar */}
+      {!isAdmin && <CompareFloatingBar />}
 
       {/* Floating WhatsApp - only on non-admin views */}
       {!isAdmin && (

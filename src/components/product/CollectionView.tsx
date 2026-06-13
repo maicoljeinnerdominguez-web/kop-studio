@@ -85,7 +85,7 @@ function FilterSidebar({
               <button
                 key={size}
                 onClick={() => toggleSize(size)}
-                className={`min-w-[2.5rem] h-9 border text-xs uppercase tracking-wider filter-btn ${isSelected ? 'active bg-white text-black border-white' : 'border-[#333] text-neutral-400'}`}
+                className={`min-w-[2.5rem] h-9 border text-xs uppercase tracking-wider filter-btn focus-ring-red ${isSelected ? 'active bg-white text-black border-white' : 'border-[#333] text-neutral-400'}`}
               >
                 {size}
               </button>
@@ -109,7 +109,7 @@ function FilterSidebar({
               <button
                 key={range.value}
                 onClick={() => setPriceRange(range.value)}
-                className={`h-9 px-3 border text-xs uppercase tracking-wider filter-btn whitespace-nowrap ${isSelected ? 'active bg-white text-black border-white' : 'border-[#333] text-neutral-400'}`}
+                className={`h-9 px-3 border text-xs uppercase tracking-wider filter-btn whitespace-nowrap focus-ring-red ${isSelected ? 'active bg-white text-black border-white' : 'border-[#333] text-neutral-400'}`}
               >
                 {range.label}
               </button>
@@ -373,6 +373,7 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+        <div className="max-w-7xl mx-auto px-4"><div className="separator-dot py-3"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -507,7 +508,7 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5 border-radius-animate">
                   {filteredProducts.map((product, i) => (
                     <ProductCard key={product.id} product={product} index={i} />
                   ))}

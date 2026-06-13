@@ -92,7 +92,8 @@ export type AppView =
   | "admin-products-edit"
   | "wishlist"
   | "order-tracking"
-  | "order-history";
+  | "order-history"
+  | "product-comparison";
 
 export interface ProductFilters {
   sizes: string[];
