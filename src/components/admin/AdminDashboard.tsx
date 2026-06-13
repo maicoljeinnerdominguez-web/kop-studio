@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback, Fragment } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign,
   Clock,
   Package,
   ShoppingBag,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +24,13 @@ import {
 import {
   Skeleton,
 } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useNavigationStore } from '@/stores/useNavigationStore';
@@ -56,14 +66,180 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   CANCELLED: 'Cancelado',
 };
 
+const ALL_STATUSES: OrderStatus[] = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
+interface OrderItemDetail {
+  id: string;
+  quantity: number;
+  priceAtPurchase: number;
+  productVariant: {
+    size: string;
+    color: string;
+    product: {
+      title: string;
+    };
+  };
+}
+
 interface RecentOrder {
   id: string;
   totalAmount: number;
   status: string;
   createdAt: string;
   user: { name: string; email: string } | null;
+  items?: OrderItemDetail[];
 }
 
+/* ─── OrderStatusSelect ─── */
+function OrderStatusSelect({
+  orderId,
+  currentStatus,
+  onStatusChange,
+}: {
+  orderId: string;
+  currentStatus: string;
+  onStatusChange: (orderId: string, newStatus: string) => void;
+}) {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const status = currentStatus as OrderStatus;
+
+  const handleChange = async (newStatus: string) => {
+    if (newStatus === currentStatus) return;
+
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Error al actualizar');
+      }
+
+      const updated = await res.json();
+      onStatusChange(orderId, updated.status);
+      toast.success(`Estado actualizado a ${STATUS_LABELS[newStatus as OrderStatus]}`);
+    } catch {
+      toast.error('Error al actualizar el estado');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const colorClasses = STATUS_COLORS[status] || STATUS_COLORS.PENDING;
+
+  return (
+    <div className="relative inline-flex">
+      {isUpdating && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0a0a0a]/80 rounded-sm">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-neutral-400" />
+        </div>
+      )}
+      <Select value={status} onValueChange={handleChange}>
+        <SelectTrigger
+          className={`inline-flex items-center gap-0 border ${colorClasses} hover:opacity-80 focus-visible:ring-1 focus-visible:ring-neutral-500 h-6 px-2 py-0 text-[10px] uppercase tracking-wider font-bold rounded-none bg-transparent cursor-pointer shadow-none transition-opacity`}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent
+          position="popper"
+          className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none"
+        >
+          {ALL_STATUSES.map((s) => (
+            <SelectItem
+              key={s}
+              value={s}
+              className={`text-xs uppercase tracking-wider font-medium rounded-none focus:bg-[#1a1a1a] ${
+                STATUS_COLORS[s]
+              } cursor-pointer`}
+            >
+              <span className="flex items-center gap-2">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor:
+                      s === 'PENDING'
+                        ? '#eab308'
+                        : s === 'PAID'
+                        ? '#3b82f6'
+                        : s === 'SHIPPED'
+                        ? '#a855f7'
+                        : s === 'DELIVERED'
+                        ? '#22c55e'
+                        : '#ef4444',
+                  }}
+                />
+                {STATUS_LABELS[s]}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+/* ─── OrderItemsRow ─── */
+function OrderItemsRow({ items }: { items: OrderItemDetail[] }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+      <div className="bg-[#080808] border-t border-[#1a1a1a] px-4 py-3">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b-[#1a1a1a] hover:bg-transparent">
+              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+                Producto
+              </TableHead>
+              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+                Talla
+              </TableHead>
+              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+                Color
+              </TableHead>
+              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-center">
+                Cantidad
+              </TableHead>
+              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-right">
+                Precio Unitario
+              </TableHead>
+              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-right">
+                Subtotal
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow key={item.id} className="border-b-[#111] hover:bg-transparent">
+                <TableCell className="text-neutral-300 text-xs">
+                  {item.productVariant.product.title}
+                </TableCell>
+                <TableCell className="text-neutral-400 text-xs">{item.productVariant.size}</TableCell>
+                <TableCell className="text-neutral-400 text-xs">{item.productVariant.color}</TableCell>
+                <TableCell className="text-neutral-400 text-xs text-center">{item.quantity}</TableCell>
+                <TableCell className="text-neutral-300 text-xs text-right">
+                  {formatPrice(item.priceAtPurchase)}
+                </TableCell>
+                <TableCell className="text-white text-xs font-medium text-right">
+                  {formatPrice(item.priceAtPurchase * item.quantity)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── AdminDashboard ─── */
 export default function AdminDashboard() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const navigate = useNavigationStore((s) => s.navigate);
@@ -73,6 +249,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -102,6 +279,24 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
+
+  const handleStatusChange = useCallback((orderId: string, newStatus: string) => {
+    setRecentOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+    );
+  }, []);
+
+  const toggleExpand = useCallback(async (orderId: string) => {
+    setExpandedOrders((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+      } else {
+        next.add(orderId);
+      }
+      return next;
+    });
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -227,6 +422,7 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-b-[#1a1a1a] hover:bg-transparent">
+                    <TableHead className="w-8" />
                     <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                       Orden ID
                     </TableHead>
@@ -248,6 +444,7 @@ export default function AdminDashboard() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i} className="border-b-[#1a1a1a] hover:bg-transparent">
+                        <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-20" /></TableCell>
@@ -257,40 +454,63 @@ export default function AdminDashboard() {
                     ))
                   ) : recentOrders.length === 0 ? (
                     <TableRow className="border-b-0 hover:bg-transparent">
-                      <TableCell colSpan={5} className="text-center py-8">
+                      <TableCell colSpan={6} className="text-center py-8">
                         <p className="text-neutral-500 text-sm">No hay órdenes aún</p>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    recentOrders.map((order) => (
-                      <TableRow
-                        key={order.id}
-                        className="border-b-[#1a1a1a] hover:bg-[#111] transition-colors"
-                      >
-                        <TableCell className="text-white text-xs font-mono">
-                          #{order.id.slice(0, 8)}
-                        </TableCell>
-                        <TableCell className="text-white text-xs">
-                          {order.user?.name || order.user?.email || 'Guest'}
-                        </TableCell>
-                        <TableCell className="text-white text-xs font-medium">
-                          {formatPrice(order.totalAmount)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-none border ${
-                              STATUS_COLORS[order.status as OrderStatus] || STATUS_COLORS.PENDING
-                            }`}
+                    recentOrders.map((order) => {
+                      const isExpanded = expandedOrders.has(order.id);
+                      return (
+                        <Fragment key={order.id}>
+                          <TableRow
+                            className={`border-b-[#1a1a1a] hover:bg-[#111] transition-colors cursor-pointer ${isExpanded ? 'bg-[#111]' : ''}`}
+                            onClick={() => toggleExpand(order.id)}
                           >
-                            {STATUS_LABELS[order.status as OrderStatus] || order.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-neutral-400 text-xs">
-                          {formatDate(order.createdAt)}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                            <TableCell className="w-8">
+                              <button
+                                className="text-neutral-500 hover:text-white transition-colors"
+                                aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="w-4 h-4" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4" />
+                                )}
+                              </button>
+                            </TableCell>
+                            <TableCell className="text-white text-xs font-mono">
+                              #{order.id.slice(0, 8)}
+                            </TableCell>
+                            <TableCell className="text-white text-xs">
+                              {order.user?.name || order.user?.email || 'Guest'}
+                            </TableCell>
+                            <TableCell className="text-white text-xs font-medium">
+                              {formatPrice(order.totalAmount)}
+                            </TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <OrderStatusSelect
+                                orderId={order.id}
+                                currentStatus={order.status}
+                                onStatusChange={handleStatusChange}
+                              />
+                            </TableCell>
+                            <TableCell className="text-neutral-400 text-xs">
+                              {formatDate(order.createdAt)}
+                            </TableCell>
+                          </TableRow>
+                          <AnimatePresence>
+                            {isExpanded && order.items && order.items.length > 0 && (
+                              <TableRow className="border-b-[#1a1a1a] hover:bg-transparent p-0">
+                                <TableCell colSpan={6} className="p-0">
+                                  <OrderItemsRow items={order.items} />
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </AnimatePresence>
+                        </Fragment>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -323,3 +543,5 @@ export default function AdminDashboard() {
     </section>
   );
 }
+
+

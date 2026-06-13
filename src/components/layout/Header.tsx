@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   ShoppingCart,
   User,
   Menu,
-  X,
   Heart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -21,7 +19,7 @@ import {
 } from '@/components/ui/sheet';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useCartStore } from '@/stores/useCartStore';
-import type { Product } from '@/types';
+import { useSearchOpenStore } from '@/stores/useSearchOpenStore';
 
 const NAV_LINKS = [
   { label: 'New Merch', slug: 'new-merch' },
@@ -38,60 +36,16 @@ export default function Header() {
   const navigate = useNavigationStore((s) => s.navigate);
   const itemCount = useCartStore((s) => s.getItemCount());
   const toggleCart = useCartStore((s) => s.toggleCart);
+  const toggleSearch = useSearchOpenStore((s) => s.toggle);
 
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-
-  const searchRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setSearchOpen(false);
-      }
-    };
-    if (searchOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [searchOpen]);
-
-  const handleSearch = useCallback((value: string) => {
-    setSearchQuery(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!value || value.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(value)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data);
-        }
-      } catch {
-        setSearchResults([]);
-      }
-    }, 300);
-  }, []);
-
-  const handleResultClick = (product: Product) => {
-    setSearchOpen(false);
-    setSearchQuery('');
-    setSearchResults([]);
-    navigate('product', { id: product.id, slug: product.slug });
-  };
 
   return (
     <header
@@ -183,105 +137,15 @@ export default function Header() {
           {/* Right: Search, Cart, User */}
           <div className="flex items-center gap-1">
             {/* Search */}
-            <div ref={searchRef} className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSearchOpen(!searchOpen)}
-                className="text-white hover:bg-white/10"
-                aria-label="Buscar"
-              >
-                <AnimatePresence mode="wait">
-                  {searchOpen ? (
-                    <motion.div
-                      key="close"
-                      initial={{ rotate: -90, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      exit={{ rotate: 90, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <X className="size-5" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="search"
-                      initial={{ rotate: 90, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      exit={{ rotate: -90, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <Search className="size-5" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </Button>
-
-              <AnimatePresence>
-                {searchOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-[#111] border border-[#262626] rounded-lg shadow-2xl shadow-black/60 overflow-hidden"
-                  >
-                    <div className="p-3">
-                      <Input
-                        type="text"
-                        placeholder="Buscar productos..."
-                        value={searchQuery}
-                        onChange={(e) => handleSearch(e.target.value)}
-                        className="bg-[#1a1a1a] border-[#333] text-white placeholder:text-neutral-500 text-sm h-9"
-                        autoFocus
-                      />
-                    </div>
-
-                    {searchResults.length > 0 && (
-                      <div className="max-h-72 overflow-y-auto border-t border-[#262626]">
-                        {searchResults.map((product) => {
-                          const primaryImage = product.images?.[0];
-                          return (
-                            <button
-                              key={product.id}
-                              onClick={() => handleResultClick(product)}
-                              className="w-full flex items-center gap-3 p-3 hover:bg-white/5 transition-colors text-left"
-                            >
-                              <div className="w-10 h-10 rounded bg-[#1a1a1a] overflow-hidden flex-shrink-0">
-                                {primaryImage?.url ? (
-                                  <img
-                                    src={primaryImage.url}
-                                    alt={product.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-neutral-600 text-xs">
-                                    N/A
-                                  </div>
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm text-white truncate">
-                                  {product.title}
-                                </p>
-                                <p className="text-xs text-neutral-400">
-                                  ${product.price.toLocaleString('es-CO')}
-                                </p>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {searchQuery.length >= 2 && searchResults.length === 0 && (
-                      <div className="p-4 text-center text-neutral-500 text-sm">
-                        No se encontraron resultados
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSearch}
+              className="text-white hover:bg-white/10"
+              aria-label="Buscar"
+            >
+              <Search className="size-5" />
+            </Button>
 
             {/* Cart */}
             <Button

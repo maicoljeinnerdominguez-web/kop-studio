@@ -538,3 +538,142 @@ KOP STUDIO e-commerce is production-quality with visual polish rating ~9/10. All
 8. Mobile-specific responsive fine-tuning
 9. Add product comparison feature
 10. Implement dark/light theme toggle (currently dark-only)
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Add order status management to admin dashboard
+
+Work Log:
+- Created API endpoint `src/app/api/orders/[id]/route.ts` with GET and PATCH handlers
+  - GET: Fetches a single order with items, product variant, and product info; returns 404 if not found
+  - PATCH: Accepts `{ status }` body, validates against valid statuses (PENDING, PAID, SHIPPED, DELIVERED, CANCELLED), updates order and returns updated order; returns 400 for invalid status or body
+- Updated `src/components/admin/AdminDashboard.tsx` with:
+  - **OrderStatusSelect component**: Inline shadcn Select styled to match the existing status badge colors. Shows Loader2 spinner during API call. Displays color-coded dot indicators in dropdown options. Handles success/error toasts.
+  - **Order detail expansion**: Chevron button at start of each row. Click toggles expand/collapse with AnimatePresence for smooth animation. Expanded view shows nested table with product name, size, color, quantity, unit price, and line total. Styled with bg-[#080808] and border-[#1a1a1a].
+  - Status select click propagation stopped so dropdown works without triggering row expand.
+  - Local state updates via `handleStatusChange` callback — no refetch needed.
+
+Stage Summary:
+- Admin can now change order status directly from the orders table using a color-coded dropdown select
+- Each order row is expandable to reveal order item details
+- Toast notifications confirm successful status changes
+- Error handling with revert on failure
+- All styling matches existing dark theme
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Newsletter API endpoint, Footer polish, ProductCard micro-interactions
+
+Work Log:
+- Created `src/app/api/newsletter/route.ts` (POST endpoint)
+  - Validates email format with regex, returns 400 for missing/invalid emails
+  - 300ms simulated delay via setTimeout/Promise
+  - Returns `{ success: true, message: "¡Suscripción exitosa!" }` on success
+  - Error handling with 500 fallback
+
+- Updated `src/components/layout/Footer.tsx`:
+  - Replaced local-only validation with real API call to `/api/newsletter`
+  - Added `FormStatus` state machine: idle → loading → success/error → auto-reset
+  - Loading state: Loader2 spinner replaces button text, input+button disabled
+  - Success state: Animated checkmark (framer-motion spring + pathLength) + "¡Suscrito exitosamente!" in text-green-400, auto-resets after 3s
+  - Error state: "Intenta de nuevo" in text-red-400 with AnimatePresence fade, auto-clears after 3s
+  - Input focus: `focus-visible:border-white/30 transition-colors`
+  - Subscribe button: `hover:scale-105 active:scale-100 transition-all`
+  - Social links (all instances): Added `hover:scale-110 hover:text-white hover:border-white/50 transition-all duration-200`
+  - Restructured bottom section: Split copyright into two lines — "Diseñado con pasión en Bogotá, Colombia 🇨🇴" and "© 2026 KOP STUDIO. Todos los derechos reservados." in `text-neutral-600 text-xs tracking-wide`
+
+- Updated `src/components/product/ProductCard.tsx`:
+  - Image hover transition: Changed from `duration-300` to `duration-500` for smoother opacity swap
+  - Added `opacity-100 group-hover:opacity-0` on primary and `opacity-0 group-hover:opacity-100` on secondary
+  - NUEVO badge repositioning: When discount badge exists, NUEVO moves to `top-10 right-2` (below discount); otherwise stays at `top-2 right-2`
+  - Wishlist heart icon repositioned to avoid overlap with NUEVO badge
+  - Add-to-cart button feedback: Local `addedToCart` state, button text changes to "✓ AÑADIDO" with green-600 bg for 1.5s, then resets
+  - Savings display: Added `AHORRAS $XX` line in text-red-500/80 text-[10px] font-bold below price when discount exists
+  - Removed unused `Star` import
+
+Stage Summary:
+- Newsletter form is now fully interactive with loading/success/error states and API integration
+- Footer social links have polished hover animations
+- ProductCard has smoother image transitions, non-overlapping badges, cart feedback, and savings display
+- All linting passes with no errors
+
+---
+Task ID: 7-search-palette
+Agent: Main Agent
+Task: Cmd+K Search Command Palette
+
+Work Log:
+- Created `src/stores/useSearchOpenStore.ts` — minimal zustand store with `isOpen`, `setOpen`, `toggle`
+- Created `src/components/search/SearchCommandPalette.tsx` — spotlight-style search overlay:
+  - Full-screen backdrop with bg-black/70 backdrop-blur-sm, z-50
+  - Centered dialog at top-[15vh] with max-w-xl, bg-[#0a0a0a], border-[#1a1a1a], shadow-2xl
+  - AnimatePresence: opacity+scale in/out (0.2s duration)
+  - Search input with Search icon (left, absolute) and "ESC" badge (right)
+  - Global Cmd+K / Ctrl+K keyboard shortcut listener
+  - Debounced search (300ms, useCallback+useRef) fetching /api/search?q=
+  - 3 skeleton loading rows with animate-pulse
+  - Result rows: thumbnail, title, category, price, ArrowRight icon
+  - Quick Links section ("ACCESOS RÁPIDOS") with Tag icon: Nuevos Productos, Bestsellers, Camisetas, Inferiores, Accesorios
+  - No-results state with query displayed
+  - Bottom bar with keyboard hints (↵ Abrir, esc Cerrar) and KOP STUDIO branding
+  - Custom dark scrollbar CSS class (search-palette-scrollbar) added to globals.css
+- Updated `src/components/layout/Header.tsx`:
+  - Removed inline search dropdown (old searchRef, searchQuery, searchResults, handleSearch, handleResultClick)
+  - Replaced with simple search button that calls toggleSearch from useSearchOpenStore
+  - Cleaned up unused imports (X, Input, useRef, useCallback, Product type)
+- Updated `src/app/page.tsx`:
+  - Imported and rendered <SearchCommandPalette /> alongside CartDrawer
+- Lint passes with no errors
+
+Stage Summary:
+- Cmd+K / Ctrl+K opens a full-screen spotlight search overlay
+- Header search button now opens the same command palette via shared zustand store
+- Search results fetched from existing /api/search endpoint with 300ms debounce
+- Quick links provide fast navigation to popular collections
+- Dark theme matches existing design system perfectly
+
+---
+## Current Project Status (Post-Cron Review #1)
+
+### Assessment
+KOP STUDIO e-commerce is at ~9.5/10 visual polish. All 5 original build phases complete plus 4 enhancement rounds. Zero lint errors, zero runtime errors across all views.
+
+### Completed This Round
+- **QA Testing**: Full agent-browser verification across Home, Collection, Product Detail, Cart, Checkout, Admin — all stable
+- **Bug Fix — Admin API relations**: `/api/admin` was missing nested `productVariant.product` include for order items. Fixed with proper Prisma include chain
+- **Bug Fix — OrderItemsRow animation**: Removed framer-motion `height: 0/auto` animation that prevented table content from rendering inside `<TableRow>`. Changed to simple opacity fade
+- **Cmd+K Search Command Palette**: New spotlight-style search overlay with backdrop blur, debounced search, quick links, ESC badge, keyboard navigation
+- **Admin Order Status Management**: New `OrderStatusSelect` component with color-coded dropdown, expandable order rows showing item details, PATCH API endpoint for status updates
+- **Newsletter API**: New `/api/newsletter` POST endpoint with email validation and simulated delay
+- **Footer Polish**: Newsletter form with loading/success/error states, animated checkmark, social link hover effects, restructured copyright
+- **ProductCard Micro-interactions**: Smoother 500ms image crossfade, non-overlapping badges, "✓ AÑADIDO" green flash feedback, "AHORRAS $XX" savings display
+
+### Verified via Agent-Browser
+- ✅ Homepage: all sections, zero errors
+- ✅ Collection: filters, chips, product count
+- ✅ Product Detail: size guide, share, material accordion, image zoom
+- ✅ Cart + Checkout: order summary sidebar, step indicators
+- ✅ Search Command Palette: opens via button, shows quick links, search results for "hoodie" query
+- ✅ Admin Dashboard: stats cards, expandable order items (Memento Tee - M/Negro x2 = $178.000), status change ENTREGADO→ENVIADO
+- ✅ Zero lint errors, zero runtime errors
+
+### Unresolved Issues
+- Agent-browser motion.div click propagation (tool limitation only)
+- Checkout payment processing still simulated
+- Admin password in plain text (no bcrypt)
+- No image upload in admin product form
+- No real email notification system
+
+### Priority Recommendations for Next Phase
+1. Add image upload functionality to admin product form
+2. Implement bcrypt password hashing
+3. Add product comparison feature
+4. Mobile-specific responsive fine-tuning
+5. Add "Total Looks" category with outfit bundles
+6. Customer order history page
+7. Add product reviews/ratings system
+8. Implement dark/light theme toggle
+9. Add promo code / discount code system
+10. Add size recommendation quiz

@@ -16,7 +16,15 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
         include: {
           user: { select: { name: true, email: true } },
-          items: true,
+          items: {
+            include: {
+              productVariant: {
+                include: {
+                  product: { select: { title: true } },
+                },
+              },
+            },
+          },
         },
       }),
     ]);

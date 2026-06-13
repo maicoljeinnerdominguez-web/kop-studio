@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Heart, ShoppingBag, Star } from 'lucide-react'
+import { Heart, ShoppingBag } from 'lucide-react'
 import { useCartStore } from '@/stores/useCartStore'
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
@@ -21,6 +21,15 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isInWishlist = useWishlistStore((s) => s.isInWishlist)
   const wishlisted = isInWishlist(product.id)
   const [imageError, setImageError] = useState(false)
+  const [addedToCart, setAddedToCart] = useState(false)
+
+  // Auto-reset "added" state after 1.5 seconds
+  useEffect(() => {
+    if (addedToCart) {
+      const timer = setTimeout(() => setAddedToCart(false), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [addedToCart])
 
   const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0]
   const secondaryImage = product.images.find((img) => !img.isPrimary) || product.images[1]
@@ -28,6 +37,10 @@ export default function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price
   const discountPercent = hasDiscount
     ? Math.round(((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100)
+    : 0
+
+  const savingsAmount = hasDiscount
+    ? product.compareAtPrice! - product.price
     : 0
 
   const formatPrice = (price: number) =>
@@ -39,6 +52,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     if (availableVariant) {
       addItem(product, availableVariant)
       toast.success('Producto añadido al carrito')
+      setAddedToCart(true)
       openCart()
     }
   }
@@ -61,7 +75,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <img
               src={primaryImage.url}
               alt={primaryImage.altText}
-              className="product-card-image product-card-image-primary absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+              className="product-card-image product-card-image-primary absolute inset-0 w-full h-full object-cover opacity-100 group-hover:opacity-0 transition-opacity duration-500"
               onError={() => setImageError(true)}
             />
           ) : (
@@ -74,7 +88,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <img
               src={secondaryImage.url}
               alt={secondaryImage.altText}
-              className="product-card-image product-card-image-secondary absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+              className="product-card-image product-card-image-secondary absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
               onError={() => setImageError(true)}
             />
           )}
@@ -86,20 +100,26 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* New badge */}
+          {/* New badge — below discount badge if both exist */}
           {product.isNew && (
-            <div className="absolute top-2 right-2 z-10 bg-white text-black text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-widest">
+            <div
+              className={`absolute z-10 bg-white text-black text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-widest ${
+                hasDiscount ? 'top-10 right-2' : 'top-2 right-2'
+              }`}
+            >
               NUEVO
             </div>
           )}
 
-          {/* Wishlist heart icon - show on hover */}
+          {/* Wishlist heart icon — offset right when NUEVO badge is at top-right */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleWishlist(product.id);
             }}
-            className="absolute top-2 right-2 z-20 w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            className={`absolute z-20 w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+              product.isNew && !hasDiscount ? 'top-10 right-2' : 'top-2 right-2'
+            }`}
             aria-label="Agregar a favoritos"
           >
             <Heart
@@ -113,9 +133,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
             <button
               onClick={handleQuickAdd}
-              className="w-full bg-white text-black text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm hover:bg-red-600 hover:text-white transition-colors duration-200"
+              className={`w-full text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm transition-colors duration-200 ${
+                addedToCart
+                  ? 'bg-green-600 text-white'
+                  : 'bg-white text-black hover:bg-red-600 hover:text-white'
+              }`}
             >
-              Añadir
+              {addedToCart ? '✓ AÑADIDO' : 'AÑADIR'}
             </button>
           </div>
         </div>
@@ -138,6 +162,11 @@ export default function ProductCard({ product }: ProductCardProps) {
               </span>
             )}
           </div>
+          {hasDiscount && savingsAmount > 0 && (
+            <p className="text-red-500/80 text-[10px] font-bold mt-0.5">
+              AHORRAS {formatPrice(savingsAmount)}
+            </p>
+          )}
         </div>
       </div>
     </motion.div>

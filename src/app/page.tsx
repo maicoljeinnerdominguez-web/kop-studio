@@ -8,6 +8,7 @@ import AnnouncementBar from '@/components/layout/AnnouncementBar';
 import Header from '@/components/layout/Header';
 import CartDrawer from '@/components/layout/CartDrawer';
 import Footer from '@/components/layout/Footer';
+import SearchCommandPalette from '@/components/search/SearchCommandPalette';
 
 const HomeView = lazy(() => import('@/components/home/HomeView'));
 const CollectionView = lazy(() => import('@/components/product/CollectionView'));
@@ -87,6 +88,7 @@ export default function Page() {
       </main>
       {!isAdmin && <Footer />}
       <CartDrawer />
+      <SearchCommandPalette />
 
       {/* Floating WhatsApp - only on non-admin views */}
       {!isAdmin && (
