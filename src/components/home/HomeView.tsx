@@ -202,11 +202,11 @@ export default function HomeView() {
       <section ref={heroRef} className="relative min-h-[70vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden vignette-overlay">
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
           <img
-            src="/images/hero/hero-main.png"
+            src="/images/brand/ascension-collection-2026.jpeg"
             alt="KOP STUDIO - Ascensión Colección 2026"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
           />
-          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-black/50" />
         </motion.div>
 
         {/* Grain/noise texture overlay */}
@@ -645,23 +645,209 @@ export default function HomeView() {
         </div>
       </section>
 
+      {/* ===== BRAND IDENTITY / LOGOS SECTION ===== */}
+      <section className="bg-[#0a0a0a] py-20 px-4 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeInUp}
+            custom={0}
+            className="text-center mb-14"
+          >
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-widest">
+              <span className="gradient-text-red">Nuestra Identidad</span>
+            </h2>
+            <div className="glowing-red-line mt-3 mx-auto w-40" />
+            <p className="mt-4 text-sm text-neutral-500 tracking-wider">
+              Símbolos que definen a KOP STUDIO
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            {/* Memento Vivere */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={fadeInUp}
+              custom={0}
+              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+            >
+              <img
+                src="/images/brand/memento-vivere.jpeg"
+                alt="Memento Vivere"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Lema</p>
+                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">Memento Vivere</p>
+                <p className="text-neutral-500 text-[10px] mt-0.5 italic">&quot;Recuerda vivir&quot;</p>
+              </div>
+            </motion.div>
+
+            {/* KOP Monogram */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={fadeInUp}
+              custom={1}
+              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+            >
+              <img
+                src="/images/brand/kop-monogram.jpeg"
+                alt="KOP Monogram"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Monograma</p>
+                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">KOP</p>
+                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Identidad caligráfica</p>
+              </div>
+            </motion.div>
+
+            {/* 72+1 */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={fadeInUp}
+              custom={2}
+              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+            >
+              <img
+                src="/images/brand/72-plus-1.jpeg"
+                alt="72+1"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Símbolo</p>
+                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">72+1</p>
+                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Cruz & corona</p>
+              </div>
+            </motion.div>
+
+            {/* Praying Figure */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={fadeInUp}
+              custom={3}
+              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+            >
+              <img
+                src="/images/brand/praying-figure-pink.jpeg"
+                alt="Figura Orante"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Arte</p>
+                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">Oración</p>
+                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Fe & resistencia</p>
+              </div>
+            </motion.div>
+
+            {/* Hooded Crown of Thorns */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={fadeInUp}
+              custom={4}
+              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+            >
+              <img
+                src="/images/brand/hooded-crown-thorns.jpeg"
+                alt="Corona de Espinas"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Icono</p>
+                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">Corona de Espinas</p>
+                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Sacrificio & gloria</p>
+              </div>
+            </motion.div>
+
+            {/* Brand Collage */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={fadeInUp}
+              custom={5}
+              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+            >
+              <img
+                src="/images/brand/brand-collage.jpeg"
+                alt="KOP STUDIO Brand Identity"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Colección</p>
+                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">Brand Collage</p>
+                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Todo en uno</p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ===== BRAND STORY SECTION ===== */}
-      <section className="bg-[#0a0a0a] py-20 px-4">
+      <section className="bg-[#0a0a0a] py-20 px-4 border-t border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-          {/* Left: Brand image */}
+          {/* Left: Brand images - two stacked */}
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
             variants={fadeInUp}
             custom={0}
-            className="overflow-hidden rounded-md"
+            className="flex flex-col gap-3"
           >
-            <img
-              src="/images/products/hoodie-mandala-2.png"
-              alt="KOP STUDIO - Nuestra Historia"
-              className="w-full aspect-[4/5] object-cover grayscale hover:grayscale-0 transition-all duration-700"
-            />
+            <div className="overflow-hidden rounded-md">
+              <img
+                src="/images/brand/hooded-crown-thorns.jpeg"
+                alt="KOP STUDIO - Icono Sagrado"
+                className="w-full aspect-[4/3] object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                loading="lazy"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="overflow-hidden rounded-md">
+                <img
+                  src="/images/brand/memento-vivere.jpeg"
+                  alt="Memento Vivere"
+                  className="w-full aspect-square object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                  loading="lazy"
+                />
+              </div>
+              <div className="overflow-hidden rounded-md relative">
+                <img
+                  src="/images/brand/brand-collage.jpeg"
+                  alt="KOP STUDIO"
+                  className="w-full aspect-square object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <span className="text-white text-3xl font-black uppercase tracking-widest" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>KOP</span>
+                </div>
+              </div>
+            </div>
           </motion.div>
 
           {/* Right: Brand text */}
@@ -673,13 +859,25 @@ export default function HomeView() {
             custom={1}
             className="flex flex-col gap-6"
           >
+            <div className="flex items-center gap-3">
+              <img
+                src="/images/brand/kop-studio-text.jpeg"
+                alt="KOP STUDIO"
+                className="h-6 w-auto object-contain opacity-70"
+              />
+            </div>
             <h2 className="text-sm font-bold uppercase tracking-widest text-white">
-              Nuestra Historia
+              Built in Silence
             </h2>
             <p className="text-gray-300 leading-relaxed text-base">
               KOP STUDIO nació en las calles de Bogotá, donde la cultura urbana se
               encuentra con el arte. Cada prenda cuenta una historia de resistencia,
               identidad y estilo propio. No seguimos tendencias — las creamos.
+            </p>
+            <p className="text-gray-400 leading-relaxed text-sm">
+              Nuestros símbolos — la corona de espinas, el &quot;Memento Vivere&quot;,
+              el 72+1 — no son solo diseños. Son declaraciones de fe, poder y
+              la búsqueda constante de la excelencia en cada detalle.
             </p>
             {/* Brand stats */}
             <div className="flex items-center gap-8 mt-2">
@@ -701,10 +899,10 @@ export default function HomeView() {
             <div>
               <Button
                 variant="outline"
-                onClick={() => navigate('home')}
+                onClick={() => navigate('collection')}
                 className="border-white/30 text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-4 h-auto rounded-none bg-transparent transition-colors"
               >
-                Conócenos
+                Ver Colección
               </Button>
             </div>
           </motion.div>

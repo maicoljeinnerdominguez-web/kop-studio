@@ -5,14 +5,14 @@ import { motion, useInView } from 'framer-motion'
 import { Instagram, Heart, MessageCircle } from 'lucide-react'
 
 const SOCIAL_IMAGES = [
-  { src: '/images/products/tshirt-gothic-1.png', likes: 342, comments: 28 },
-  { src: '/images/products/hoodie-mandala-2.png', likes: 518, comments: 45 },
-  { src: '/images/products/cargo-black-3.png', likes: 287, comments: 19 },
-  { src: '/images/products/tshirt-pray-4.png', likes: 421, comments: 33 },
-  { src: '/images/products/jogger-6.png', likes: 195, comments: 15 },
-  { src: '/images/products/tshirt-angel-7.png', likes: 376, comments: 29 },
-  { src: '/images/products/beanie-9.png', likes: 263, comments: 21 },
-  { src: '/images/products/puffer-bag-5.png', likes: 449, comments: 38 },
+  { src: '/images/brand/ascension-collection-2026.jpeg', likes: 892, comments: 67, alt: 'Ascensión Collection 2026' },
+  { src: '/images/brand/praying-figure-pink.jpeg', likes: 518, comments: 45, alt: 'Figura Orante' },
+  { src: '/images/brand/kop-monogram.jpeg', likes: 634, comments: 52, alt: 'KOP Monogram' },
+  { src: '/images/brand/hooded-crown-thorns.jpeg', likes: 421, comments: 33, alt: 'Corona de Espinas' },
+  { src: '/images/brand/memento-vivere.jpeg', likes: 756, comments: 61, alt: 'Memento Vivere' },
+  { src: '/images/brand/72-plus-1.jpeg', likes: 493, comments: 38, alt: '72+1' },
+  { src: '/images/brand/brand-collage.jpeg', likes: 823, comments: 71, alt: 'Brand Identity' },
+  { src: '/images/products/tshirt-gothic-1.png', likes: 342, comments: 28, alt: 'T-shirt Gótica' },
 ]
 
 const containerVariants = {
@@ -86,7 +86,7 @@ export default function SocialFeed() {
                 {/* Image */}
                 <img
                   src={item.src}
-                  alt={`KOP STUDIO - Post ${i + 1}`}
+                  alt={item.alt || `KOP STUDIO - Post ${i + 1}`}
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                   loading="lazy"
                 />

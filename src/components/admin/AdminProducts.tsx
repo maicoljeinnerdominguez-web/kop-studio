@@ -11,6 +11,7 @@ import {
   EyeOff,
   Search,
   Package,
+  ArrowLeft,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -122,15 +123,24 @@ export default function AdminProducts() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-white text-xl md:text-2xl font-bold uppercase tracking-wider">
-              GESTIÓN DE PRODUCTOS
-            </h1>
-            {!loading && (
-              <p className="text-neutral-500 text-xs mt-1 uppercase tracking-wider">
-                {products.length} producto{products.length !== 1 ? 's' : ''}
-              </p>
-            )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('admin')}
+              className="flex items-center justify-center w-9 h-9 border border-neutral-700 text-neutral-400 hover:text-white hover:border-neutral-500 transition-colors flex-shrink-0"
+              aria-label="Volver al Dashboard"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <h1 className="text-white text-xl md:text-2xl font-bold uppercase tracking-wider">
+                GESTIÓN DE PRODUCTOS
+              </h1>
+              {!loading && (
+                <p className="text-neutral-500 text-xs mt-1 uppercase tracking-wider">
+                  {products.length} producto{products.length !== 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
           </div>
           <Button
             onClick={() => navigate('admin-products-new')}
