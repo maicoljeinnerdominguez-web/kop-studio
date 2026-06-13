@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, Trash2 } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingBag, Truck, ArrowRight, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -64,34 +64,35 @@ export default function CartDrawer() {
         {/* Header */}
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-[#262626] flex-shrink-0">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-white text-base uppercase tracking-wider font-bold">
-              TU CARRITO{' '}
-              {itemCount > 0 && (
-                <span className="text-neutral-400 font-normal text-sm">
-                  ({itemCount} {itemCount === 1 ? 'item' : 'items'})
-                </span>
-              )}
-            </SheetTitle>
+            <div>
+              <SheetTitle className="text-white text-base uppercase tracking-wider font-bold">
+                TU CARRITO{' '}
+                {itemCount > 0 && (
+                  <span className="text-neutral-400 font-normal text-sm">
+                    ({itemCount} {itemCount === 1 ? 'item' : 'items'})
+                  </span>
+                )}
+              </SheetTitle>
+              <div className="h-0.5 w-8 bg-red-600 mt-1" />
+            </div>
           </div>
         </SheetHeader>
 
         {items.length === 0 ? (
           /* Empty Cart */
           <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
-            <div className="w-20 h-20 rounded-full bg-[#1a1a1a] flex items-center justify-center">
-              <Trash2 className="size-8 text-neutral-600" />
-            </div>
+            <ShoppingBag className="size-16 text-neutral-700" />
             <div className="text-center">
-              <p className="text-white text-lg font-semibold mb-1">
-                Tu carrito está vacío
+              <p className="text-white text-lg uppercase tracking-wider font-bold mb-2">
+                TU CARRITO ESTÁ VACÍO
               </p>
               <p className="text-neutral-500 text-sm">
-                Agrega productos para comenzar
+                Explora nuestra colección y encuentra tu próximo estilo
               </p>
             </div>
             <Button
               onClick={handleExploreStore}
-              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold px-6 h-10 rounded-none"
+              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold px-8 h-11 rounded-none"
             >
               EXPLORAR TIENDA
             </Button>
@@ -102,17 +103,27 @@ export default function CartDrawer() {
             <div className="px-5 py-3 border-b border-[#262626] flex-shrink-0">
               <Progress
                 value={shippingProgress}
-                className="h-1.5 bg-[#1a1a1a] [&>[data-slot=progress-indicator]]:bg-red-600"
+                className={`h-1.5 bg-[#1a1a1a] ${
+                  freeShipping
+                    ? '[&>[data-slot=progress-indicator]]:bg-green-500'
+                    : '[&>[data-slot=progress-indicator]]:bg-red-600'
+                }`}
               />
               <div className="mt-2">
                 {freeShipping ? (
-                  <p className="text-green-500 text-xs font-medium">
+                  <p className="text-green-400 text-xs font-medium flex items-center gap-1.5">
                     🎉 ¡ENVÍO GRATIS ACTIVADO!
                   </p>
                 ) : (
                   <>
-                    <p className="text-red-500 text-xs font-medium">
-                      Faltan {formatPrice(remaining)} para obtener ENVÍO GRATIS
+                    <p className="text-red-500 text-xs font-medium flex items-center gap-1.5">
+                      <Truck className="size-3.5" />
+                      <motion.span
+                        animate={{ opacity: [1, 0.6, 1] }}
+                        transition={{ repeat: Infinity, duration: 2 }}
+                      >
+                        Faltan {formatPrice(remaining)} para envío gratis
+                      </motion.span>
                     </p>
                     <p className="text-neutral-500 text-[11px] mt-0.5">
                       Agrega {formatPrice(remaining)} más y recibe envío gratis
@@ -124,14 +135,15 @@ export default function CartDrawer() {
 
             {/* Cart Items */}
             <ScrollArea className="flex-1">
-              <div className="px-5 py-3 flex flex-col gap-3">
+              <div className="px-5 py-3 flex flex-col">
                 <AnimatePresence mode="popLayout">
-                  {items.map((item) => {
+                  {items.map((item, index) => {
                     const primaryImage = item.product.images?.find(
                       (img) => img.isPrimary
                     );
                     const imageUrl = primaryImage?.url || item.product.images?.[0]?.url;
                     const lineTotal = item.product.price * item.quantity;
+                    const isLast = index === items.length - 1;
 
                     return (
                       <motion.div
@@ -141,10 +153,12 @@ export default function CartDrawer() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -30, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
-                        className="flex gap-3 bg-[#111] rounded-lg p-3"
+                        className={`flex gap-3 bg-[#111] rounded-lg p-3 ${
+                          isLast ? '' : 'border-b border-[#1a1a1a] pb-4 mb-4'
+                        }`}
                       >
                         {/* Thumbnail */}
-                        <div className="w-16 h-20 rounded bg-[#1a1a1a] overflow-hidden flex-shrink-0">
+                        <div className="w-20 h-24 rounded bg-[#1a1a1a] overflow-hidden flex-shrink-0">
                           {imageUrl ? (
                             <img
                               src={imageUrl}
@@ -164,9 +178,9 @@ export default function CartDrawer() {
                             <p className="text-white text-sm font-medium truncate leading-tight">
                               {item.product.title}
                             </p>
-                            <p className="text-neutral-500 text-xs mt-0.5">
+                            <span className="inline-block mt-1 text-[10px] uppercase tracking-wider text-neutral-500 bg-[#1a1a1a] px-1.5 py-0.5">
                               {item.variant.size} / {item.variant.color}
-                            </p>
+                            </span>
                           </div>
 
                           <div className="flex items-center justify-between mt-2">
@@ -224,8 +238,9 @@ export default function CartDrawer() {
                     exit={{ opacity: 0, height: 0 }}
                     className="mx-5 mb-3 overflow-hidden"
                   >
-                    <div className="border border-red-600/30 bg-red-600/5 rounded-lg p-3 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
+                    <div className="border-2 border-dashed border-red-600/50 bg-red-600/5 rounded-lg p-3 flex items-center gap-3">
+                      <Package className="size-5 text-red-600 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
                         <p className="text-white text-xs font-semibold leading-tight">
                           Lleva un Puffer Bag Urban por solo{' '}
                           <span className="text-red-500">{formatPrice(UPSELL_PRICE)}</span>{' '}
@@ -282,9 +297,10 @@ export default function CartDrawer() {
 
               <Button
                 onClick={handleCheckout}
-                className="w-full bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold h-11 rounded-none"
+                className="w-full bg-red-600 hover:bg-red-700 text-white uppercase text-sm font-black tracking-widest h-12 rounded-none gap-2"
               >
                 IR A PAGAR
+                <ArrowRight className="size-4" />
               </Button>
             </div>
           </>

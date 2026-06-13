@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { ShoppingBag } from 'lucide-react'
+import { Heart, ShoppingBag, Star } from 'lucide-react'
 import { useCartStore } from '@/stores/useCartStore'
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import type { Product } from '@/types'
@@ -50,7 +50,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       transition={{ duration: 0.2 }}
       onClick={handleClick}
     >
-      <div className="relative overflow-hidden rounded-md bg-[#0a0a0a] border border-[#1a1a1a]">
+      <div className="relative overflow-hidden rounded-md bg-[#0a0a0a] border border-[#1a1a1a] transition-all duration-300 hover:shadow-lg hover:shadow-red-600/5 hover:border-red-600/30">
         {/* Image container */}
         <div className="relative aspect-[3/4] overflow-hidden bg-[#111]">
           {!imageError && primaryImage ? (
@@ -77,29 +77,36 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {/* Discount badge */}
           {hasDiscount && (
-            <div className="absolute top-2 left-2 z-10 bg-[#dc2626] text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">
+            <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-sm uppercase tracking-wider">
               {discountPercent}% OFF
             </div>
           )}
 
           {/* New badge */}
           {product.isNew && (
-            <div className="absolute top-2 right-2 z-10 bg-white text-black text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">
-              Nuevo
+            <div className="absolute top-2 right-2 z-10 bg-white text-black text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-widest">
+              NUEVO
             </div>
           )}
 
-          {/* Quick add button */}
-          <motion.div
-            className="absolute bottom-0 left-0 right-0 p-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
+          {/* Wishlist heart icon - show on hover */}
+          <button
+            onClick={(e) => { e.stopPropagation(); }}
+            className="absolute top-2 right-2 z-20 w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            aria-label="Agregar a favoritos"
           >
+            <Heart className="size-4 text-white/60 hover:text-red-500 transition-colors" />
+          </button>
+
+          {/* Quick add button with slide-up effect */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
             <button
               onClick={handleQuickAdd}
-              className="w-full bg-white text-black text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm hover:bg-[#dc2626] hover:text-white transition-colors"
+              className="w-full bg-white text-black text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm hover:bg-red-600 hover:text-white transition-colors duration-200"
             >
               Añadir
             </button>
-          </motion.div>
+          </div>
         </div>
 
         {/* Product info */}
@@ -111,7 +118,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.category?.name || ''}
           </p>
           <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-sm font-semibold text-white">
+            <span className="text-base font-bold text-white">
               {formatPrice(product.price)}
             </span>
             {hasDiscount && (

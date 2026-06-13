@@ -1,9 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { SlidersHorizontal, X, ShoppingBag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
@@ -72,72 +71,68 @@ function FilterSidebar({
     <div className="space-y-8">
       {/* Size filter */}
       <div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-4">
-          Talla
-        </h3>
-        <div className="flex flex-col gap-3">
-          {SIZES.map((size) => (
-            <label
-              key={size}
-              className="flex items-center gap-3 cursor-pointer group"
-            >
-              <Checkbox
-                checked={selectedSizes.includes(size)}
-                onCheckedChange={() => toggleSize(size)}
-                className="border-[#404040] data-[state=checked]:bg-white data-[state=checked]:border-white data-[state=checked]:text-black"
-              />
-              <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1 h-4 bg-red-600" />
+          <h3 className="text-xs font-bold uppercase tracking-widest text-white">
+            Talla
+          </h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {SIZES.map((size) => {
+            const isSelected = selectedSizes.includes(size)
+            return (
+              <button
+                key={size}
+                onClick={() => toggleSize(size)}
+                className={`min-w-[2.5rem] h-9 border text-xs uppercase tracking-wider transition-colors ${
+                  isSelected
+                    ? 'bg-white text-black border-white'
+                    : 'border-[#333] text-neutral-400 hover:border-white hover:text-white'
+                }`}
+              >
                 {size}
-              </span>
-            </label>
-          ))}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Price range filter */}
       <div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-4">
-          Precio
-        </h3>
-        <div className="flex flex-col gap-2.5">
-          {PRICE_RANGES.map((range) => (
-            <label
-              key={range.value}
-              className="flex items-center gap-3 cursor-pointer group"
-            >
-              <div
-                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  priceRange === range.value
-                    ? 'border-[#dc2626]'
-                    : 'border-[#404040] group-hover:border-gray-500'
-                }`}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1 h-4 bg-red-600" />
+          <h3 className="text-xs font-bold uppercase tracking-widest text-white">
+            Precio
+          </h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {PRICE_RANGES.map((range) => {
+            const isSelected = priceRange === range.value
+            return (
+              <button
+                key={range.value}
                 onClick={() => setPriceRange(range.value)}
+                className={`h-9 px-3 border text-xs uppercase tracking-wider transition-colors whitespace-nowrap ${
+                  isSelected
+                    ? 'bg-white text-black border-white'
+                    : 'border-[#333] text-neutral-400 hover:border-white hover:text-white'
+                }`}
               >
-                {priceRange === range.value && (
-                  <div className="w-2 h-2 rounded-full bg-[#dc2626]" />
-                )}
-              </div>
-              <input
-                type="radio"
-                name="priceRange"
-                value={range.value}
-                checked={priceRange === range.value}
-                onChange={() => setPriceRange(range.value)}
-                className="sr-only"
-              />
-              <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
                 {range.label}
-              </span>
-            </label>
-          ))}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Sort */}
       <div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-4">
-          Ordenar
-        </h3>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1 h-4 bg-red-600" />
+          <h3 className="text-xs font-bold uppercase tracking-widest text-white">
+            Ordenar
+          </h3>
+        </div>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full border-[#404040] bg-[#0a0a0a] text-white">
             <SelectValue placeholder="Ordenar por" />
@@ -302,12 +297,6 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
             <h1 className="text-2xl sm:text-3xl font-bold text-white uppercase tracking-wider">
               {categoryName}
             </h1>
-            {!loading && (
-              <p className="text-sm text-gray-500 mt-1">
-                {filteredProducts.length} producto
-                {filteredProducts.length !== 1 ? 's' : ''}
-              </p>
-            )}
           </div>
 
           {/* Mobile filter button */}
@@ -328,10 +317,10 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-[#404040] text-white gap-2 rounded-none bg-transparent"
+                  className="border border-[#333] text-white gap-2 rounded-none bg-transparent hover:border-white"
                 >
                   <SlidersHorizontal className="size-4" />
-                  Filtros
+                  FILTRAR{!loading && ` (${filteredProducts.length} productos)`}
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 bg-[#0a0a0a] border-[#262626] p-6">
@@ -355,7 +344,7 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
           {/* Product grid */}
           <div className="flex-1">
             {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
                 {[...Array(8)].map((_, i) => (
                   <div key={i}>
                     <Skeleton className="aspect-[3/4] w-full bg-[#111] rounded-md" />
@@ -366,26 +355,37 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <p className="text-gray-400 text-lg font-medium mb-2">
-                  No se encontraron productos
+                <ShoppingBag className="size-16 text-neutral-700 mb-6" />
+                <p className="text-white text-lg uppercase tracking-wider font-bold mb-2">
+                  NO HAY PRODUCTOS
                 </p>
-                <p className="text-gray-600 text-sm">
-                  Intenta ajustar los filtros
+                <p className="text-neutral-500 text-sm mb-6">
+                  No se encontraron productos con los filtros seleccionados
                 </p>
                 <Button
                   variant="outline"
                   onClick={clearFilters}
-                  className="mt-4 border-[#404040] text-white hover:border-white text-xs uppercase tracking-wider rounded-none bg-transparent"
+                  className="border-[#333] text-white hover:border-white text-xs uppercase tracking-widest rounded-none bg-transparent h-10 px-6"
                 >
-                  Limpiar Filtros
+                  LIMPIAR FILTROS
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <>
+                {/* Product count header */}
+                <div className="border-t border-[#1a1a1a] pt-6 mb-6">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-neutral-400">
+                      <span className="text-white font-medium">{filteredProducts.length}</span> productos
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
+                  {filteredProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>

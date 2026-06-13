@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Instagram, Twitter, Lock, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigationStore } from '@/stores/useNavigationStore';
@@ -64,6 +64,27 @@ export default function Footer() {
               Streetwear colombiano con actitud. Diseños que rompen esquemas y
               definan tu estilo urbano sin importar las reglas.
             </p>
+            {/* Social Media Icons Row */}
+            <div className="flex gap-3 pt-1">
+              <a
+                href="https://instagram.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:text-white hover:border-white transition-colors"
+              >
+                <Instagram className="size-4" />
+              </a>
+              <a
+                href="https://twitter.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Twitter"
+                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:text-white hover:border-white transition-colors"
+              >
+                <Twitter className="size-4" />
+              </a>
+            </div>
           </div>
 
           {/* Col 2: Tienda */}
@@ -125,21 +146,31 @@ export default function Footer() {
                   }}
                   className="bg-[#1a1a1a] border-[#333] text-white placeholder:text-neutral-600 text-sm h-9 rounded-none flex-1"
                 />
-                <Button
-                  type="submit"
-                  className="bg-red-600 hover:bg-red-700 text-white uppercase text-[10px] tracking-wider font-bold px-3 h-9 rounded-none"
-                >
-                  SUSCRIBIRSE
-                </Button>
+                {emailSuccess ? (
+                  <div className="flex items-center justify-center w-9 h-9 bg-green-600 shrink-0">
+                    <Check className="size-4 text-white" />
+                  </div>
+                ) : (
+                  <Button
+                    type="submit"
+                    className="bg-red-600 hover:bg-red-700 text-white uppercase text-[10px] tracking-wider font-bold px-3 h-9 rounded-none"
+                  >
+                    SUSCRIBIRSE
+                  </Button>
+                )}
               </div>
               {emailError && (
                 <p className="text-red-500 text-xs">{emailError}</p>
               )}
               {emailSuccess && (
-                <p className="text-green-500 text-xs">
-                  ¡Suscripción exitosa! 🎉
+                <p className="text-green-500 text-xs flex items-center gap-1.5">
+                  <Check className="size-3" />
+                  ¡Suscripción exitosa!
                 </p>
               )}
+              <p className="text-[10px] text-neutral-600 leading-relaxed">
+                Al suscribirte, aceptas nuestra política de privacidad.
+              </p>
             </form>
           </div>
         </div>
@@ -149,13 +180,14 @@ export default function Footer() {
       <div className="border-t border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <span className="text-neutral-600 text-xs uppercase tracking-wider mr-2">
+            <span className="text-neutral-600 text-xs uppercase tracking-wider mr-1 flex items-center gap-1.5">
+              <Lock className="size-3" />
               Métodos de pago:
             </span>
             {PAYMENT_METHODS.map((method) => (
               <span
                 key={method}
-                className="bg-[#1a1a1a] border border-[#262626] text-neutral-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded"
+                className="bg-[#111] border border-[#1a1a1a] text-neutral-500 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm"
               >
                 {method}
               </span>
@@ -164,25 +196,38 @@ export default function Footer() {
         </div>
       </div>
 
+      {/* Social Bottom Bar */}
+      <div className="border-t border-[#1a1a1a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-center gap-4">
+          <a
+            href="https://instagram.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:text-white hover:border-white transition-colors"
+          >
+            <Instagram className="size-4" />
+          </a>
+          <a
+            href="https://twitter.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Twitter"
+            className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:text-white hover:border-white transition-colors"
+          >
+            <Twitter className="size-4" />
+          </a>
+        </div>
+      </div>
+
       {/* Copyright */}
       <div className="border-t border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <p className="text-center text-neutral-600 text-xs tracking-wide">
-            © 2026 KOP STUDIO. Todos los derechos reservados.
+            © 2026 KOP STUDIO. Todos los derechos reservados. | Diseñado con pasión en Colombia 🇨🇴
           </p>
         </div>
       </div>
-
-      {/* Floating WhatsApp Button */}
-      <a
-        href="https://wa.me/"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Contactar por WhatsApp"
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors"
-      >
-        <MessageCircle className="size-6 text-white" fill="white" />
-      </a>
     </footer>
   );
 }

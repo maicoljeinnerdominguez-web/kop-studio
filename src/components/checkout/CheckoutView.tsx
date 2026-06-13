@@ -314,8 +314,8 @@ export default function CheckoutView() {
 
       setTimeout(() => {
         cart.clearCart();
-        navigate('home');
-      }, 2500);
+        navigate('order-confirmation');
+      }, 1500);
     } catch {
       toast.error('Hubo un error al procesar tu pedido. Intenta de nuevo.');
     } finally {

@@ -85,6 +85,7 @@ export type AppView =
   | "collection"
   | "product"
   | "checkout"
+  | "order-confirmation"
   | "admin-dashboard"
   | "admin-products"
   | "admin-products-new"
