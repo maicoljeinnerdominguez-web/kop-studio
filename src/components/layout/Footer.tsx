@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useNewsletterStore } from '@/stores/useNewsletterStore';
 
 const SHOP_LINKS = [
   { label: 'New Merch', slug: 'new-merch' },
@@ -31,6 +32,7 @@ type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export default function Footer() {
   const navigate = useNavigationStore((s) => s.navigate);
+  const triggerSuccess = useNewsletterStore((s) => s.triggerSuccess);
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -87,6 +89,7 @@ export default function Footer() {
 
         if (res.ok && data.success) {
           setStatus('success');
+          triggerSuccess();
         } else {
           setStatus('error');
           setErrorMessage('Intenta de nuevo');
@@ -96,7 +99,7 @@ export default function Footer() {
         setErrorMessage('Intenta de nuevo');
       }
     },
-    [email]
+    [email, triggerSuccess]
   );
 
   const isDisabled = status === 'loading' || status === 'success';

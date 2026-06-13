@@ -85,7 +85,7 @@ function FilterSidebar({
               <button
                 key={size}
                 onClick={() => toggleSize(size)}
-                className={`min-w-[2.5rem] h-9 border text-xs uppercase tracking-wider filter-btn focus-ring-red ${isSelected ? 'active bg-white text-black border-white' : 'border-[#333] text-neutral-400'}`}
+                className={`min-w-[2.5rem] h-9 border text-xs uppercase tracking-wider filter-btn focus-ring-red ${isSelected ? 'active shimmer-chip text-white' : 'border-[#333] text-neutral-400'}`}
               >
                 {size}
               </button>
@@ -109,7 +109,7 @@ function FilterSidebar({
               <button
                 key={range.value}
                 onClick={() => setPriceRange(range.value)}
-                className={`h-9 px-3 border text-xs uppercase tracking-wider filter-btn whitespace-nowrap focus-ring-red ${isSelected ? 'active bg-white text-black border-white' : 'border-[#333] text-neutral-400'}`}
+                className={`h-9 px-3 border text-xs uppercase tracking-wider filter-btn whitespace-nowrap focus-ring-red ${isSelected ? 'active shimmer-chip text-white' : 'border-[#333] text-neutral-400'}`}
               >
                 {range.label}
               </button>
@@ -206,16 +206,16 @@ function ActiveFilterChips({
   if (chips.length === 0) return null
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-4">
+    <div className="flex flex-wrap items-center gap-2 mb-4 overflow-x-auto custom-scrollbar-thin -mx-1 px-1 pb-1">
       {chips.map((chip, i) => (
         <div
           key={i}
-          className="bg-[#1a1a1a] border border-[#333] text-xs text-neutral-300 px-3 py-1.5 rounded-sm flex items-center gap-2"
+          className="shimmer-chip text-xs text-white px-3 py-1.5 rounded-sm flex items-center gap-2 shrink-0"
         >
           <span>{chip.label}</span>
           <button
             onClick={chip.onRemove}
-            className="text-neutral-500 hover:text-white transition-colors"
+            className="text-white/50 hover:text-white transition-colors"
             aria-label={`Remove filter: ${chip.label}`}
           >
             <X className="size-3" />
@@ -500,19 +500,38 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
                     <p className="text-sm text-neutral-400 count-animate">
                       <motion.span
                         key={filteredProducts.length}
-                        className="text-white font-medium"
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                        className="text-white font-medium bounce-number"
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 15 }}
                       >{filteredProducts.length}</motion.span> productos
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5 border-radius-animate">
+                <motion.div
+                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5 border-radius-animate"
+                  initial="hidden"
+                  animate="show"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    show: {
+                      opacity: 1,
+                      transition: { staggerChildren: 0.05 },
+                    },
+                  }}
+                >
                   {filteredProducts.map((product, i) => (
-                    <ProductCard key={product.id} product={product} index={i} />
+                    <motion.div
+                      key={product.id}
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+                      }}
+                    >
+                      <ProductCard product={product} index={i} />
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
               </>
             )}
           </div>

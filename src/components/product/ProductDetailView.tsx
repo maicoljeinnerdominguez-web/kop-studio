@@ -65,6 +65,7 @@ import ProductCard from '@/components/product/ProductCard'
 import ProductReviews from '@/components/product/ProductReviews'
 import ProductLightbox from '@/components/product/ProductLightbox'
 import SizeQuizDialog from '@/components/product/SizeQuizDialog'
+import CompleteTheLook from '@/components/product/CompleteTheLook'
 import type { Product, ProductVariant } from '@/types'
 
 const SIZE_CHART = [
@@ -514,9 +515,18 @@ function ProductDetailInner({ slug }: { slug: string }) {
                 )}
               </div>
 
-              {/* Expand/lightbox hint */}
-              <div className="absolute bottom-3 right-3 bg-black/50 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              {/* Expand/lightbox hint with zoom overlay */}
+              <div className="absolute bottom-3 right-3 bg-black/50 rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none border border-white/10">
                 <Maximize2 className="size-5 text-white" />
+              </div>
+              {/* Zoom cursor overlay icon — top right */}
+              <div className="absolute top-3 right-3 bg-black/40 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                <svg className="size-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <line x1="11" y1="8" x2="11" y2="14" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
               </div>
             </div>
 
@@ -538,7 +548,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     onClick={() => setSelectedImageIndex(i)}
                     className={`shrink-0 w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-md overflow-hidden border-2 transition-colors ${
                       selectedImageIndex === i
-                        ? 'border-white'
+                        ? 'border-white thumbnail-progress'
                         : 'border-[#333] hover:border-gray-500'
                     }`}
                   >
@@ -579,6 +589,13 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   </span>
                 </>
               )}
+            </div>
+
+            {/* Material tags row */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              <span className="material-tag">Algodón Premium</span>
+              <span className="material-tag">240gsm</span>
+              <span className="material-tag">Made in Colombia</span>
             </div>
 
             {/* Icons row */}
@@ -739,10 +756,10 @@ function ProductDetailInner({ slug }: { slug: string }) {
                 <Button
                   onClick={handleAddToCart}
                   disabled={!canAddToCart || isOutOfStock}
-                  className={`w-full text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-300 ${
+                  className={`w-full text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 relative z-0 ${
                     addedToCart
                       ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-red-600 hover:bg-red-700'
+                      : 'btn-gradient-sweep'
                   }`}
                 >
                   {addedToCart ? (
@@ -930,6 +947,14 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
         {/* Reviews */}
         <ProductReviews productId={product.id} />
+
+        {/* Complete the Look */}
+        {product.category?.slug && (
+          <CompleteTheLook
+            categorySlug={product.category.slug}
+            currentProductId={product.id}
+          />
+        )}
       </div>
 
       {/* Size Quiz Dialog */}

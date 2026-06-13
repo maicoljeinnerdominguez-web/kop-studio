@@ -42,6 +42,15 @@ export default function CartDrawer() {
   const freeShipping = hasFreeShipping();
   const shippingCost = freeShipping ? 0 : 15000;
 
+  // Calculate savings from discounted items
+  const savingsAmount = items.reduce((sum, item) => {
+    const comparePrice = item.product.compareAtPrice;
+    if (comparePrice && comparePrice > item.product.price) {
+      return sum + (comparePrice - item.product.price) * item.quantity;
+    }
+    return sum;
+  }, 0);
+
   const handleCheckout = () => {
     closeCart();
     navigate('checkout');
@@ -63,6 +72,9 @@ export default function CartDrawer() {
       >
         {/* Red gradient line at top */}
         <div className="h-1 bg-gradient-to-r from-red-600 to-red-800 flex-shrink-0" />
+
+        {/* Inner shadow at top for depth */}
+        <div className="drawer-inner-shadow flex-shrink-0" />
 
         {/* Header */}
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-[#262626] flex-shrink-0">
@@ -132,13 +144,14 @@ export default function CartDrawer() {
                 ) : (
                   <>
                     <p className="text-red-500 text-xs font-medium flex items-center gap-1.5">
-                      <Truck className="size-3.5" />
                       <motion.span
-                        animate={{ opacity: [1, 0.6, 1] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
+                        animate={{ scale: [1, 1.15, 1] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                        className="inline-flex"
                       >
-                        Faltan {formatPrice(remaining)} para envío gratis
+                        <Truck className="size-3.5" />
                       </motion.span>
+                      <span>GASTOS DE ENVÍO: {formatPrice(shippingCost)}</span>
                     </p>
                     <p className="text-neutral-500 text-[11px] mt-0.5">
                       Agrega {formatPrice(remaining)} más y recibe envío gratis
@@ -205,7 +218,7 @@ export default function CartDrawer() {
                                 onClick={() =>
                                   updateQuantity(item.variant.id, item.quantity - 1)
                                 }
-                                className="w-6 h-6 rounded bg-[#1a1a1a] hover:bg-[#262626] flex items-center justify-center text-neutral-400 hover:text-white transition-colors btn-press"
+                                className="w-8 h-8 rounded-full border border-[#333] hover:border-white flex items-center justify-center text-neutral-400 hover:text-white transition-all duration-200 btn-press bg-transparent"
                                 aria-label="Disminuir cantidad"
                               >
                                 <Minus className="size-3" />
@@ -217,7 +230,7 @@ export default function CartDrawer() {
                                 onClick={() =>
                                   updateQuantity(item.variant.id, item.quantity + 1)
                                 }
-                                className="w-6 h-6 rounded bg-[#1a1a1a] hover:bg-[#262626] flex items-center justify-center text-neutral-400 hover:text-white transition-colors btn-press"
+                                className="w-8 h-8 rounded-full border border-[#333] hover:border-white flex items-center justify-center text-neutral-400 hover:text-white transition-all duration-200 btn-press bg-transparent"
                                 aria-label="Aumentar cantidad"
                               >
                                 <Plus className="size-3" />
@@ -287,7 +300,9 @@ export default function CartDrawer() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-400">Envío</span>
+                  <span className="text-neutral-400 flex items-center gap-1.5">
+                    Envío
+                  </span>
                   <span className={`font-medium ${freeShipping ? 'text-green-500' : 'text-white'}`}>
                     {freeShipping ? 'GRATIS' : formatPrice(shippingCost)}
                   </span>
@@ -297,6 +312,17 @@ export default function CartDrawer() {
                     <span className="text-neutral-400">Puffer Bag Urban</span>
                     <span className="text-red-400 font-medium">
                       +{formatPrice(UPSELL_PRICE)}
+                    </span>
+                  </div>
+                )}
+                {/* Savings indicator */}
+                {savingsAmount > 0 && (
+                  <div className="flex items-center justify-between text-sm pt-1">
+                    <span className="text-green-500 text-xs font-medium">
+                      Estás ahorrando
+                    </span>
+                    <span className="text-green-500 text-xs font-bold">
+                      {formatPrice(savingsAmount)}
                     </span>
                   </div>
                 )}

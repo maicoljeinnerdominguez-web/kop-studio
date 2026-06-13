@@ -1108,3 +1108,186 @@ body::before {
   initial-value: 0deg;
   inherits: false;
 }
+
+/* ===== ROUND 6 ENHANCEMENTS ===== */
+
+/* 1. Shimmer chip — animated gradient background for filter chips */
+.shimmer-chip {
+  background: linear-gradient(
+    90deg,
+    #1a1a1a 0%,
+    #2a2a2a 25%,
+    #333 50%,
+    #2a2a2a 75%,
+    #1a1a1a 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerChipMove 2.5s ease-in-out infinite;
+  border-color: #dc2626 !important;
+}
+@keyframes shimmerChipMove {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 2. Thumbnail progress bar — thin red line below active gallery thumbnail */
+.thumbnail-progress {
+  position: relative;
+}
+.thumbnail-progress::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+  animation: thumbnailProgressIn 0.3s ease-out both;
+}
+@keyframes thumbnailProgressIn {
+  from { transform: scaleX(0); transform-origin: left; }
+  to { transform: scaleX(1); transform-origin: left; }
+}
+
+/* 3. Material tag — small pill badge styling */
+.material-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a3a3a3;
+  background: #111;
+  border: 1px solid #1f1f1f;
+  border-radius: 9999px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.material-tag:hover {
+  color: #f5f5f5;
+  border-color: #dc2626;
+}
+
+/* 4. Button gradient sweep — gradient bg + light sweep on hover */
+.btn-gradient-sweep {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  position: relative;
+  overflow: hidden;
+}
+.btn-gradient-sweep::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.12) 45%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.12) 55%,
+    transparent 70%
+  );
+  transition: left 0.5s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.btn-gradient-sweep:hover::before {
+  left: 150%;
+}
+.btn-gradient-sweep:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* 5. Drawer inner shadow — inner box-shadow for drawer top edge */
+.drawer-inner-shadow {
+  box-shadow: inset 0 8px 12px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* 6. Stat sparkline — tiny SVG sparkline container */
+.stat-sparkline {
+  display: inline-flex;
+  align-items: flex-end;
+  height: 20px;
+  width: 48px;
+  opacity: 0.5;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* 7. Row hover highlight — subtle row hover effect */
+.row-hover-highlight {
+  transition: background-color 0.15s ease;
+}
+.row-hover-highlight:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* 8. Bounce number — quick scale bounce animation for number changes */
+@keyframes numberBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.2); }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.bounce-number {
+  display: inline-block;
+  animation: numberBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 9. Custom scrollbar thin — horizontal and vertical */
+.custom-scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #404040 transparent;
+}
+.custom-scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+.custom-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}
+
+/* Confetti burst keyframes for order confirmation */
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-20px) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(400px) rotate(720deg) scale(0);
+    opacity: 0;
+  }
+}
+.confetti-piece {
+  animation: confettiFall var(--fall-duration, 2.5s) var(--fall-delay, 0s) ease-in forwards;
+}
+
+/* Pulsing glow behind checkmark */
+@keyframes pulsingGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.2), 0 0 40px rgba(34, 197, 94, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2), 0 0 120px rgba(34, 197, 94, 0.1); }
+}
+.pulsing-glow-green {
+  animation: pulsingGlow 2s ease-in-out infinite;
+}
+
+/* Status badge flash animation */
+@keyframes statusFlash {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.status-flash {
+  animation: statusFlash 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}

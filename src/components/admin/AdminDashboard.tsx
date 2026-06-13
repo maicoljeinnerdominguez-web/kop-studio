@@ -40,6 +40,28 @@ import { useNavigationStore } from '@/stores/useNavigationStore';
 import AdminLogin from '@/components/layout/AdminLogin';
 import type { AdminStats, OrderStatus, Product } from '@/types';
 
+/* ─── Mini Sparkline SVG ─── */
+function MiniSparkline({ color = '#dc2626' }: { color?: string }) {
+  const points = [3, 12, 7, 18, 10, 22, 15, 20, 25, 18, 30, 22];
+  const w = 48;
+  const h = 20;
+  const max = Math.max(...points);
+  const min = Math.min(...points);
+  const range = max - min || 1;
+  const pathData = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * w;
+      const y = h - ((p - min) / range) * (h - 4) - 2;
+      return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+    })
+    .join(' ');
+  return (
+    <svg className="stat-sparkline" viewBox={`0 0 ${w} ${h}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d={pathData} stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /* ─── Animated Counter ─── */
 function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
   const [count, setCount] = useState(0);
@@ -135,6 +157,7 @@ function OrderStatusSelect({
   onStatusChange: (orderId: string, newStatus: string) => void;
 }) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [flashKey, setFlashKey] = useState(0);
   const status = currentStatus as OrderStatus;
 
   const handleChange = async (newStatus: string) => {
@@ -155,6 +178,7 @@ function OrderStatusSelect({
 
       const updated = await res.json();
       onStatusChange(orderId, updated.status);
+      setFlashKey((k) => k + 1);
       toast.success(`Estado actualizado a ${STATUS_LABELS[newStatus as OrderStatus]}`);
     } catch {
       toast.error('Error al actualizar el estado');
@@ -174,7 +198,8 @@ function OrderStatusSelect({
       )}
       <Select value={status} onValueChange={handleChange}>
         <SelectTrigger
-          className={`inline-flex items-center gap-0 border ${colorClasses} hover:opacity-80 focus-visible:ring-1 focus-visible:ring-neutral-500 h-6 px-2 py-0 text-[10px] uppercase tracking-wider font-bold rounded-none bg-transparent cursor-pointer shadow-none transition-opacity`}
+          key={flashKey}
+          className={`inline-flex items-center gap-0 border ${colorClasses} hover:opacity-80 focus-visible:ring-1 focus-visible:ring-neutral-500 h-6 px-2 py-0 text-[10px] uppercase tracking-wider font-bold rounded-none bg-transparent cursor-pointer shadow-none transition-opacity ${flashKey > 0 ? 'status-flash' : ''}`}
         >
           <SelectValue />
         </SelectTrigger>
@@ -376,7 +401,10 @@ export default function AdminDashboard() {
       label: 'Ventas Totales',
       value: stats?.totalSales ?? 0,
       displayValue: stats ? (
-        <AnimatedCounter value={stats.totalSales} prefix="$" />
+        <span className="flex items-center">
+          <AnimatedCounter value={stats.totalSales} prefix="$" />
+          <MiniSparkline color="#22c55e" />
+        </span>
       ) : (
         <span>—</span>
       ),
@@ -389,7 +417,10 @@ export default function AdminDashboard() {
       label: 'Órdenes Pendientes',
       value: stats?.pendingOrders ?? 0,
       displayValue: stats ? (
-        <AnimatedCounter value={stats.pendingOrders} />
+        <span className="flex items-center">
+          <AnimatedCounter value={stats.pendingOrders} />
+          <MiniSparkline color="#eab308" />
+        </span>
       ) : (
         <span>—</span>
       ),
@@ -402,7 +433,10 @@ export default function AdminDashboard() {
       label: 'Productos Activos',
       value: stats?.activeProducts ?? 0,
       displayValue: stats ? (
-        <AnimatedCounter value={stats.activeProducts} />
+        <span className="flex items-center">
+          <AnimatedCounter value={stats.activeProducts} />
+          <MiniSparkline color="#f87171" />
+        </span>
       ) : (
         <span>—</span>
       ),
@@ -415,7 +449,10 @@ export default function AdminDashboard() {
       label: 'Total Órdenes',
       value: stats?.totalOrders ?? 0,
       displayValue: stats ? (
-        <AnimatedCounter value={stats.totalOrders} />
+        <span className="flex items-center">
+          <AnimatedCounter value={stats.totalOrders} />
+          <MiniSparkline color="#fb923c" />
+        </span>
       ) : (
         <span>—</span>
       ),
@@ -502,7 +539,8 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
           {/* Recent Activity - takes 2 columns */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-0.5 w-12 bg-red-600" />
               <Clock className="size-4 text-neutral-500" />
               <h2 className="text-white text-sm font-bold uppercase tracking-wider">
                 Actividad Reciente
@@ -614,7 +652,7 @@ export default function AdminDashboard() {
                           return (
                             <Fragment key={order.id}>
                               <TableRow
-                                className={`border-b-[#1a1a1a] hover:bg-[#111] transition-colors cursor-pointer ${isExpanded ? 'bg-[#111]' : idx % 2 === 0 ? 'bg-[#0a0a0a]' : 'bg-transparent'}`}
+                                className={`border-b-[#1a1a1a] hover:bg-white/[0.02] transition-colors cursor-pointer row-hover-highlight ${isExpanded ? 'bg-[#111]' : idx % 2 === 0 ? 'bg-[#0a0a0a]' : 'bg-white/[0.015]'}`}
                                 onClick={() => toggleExpand(order.id)}
                               >
                                 <TableCell className="w-8">

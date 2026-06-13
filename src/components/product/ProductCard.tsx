@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Heart, ShoppingBag, Eye } from 'lucide-react'
+import { Heart, ShoppingBag, Eye, Zap } from 'lucide-react'
 import { useCartStore } from '@/stores/useCartStore'
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
 import ProductQuickView from '@/components/product/ProductQuickView'
+import QuickBuyModal from '@/components/product/QuickBuyModal'
 import type { Product } from '@/types'
 
 function getProductRating(productId: string): { rating: number; count: number } {
@@ -46,6 +47,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
   const [quickViewOpen, setQuickViewOpen] = useState(false)
+  const [quickBuyOpen, setQuickBuyOpen] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({})
 
@@ -246,18 +248,32 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             </div>
           )}
 
-          {/* Quick add button with slide-up effect */}
+          {/* Quick add + buy now buttons with slide-up effect */}
           <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-            <button
-              onClick={handleQuickAdd}
-              className={`w-full text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm transition-all duration-200 scale-105 hover:scale-100 ${
-                addedToCart
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-black hover:bg-red-600 hover:text-white'
-              }`}
-            >
-              {addedToCart ? '✓ AÑADIDO' : 'AÑADIR'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleQuickAdd}
+                className={`flex-1 text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm transition-all duration-200 scale-105 hover:scale-100 ${
+                  addedToCart
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white text-black hover:bg-red-600 hover:text-white'
+                }`}
+              >
+                {addedToCart ? '✓ AÑADIDO' : 'AÑADIR'}
+              </button>
+              {totalStock > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setQuickBuyOpen(true)
+                  }}
+                  className="flex-1 text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm bg-red-600 text-white hover:bg-red-700 transition-all duration-200 scale-105 hover:scale-100 flex items-center justify-center gap-1"
+                >
+                  <Zap className="size-3" />
+                  Comprar
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -295,6 +311,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         </div>
       </div>
       <ProductQuickView product={product} open={quickViewOpen} onOpenChange={setQuickViewOpen} />
+      <QuickBuyModal product={product} open={quickBuyOpen} onOpenChange={setQuickBuyOpen} />
     </motion.div>
   )
 }

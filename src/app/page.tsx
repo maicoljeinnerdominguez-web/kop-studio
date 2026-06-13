@@ -9,6 +9,7 @@ import PromoBanner from '@/components/promo/PromoBanner';
 import Header from '@/components/layout/Header';
 import CartDrawer from '@/components/layout/CartDrawer';
 import Footer from '@/components/layout/Footer';
+import NewsletterSuccess from '@/components/layout/NewsletterSuccess';
 import SearchCommandPalette from '@/components/search/SearchCommandPalette';
 import SocialProofNotification from '@/components/social/SocialProofNotification';
 import CompareFloatingBar from '@/components/product/CompareFloatingBar';
@@ -100,6 +101,7 @@ export default function Page() {
         <ViewRouter />
       </main>
       {!isAdmin && <Footer />}
+      {!isAdmin && <NewsletterSuccess />}
       <CartDrawer />
       <SearchCommandPalette />
 

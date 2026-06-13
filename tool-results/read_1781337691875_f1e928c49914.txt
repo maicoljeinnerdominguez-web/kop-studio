@@ -1,0 +1,764 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, Fragment } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  DollarSign,
+     7→  Clock,
+     8→  Package,
+     9→  ShoppingBag,
+    10→  ChevronDown,
+    11→  ChevronRight,
+    12→  Loader2,
+    13→  ClipboardList,
+    14→  AlertTriangle,
+    15→  Pencil,
+    16→} from 'lucide-react';
+    17→import { Badge } from '@/components/ui/badge';
+    18→import { Button } from '@/components/ui/button';
+    19→import {
+    20→  Table,
+    21→  TableBody,
+    22→  TableCell,
+    23→  TableHead,
+    24→  TableHeader,
+    25→  TableRow,
+    26→} from '@/components/ui/table';
+    27→import {
+    28→  Skeleton,
+    29→} from '@/components/ui/skeleton';
+    30→import {
+    31→  Select,
+    32→  SelectContent,
+    33→  SelectItem,
+    34→  SelectTrigger,
+    35→  SelectValue,
+    36→} from '@/components/ui/select';
+    37→import { toast } from 'sonner';
+    38→import { useAuthStore } from '@/stores/useAuthStore';
+    39→import { useNavigationStore } from '@/stores/useNavigationStore';
+    40→import AdminLogin from '@/components/layout/AdminLogin';
+    41→import type { AdminStats, OrderStatus, Product } from '@/types';
+    42→
+    43→/* ─── Animated Counter ─── */
+    44→function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
+    45→  const [count, setCount] = useState(0);
+    46→  useEffect(() => {
+    47→    const duration = 1000;
+    48→    const steps = 30;
+    49→    const increment = value / steps;
+    50→    let current = 0;
+    51→    const timer = setInterval(() => {
+    52→      current += increment;
+    53→      if (current >= value) {
+    54→        setCount(value);
+    55→        clearInterval(timer);
+    56→      } else {
+    57→        setCount(Math.floor(current));
+    58→      }
+    59→    }, duration / steps);
+    60→    return () => clearInterval(timer);
+    61→  }, [value]);
+    62→
+    63→  return <span>{prefix}{count.toLocaleString('es-CO')}{suffix}</span>;
+    64→}
+    65→
+    66→/* ─── Low Stock Product type ─── */
+    67→interface LowStockProduct {
+    68→  id: string;
+    69→  title: string;
+    70→  slug: string;
+    71→  totalStock: number;
+    72→}
+    73→
+    74→function formatPrice(amount: number) {
+    75→  return `$${Math.round(amount).toLocaleString('es-CO')}`;
+    76→}
+    77→
+    78→function formatDate(dateStr: string) {
+    79→  const d = new Date(dateStr);
+    80→  return d.toLocaleDateString('es-CO', {
+    81→    day: '2-digit',
+    82→    month: 'short',
+    83→    year: 'numeric',
+    84→  });
+    85→}
+    86→
+    87→const STATUS_COLORS: Record<OrderStatus, string> = {
+    88→  PENDING: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    89→  PAID: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    90→  SHIPPED: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    91→  DELIVERED: 'bg-green-500/20 text-green-400 border-green-500/30',
+    92→  CANCELLED: 'bg-red-500/20 text-red-400 border-red-500/30',
+    93→};
+    94→
+    95→const STATUS_LABELS: Record<OrderStatus, string> = {
+    96→  PENDING: 'Pendiente',
+    97→  PAID: 'Pagado',
+    98→  SHIPPED: 'Enviado',
+    99→  DELIVERED: 'Entregado',
+   100→  CANCELLED: 'Cancelado',
+   101→};
+   102→
+   103→const ALL_STATUSES: OrderStatus[] = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+   104→
+   105→interface OrderItemDetail {
+   106→  id: string;
+   107→  quantity: number;
+   108→  priceAtPurchase: number;
+   109→  productVariant: {
+   110→    size: string;
+   111→    color: string;
+   112→    product: {
+   113→      title: string;
+   114→    };
+   115→  };
+   116→}
+   117→
+   118→interface RecentOrder {
+   119→  id: string;
+   120→  totalAmount: number;
+   121→  status: string;
+   122→  createdAt: string;
+   123→  user: { name: string; email: string } | null;
+   124→  items?: OrderItemDetail[];
+   125→}
+   126→
+   127→/* ─── OrderStatusSelect ─── */
+   128→function OrderStatusSelect({
+   129→  orderId,
+   130→  currentStatus,
+   131→  onStatusChange,
+   132→}: {
+   133→  orderId: string;
+   134→  currentStatus: string;
+   135→  onStatusChange: (orderId: string, newStatus: string) => void;
+   136→}) {
+   137→  const [isUpdating, setIsUpdating] = useState(false);
+   138→  const status = currentStatus as OrderStatus;
+   139→
+   140→  const handleChange = async (newStatus: string) => {
+   141→    if (newStatus === currentStatus) return;
+   142→
+   143→    setIsUpdating(true);
+   144→    try {
+   145→      const res = await fetch(`/api/orders/${orderId}`, {
+   146→        method: 'PATCH',
+   147→        headers: { 'Content-Type': 'application/json' },
+   148→        body: JSON.stringify({ status: newStatus }),
+   149→      });
+   150→
+   151→      if (!res.ok) {
+   152→        const err = await res.json();
+   153→        throw new Error(err.error || 'Error al actualizar');
+   154→      }
+   155→
+   156→      const updated = await res.json();
+   157→      onStatusChange(orderId, updated.status);
+   158→      toast.success(`Estado actualizado a ${STATUS_LABELS[newStatus as OrderStatus]}`);
+   159→    } catch {
+   160→      toast.error('Error al actualizar el estado');
+   161→    } finally {
+   162→      setIsUpdating(false);
+   163→    }
+   164→  };
+   165→
+   166→  const colorClasses = STATUS_COLORS[status] || STATUS_COLORS.PENDING;
+   167→
+   168→  return (
+   169→    <div className="relative inline-flex">
+   170→      {isUpdating && (
+   171→        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0a0a0a]/80 rounded-sm">
+   172→          <Loader2 className="w-3.5 h-3.5 animate-spin text-neutral-400" />
+   173→        </div>
+   174→      )}
+   175→      <Select value={status} onValueChange={handleChange}>
+   176→        <SelectTrigger
+   177→          className={`inline-flex items-center gap-0 border ${colorClasses} hover:opacity-80 focus-visible:ring-1 focus-visible:ring-neutral-500 h-6 px-2 py-0 text-[10px] uppercase tracking-wider font-bold rounded-none bg-transparent cursor-pointer shadow-none transition-opacity`}
+   178→        >
+   179→          <SelectValue />
+   180→        </SelectTrigger>
+   181→        <SelectContent
+   182→          position="popper"
+   183→          className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none"
+   184→        >
+   185→          {ALL_STATUSES.map((s) => (
+   186→            <SelectItem
+   187→              key={s}
+   188→              value={s}
+   189→              className={`text-xs uppercase tracking-wider font-medium rounded-none focus:bg-[#1a1a1a] ${
+   190→                STATUS_COLORS[s]
+   191→              } cursor-pointer`}
+   192→            >
+   193→              <span className="flex items-center gap-2">
+   194→                <span
+   195→                  className="w-2 h-2 rounded-full"
+   196→                  style={{
+   197→                    backgroundColor:
+   198→                      s === 'PENDING'
+   199→                        ? '#eab308'
+   200→                        : s === 'PAID'
+   201→                        ? '#10b981'
+   202→                        : s === 'SHIPPED'
+   203→                        ? '#f97316'
+   204→                        : s === 'DELIVERED'
+   205→                        ? '#22c55e'
+   206→                        : '#ef4444',
+   207→                  }}
+   208→                />
+   209→                {STATUS_LABELS[s]}
+   210→              </span>
+   211→            </SelectItem>
+   212→          ))}
+   213→        </SelectContent>
+   214→      </Select>
+   215→    </div>
+   216→  );
+   217→}
+   218→
+   219→/* ─── OrderItemsRow ─── */
+   220→function OrderItemsRow({ items }: { items: OrderItemDetail[] }) {
+   221→  return (
+   222→    <motion.div
+   223→      initial={{ opacity: 0 }}
+   224→      animate={{ opacity: 1 }}
+   225→      exit={{ opacity: 0 }}
+   226→      transition={{ duration: 0.25 }}
+   227→    >
+   228→      <div className="bg-[#080808] border-t border-[#1a1a1a] px-4 py-3">
+   229→        <Table>
+   230→          <TableHeader>
+   231→            <TableRow className="border-b-[#1a1a1a] hover:bg-transparent">
+   232→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+   233→                Producto
+   234→              </TableHead>
+   235→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+   236→                Talla
+   237→              </TableHead>
+   238→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+   239→                Color
+   240→              </TableHead>
+   241→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-center">
+   242→                Cantidad
+   243→              </TableHead>
+   244→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-right">
+   245→                Precio Unitario
+   246→              </TableHead>
+   247→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-right">
+   248→                Subtotal
+   249→              </TableHead>
+   250→            </TableRow>
+   251→          </TableHeader>
+   252→          <TableBody>
+   253→            {items.map((item) => (
+   254→              <TableRow key={item.id} className="border-b-[#111] hover:bg-transparent">
+   255→                <TableCell className="text-neutral-300 text-xs">
+   256→                  {item.productVariant.product.title}
+   257→                </TableCell>
+   258→                <TableCell className="text-neutral-400 text-xs">{item.productVariant.size}</TableCell>
+   259→                <TableCell className="text-neutral-400 text-xs">{item.productVariant.color}</TableCell>
+   260→                <TableCell className="text-neutral-400 text-xs text-center">{item.quantity}</TableCell>
+   261→                <TableCell className="text-neutral-300 text-xs text-right">
+   262→                  {formatPrice(item.priceAtPurchase)}
+   263→                </TableCell>
+   264→                <TableCell className="text-white text-xs font-medium text-right">
+   265→                  {formatPrice(item.priceAtPurchase * item.quantity)}
+   266→                </TableCell>
+   267→              </TableRow>
+   268→            ))}
+   269→          </TableBody>
+   270→        </Table>
+   271→      </div>
+   272→    </motion.div>
+   273→  );
+   274→}
+   275→
+   276→/* ─── AdminDashboard ─── */
+   277→export default function AdminDashboard() {
+   278→  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+   279→  const navigate = useNavigationStore((s) => s.navigate);
+   280→  const logout = useAuthStore((s) => s.logout);
+   281→
+   282→  const [showLogin, setShowLogin] = useState(false);
+   283→  const [stats, setStats] = useState<AdminStats | null>(null);
+   284→  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+   285→  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+   286→  const [loading, setLoading] = useState(true);
+   287→  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+   288→
+   289→  useEffect(() => {
+   290→    if (!isAuthenticated) {
+   291→      setShowLogin(true);
+   292→      return;
+   293→    }
+   294→    setShowLogin(false);
+   295→    fetchAdminData();
+   296→  }, [isAuthenticated]);
+   297→
+   298→  const fetchAdminData = async () => {
+   299→    setLoading(true);
+   300→    try {
+   301→      const res = await fetch('/api/admin');
+   302→      if (!res.ok) throw new Error('Failed to fetch');
+   303→      const data = await res.json();
+   304→      setStats({
+   305→        totalSales: data.totalSales,
+   306→        pendingOrders: data.pendingOrders,
+   307→        activeProducts: data.activeProducts,
+   308→        totalOrders: data.totalOrders,
+   309→      });
+   310→      setRecentOrders(data.recentOrders || []);
+   311→    } catch {
+   312→      toast.error('Error al cargar datos del panel');
+   313→    } finally {
+   314→      setLoading(false);
+   315→    }
+   316→
+   317→    // Fetch low stock products
+   318→    try {
+   319→      const productsRes = await fetch('/api/products');
+   320→      if (productsRes.ok) {
+   321→        const products: Product[] = await productsRes.json();
+   322→        const lowStock: LowStockProduct[] = products
+   323→          .map((p) => ({
+   324→            id: p.id,
+   325→            title: p.title,
+   326→            slug: p.slug,
+   327→            totalStock: p.variants.reduce((sum, v) => sum + v.stockQuantity, 0),
+   328→          }))
+   329→          .filter((p) => p.totalStock < 5)
+   330→          .sort((a, b) => a.totalStock - b.totalStock);
+   331→        setLowStockProducts(lowStock);
+   332→      }
+   333→    } catch {
+   334→      // silently fail
+   335→    }
+   336→  };
+   337→
+   338→  const handleStatusChange = useCallback((orderId: string, newStatus: string) => {
+   339→    setRecentOrders((prev) =>
+   340→      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+   341→    );
+   342→  }, []);
+   343→
+   344→  const toggleExpand = useCallback(async (orderId: string) => {
+   345→    setExpandedOrders((prev) => {
+   346→      const next = new Set(prev);
+   347→      if (next.has(orderId)) {
+   348→        next.delete(orderId);
+   349→      } else {
+   350→        next.add(orderId);
+   351→      }
+   352→      return next;
+   353→    });
+   354→  }, []);
+   355→
+   356→  const handleLogout = () => {
+   357→    logout();
+   358→    navigate('home');
+   359→  };
+   360→
+   361→  if (showLogin) {
+   362→    return (
+   363→      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+   364→        <div className="w-full max-w-sm">
+   365→          <h1 className="text-white text-lg font-bold uppercase tracking-wider text-center mb-6">
+   366→            PANEL DE ADMINISTRACIÓN
+   367→          </h1>
+   368→          <AdminLogin open={showLogin} onOpenChange={setShowLogin} />
+   369→        </div>
+   370→      </div>
+   371→    );
+   372→  }
+   373→
+   374→  const statCards = [
+   375→    {
+   376→      label: 'Ventas Totales',
+   377→      value: stats?.totalSales ?? 0,
+   378→      displayValue: stats ? (
+   379→        <AnimatedCounter value={stats.totalSales} prefix="$" />
+   380→      ) : (
+   381→        <span>—</span>
+   382→      ),
+   383→      icon: DollarSign,
+   384→      color: 'text-green-500',
+   385→      bgColor: 'bg-green-500/10',
+   386→      trend: { value: '12%', up: true },
+   387→    },
+   388→    {
+   389→      label: 'Órdenes Pendientes',
+   390→      value: stats?.pendingOrders ?? 0,
+   391→      displayValue: stats ? (
+   392→        <AnimatedCounter value={stats.pendingOrders} />
+   393→      ) : (
+   394→        <span>—</span>
+   395→      ),
+   396→      icon: Clock,
+   397→      color: 'text-yellow-500',
+   398→      bgColor: 'bg-yellow-500/10',
+   399→      trend: { value: '5%', up: false },
+   400→    },
+   401→    {
+   402→      label: 'Productos Activos',
+   403→      value: stats?.activeProducts ?? 0,
+   404→      displayValue: stats ? (
+   405→        <AnimatedCounter value={stats.activeProducts} />
+   406→      ) : (
+   407→        <span>—</span>
+   408→      ),
+   409→      icon: Package,
+   410→      color: 'text-red-400',
+   411→      bgColor: 'bg-red-500/10',
+   412→      trend: { value: '3%', up: true },
+   413→    },
+   414→    {
+   415→      label: 'Total Órdenes',
+   416→      value: stats?.totalOrders ?? 0,
+   417→      displayValue: stats ? (
+   418→        <AnimatedCounter value={stats.totalOrders} />
+   419→      ) : (
+   420→        <span>—</span>
+   421→      ),
+   422→      icon: ShoppingBag,
+   423→      color: 'text-orange-400',
+   424→      bgColor: 'bg-orange-500/10',
+   425→      trend: { value: '8%', up: true },
+   426→    },
+   427→  ];
+   428→
+   429→  return (
+   430→    <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
+   431→      <div className="max-w-6xl mx-auto">
+   432→        {/* Header */}
+   433→        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+   434→          <div>
+   435→            <h1 className="text-white text-xl md:text-2xl font-bold uppercase tracking-wider">
+   436→              PANEL DE ADMINISTRACIÓN
+   437→            </h1>
+   438→            <div className="h-[2px] w-16 bg-red-600 mt-2" />
+   439→            <p className="text-neutral-500 text-xs mt-1 uppercase tracking-wider">
+   440→              Gestiona tu tienda
+   441→            </p>
+   442→          </div>
+   443→          <div className="flex items-center gap-3">
+   444→            <Button
+   445→              variant="outline"
+   446→              onClick={() => navigate('home')}
+   447→              className="border-neutral-700 text-white hover:bg-neutral-800 uppercase text-xs tracking-wider font-bold rounded-none h-9 px-4"
+   448→            >
+   449→              VOLVER A LA TIENDA
+   450→            </Button>
+   451→            <Button
+   452→              variant="ghost"
+   453→              onClick={handleLogout}
+   454→              className="text-neutral-500 hover:text-red-500 uppercase text-xs tracking-wider font-bold rounded-none h-9 px-4"
+   455→            >
+   456→              SALIR
+   457→            </Button>
+   458→          </div>
+   459→        </div>
+   460→
+   461→        {/* Stats Cards */}
+   462→        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+   463→          {statCards.map((card, idx) => {
+   464→            const Icon = card.icon;
+   465→            return (
+   466→              <motion.div
+   467→                key={card.label}
+   468→                initial={{ opacity: 0, y: 20 }}
+   469→                animate={{ opacity: 1, y: 0 }}
+   470→                transition={{ delay: idx * 0.1 }}
+   471→                whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(220, 38, 38, 0.08)' }}
+   472→                className={`bg-[#0a0a0a] border border-[#1a1a1a] p-5 hover:border-red-600/30 transition-all duration-300 cursor-default ${idx === 0 ? 'animated-gradient-border pulse-glow-red' : ''}`}
+   473→              >
+   474→                {loading ? (
+   475→                  <div className="space-y-3">
+   476→                    <Skeleton className="h-8 w-8 rounded" />
+   477→                    <Skeleton className="h-6 w-24" />
+   478→                    <Skeleton className="h-4 w-32" />
+   479→                  </div>
+   480→                ) : (
+   481→                  <>
+   482→                    <div className={`w-10 h-10 ${card.bgColor} rounded-lg flex items-center justify-center mb-3`}>
+   483→                      <Icon className={`w-5 h-5 ${card.color}`} />
+   484→                    </div>
+   485→                    <p className={`text-2xl font-bold ${card.color}`}>{card.displayValue}</p>
+   486→                    <p className="text-neutral-500 text-xs uppercase tracking-wider mt-1">
+   487→                      {card.label}
+   488→                    </p>
+   489→                    {card.trend && (
+   490→                      <span className={`text-[10px] font-bold ${card.trend.up ? 'text-green-500' : 'text-red-500'}`}>
+   491→                        {card.trend.up ? '↑' : '↓'} {card.trend.value}
+   492→                      </span>
+   493→                    )}
+   494→                  </>
+   495→                )}
+   496→              </motion.div>
+   497→            );
+   498→          })}
+   499→        </div>
+   500→
+   501→        {/* Two-column layout: Recent Activity + Low Stock Alerts */}
+   502→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+   503→          {/* Recent Activity - takes 2 columns */}
+   504→          <div className="lg:col-span-2">
+   505→            <div className="flex items-center gap-2 mb-4">
+   506→              <Clock className="size-4 text-neutral-500" />
+   507→              <h2 className="text-white text-sm font-bold uppercase tracking-wider">
+   508→                Actividad Reciente
+   509→              </h2>
+   510→            </div>
+   511→
+   512→            {/* Mobile Cards */}
+   513→            <div className="md:hidden">
+   514→              {loading ? (
+   515→                Array.from({ length: 3 }).map((_, i) => (
+   516→                  <div key={i} className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 rounded-lg mb-3">
+   517→                    <Skeleton className="h-4 w-20 mb-2" />
+   518→                    <Skeleton className="h-3 w-32 mb-2" />
+   519→                    <Skeleton className="h-4 w-16" />
+   520→                  </div>
+   521→                ))
+   522→              ) : recentOrders.length === 0 ? (
+   523→                <div className="bg-[#0a0a0a] border border-[#1a1a1a]] p-8 text-center">
+   524→                  <p className="text-neutral-500 text-sm">No hay actividad reciente</p>
+   525→                </div>
+   526→              ) : (
+   527→                recentOrders.slice(0, 5).map((order) => (
+   528→                  <div
+   529→                    key={order.id}
+   530→                    onClick={() => toggleExpand(order.id)}
+   531→                    className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 rounded-lg mb-3 cursor-pointer hover:bg-[#111] transition-colors"
+   532→                  >
+   533→                    <div className="flex items-center justify-between mb-2">
+   534→                      <span className="text-white text-xs font-mono font-bold">#{order.id.slice(0, 8)}</span>
+   535→                      <span className={`text-[10px] uppercase tracking-wider font-bold border px-2 py-0.5 rounded-sm ${STATUS_COLORS[order.status as OrderStatus] || STATUS_COLORS.PENDING}`}>
+   536→                        {STATUS_LABELS[order.status as OrderStatus] || order.status}
+   537→                      </span>
+   538→                    </div>
+   539→                    <p className="text-neutral-300 text-xs mb-1">
+   540→                      {order.user?.name || order.user?.email || 'Guest'}
+   541→                    </p>
+   542→                    <div className="flex items-center justify-between">
+   543→                      <span className="text-white text-sm font-bold">{formatPrice(order.totalAmount)}</span>
+   544→                      <span className="text-neutral-500 text-xs">{formatDate(order.createdAt)}</span>
+   545→                    </div>
+   546→                    <AnimatePresence>
+   547→                      {expandedOrders.has(order.id) && order.items && order.items.length > 0 && (
+   548→                        <motion.div
+   549→                          initial={{ opacity: 0, height: 0 }}
+   550→                          animate={{ opacity: 1, height: 'auto' }}
+   551→                          exit={{ opacity: 0, height: 0 }}
+   552→                          className="mt-3 pt-3 border-t border-[#1a1a1a] overflow-hidden"
+   553→                        >
+   554→                          {order.items.map((item) => (
+   555→                            <div key={item.id} className="flex justify-between text-xs py-1">
+   556→                              <span className="text-neutral-300">{item.productVariant.product.title} ({item.productVariant.size}/{item.productVariant.color}) ×{item.quantity}</span>
+   557→                              <span className="text-white font-medium">{formatPrice(item.priceAtPurchase * item.quantity)}</span>
+   558→                            </div>
+   559→                          ))}
+   560→                        </motion.div>
+   561→                      )}
+   562→                    </AnimatePresence>
+   563→                  </div>
+   564→                ))
+   565→              )}
+   566→            </div>
+   567→
+   568→            {/* Desktop Table */}
+   569→            <div className="hidden md:block">
+   570→              <div className="bg-[#0a0a0a] border border-[#1a1a1a] overflow-hidden">
+   571→                <div className="overflow-x-auto">
+   572→                  <Table>
+   573→                    <TableHeader>
+   574→                      <TableRow className="border-b-[#1a1a1a] hover:bg-transparent">
+   575→                        <TableHead className="w-8" />
+   576→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   577→                          Orden ID
+   578→                        </TableHead>
+   579→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   580→                          Cliente
+   581→                        </TableHead>
+   582→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   583→                          Total
+   584→                        </TableHead>
+   585→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   586→                          Estado
+   587→                        </TableHead>
+   588→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   589→                          Fecha
+   590→                        </TableHead>
+   591→                      </TableRow>
+   592→                    </TableHeader>
+   593→                    <TableBody>
+   594→                      {loading ? (
+   595→                        Array.from({ length: 5 }).map((_, i) => (
+   596→                          <TableRow key={i} className="border-b-[#1a1a1a] hover:bg-transparent">
+   597→                            <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+   598→                            <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+   599→                            <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+   600→                            <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+   601→                            <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+   602→                            <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+   603→                          </TableRow>
+   604→                        ))
+   605→                      ) : recentOrders.length === 0 ? (
+   606→                        <TableRow className="border-b-0 hover:bg-transparent">
+   607→                          <TableCell colSpan={6} className="text-center py-8">
+   608→                            <p className="text-neutral-500 text-sm">No hay actividad reciente</p>
+   609→                          </TableCell>
+   610→                        </TableRow>
+   611→                      ) : (
+   612→                        recentOrders.slice(0, 5).map((order, idx) => {
+   613→                          const isExpanded = expandedOrders.has(order.id);
+   614→                          return (
+   615→                            <Fragment key={order.id}>
+   616→                              <TableRow
+   617→                                className={`border-b-[#1a1a1a] hover:bg-[#111] transition-colors cursor-pointer ${isExpanded ? 'bg-[#111]' : idx % 2 === 0 ? 'bg-[#0a0a0a]' : 'bg-transparent'}`}
+   618→                                onClick={() => toggleExpand(order.id)}
+   619→                              >
+   620→                                <TableCell className="w-8">
+   621→                                  <button
+   622→                                    className="text-neutral-500 hover:text-white transition-colors"
+   623→                                    aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
+   624→                                  >
+   625→                                    {isExpanded ? (
+   626→                                      <ChevronDown className="w-4 h-4" />
+   627→                                    ) : (
+   628→                                      <ChevronRight className="w-4 h-4" />
+   629→                                    )}
+   630→                                  </button>
+   631→                                </TableCell>
+   632→                                <TableCell className="text-white text-xs font-mono">
+   633→                                  #{order.id.slice(0, 8)}
+   634→                                </TableCell>
+   635→                                <TableCell className="text-white text-xs">
+   636→                                  {order.user?.name || order.user?.email || 'Guest'}
+   637→                                </TableCell>
+   638→                                <TableCell className="text-white text-xs font-medium">
+   639→                                  {formatPrice(order.totalAmount)}
+   640→                                </TableCell>
+   641→                                <TableCell onClick={(e) => e.stopPropagation()}>
+   642→                                  <OrderStatusSelect
+   643→                                    orderId={order.id}
+   644→                                    currentStatus={order.status}
+   645→                                    onStatusChange={handleStatusChange}
+   646→                                  />
+   647→                                </TableCell>
+   648→                                <TableCell className="text-neutral-400 text-xs">
+   649→                                  {formatDate(order.createdAt)}
+   650→                                </TableCell>
+   651→                              </TableRow>
+   652→                              <AnimatePresence>
+   653→                                {isExpanded && order.items && order.items.length > 0 && (
+   654→                                  <TableRow className="border-b-[#1a1a1a] hover:bg-transparent p-0">
+   655→                                    <TableCell colSpan={6} className="p-0">
+   656→                                      <OrderItemsRow items={order.items} />
+   657→                                    </TableCell>
+   658→                                  </TableRow>
+   659→                                )}
+   660→                              </AnimatePresence>
+   661→                            </Fragment>
+   662→                          );
+   663→                        })
+   664→                      )}
+   665→                    </TableBody>
+   666→                  </Table>
+   667→                </div>
+   668→              </div>
+   669→            </div>
+   670→          </div>
+   671→
+   672→          {/* Low Stock Alerts - 1 column */}
+   673→          <div className="lg:col-span-1">
+   674→            <div className="flex items-center gap-2 mb-4">
+   675→              <AlertTriangle className="size-4 text-yellow-500" />
+   676→              <h2 className="text-white text-sm font-bold uppercase tracking-wider">
+   677→                Alerta de Stock Bajo
+   678→              </h2>
+   679→            </div>
+   680→            <div className="bg-[#0a0a0a] border border-[#1a1a1a] overflow-hidden">
+   681→              {loading ? (
+   682→                <div className="p-4 space-y-3">
+   683→                  {Array.from({ length: 3 }).map((_, i) => (
+   684→                    <div key={i} className="flex items-center justify-between">
+   685→                      <Skeleton className="h-4 w-28" />
+   686→                      <Skeleton className="h-4 w-10" />
+   687→                    </div>
+   688→                  ))}
+   689→                </div>
+   690→              ) : lowStockProducts.length === 0 ? (
+   691→                <div className="p-6 text-center">
+   692→                  <Package className="size-8 text-neutral-700 mx-auto mb-2" />
+   693→                  <p className="text-neutral-500 text-xs">Todo el inventario está bien</p>
+   694→                </div>
+   695→              ) : (
+   696→                <div className="divide-y divide-[#1a1a1a]">
+   697→                  {lowStockProducts.map((product) => (
+   698→                    <div
+   699→                      key={product.id}
+   700→                      className="flex items-center justify-between px-4 py-3 hover:bg-[#111] transition-colors"
+   701→                    >
+   702→                      <div className="min-w-0 flex-1 mr-3">
+   703→                        <p className="text-white text-xs font-medium truncate">
+   704→                          {product.title}
+   705→                        </p>
+   706→                      </div>
+   707→                      <div className="flex items-center gap-2 flex-shrink-0">
+   708→                        <span
+   709→                          className={`text-xs font-bold ${
+   710→                            product.totalStock === 0
+   711→                              ? 'text-red-500'
+   712→                              : 'text-yellow-500'
+   713→                          }`}
+   714→                        >
+   715→                          {product.totalStock === 0 ? 'AGOTADO' : `${product.totalStock} uds`}
+   716→                        </span>
+   717→                        <button
+   718→                          onClick={() => navigate('admin-products-edit', { id: product.id })}
+   719→                          className="p-1 hover:bg-[#222] rounded-sm transition-colors"
+   720→                          aria-label={`Editar ${product.title}`}
+   721→                        >
+   722→                          <Pencil size={12} className="text-neutral-500 hover:text-white transition-colors" />
+   723→                        </button>
+   724→                      </div>
+   725→                    </div>
+   726→                  ))}
+   727→                </div>
+   728→              )}
+   729→            </div>
+   730→          </div>
+   731→        </div>
+   732→
+   733→        {/* Quick Actions */}
+   734→        <div className="mb-8">
+   735→          <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
+   736→            Acciones Rápidas
+   737→          </h2>
+   738→          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   739→            <Button
+   740→              onClick={() => navigate('admin-products')}
+   741→              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+   742→            >
+   743→              <Package className="w-4 h-4 mr-2" />
+   744→              GESTIONAR PRODUCTOS
+   745→            </Button>
+   746→            <Button
+   747→              onClick={() => navigate('admin-products-new')}
+   748→              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+   749→            >
+   750→              CREAR NUEVO PRODUCTO
+   751→            </Button>
+   752→            <Button
+   753→              onClick={() => toast.info('Vista de órdenes completas próximamente')}
+   754→              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+   755→            >
+   756→              <ClipboardList className="w-4 h-4 mr-2" />
+   757→              VER ÓRDENES COMPLETAS
+   758→            </Button>
+   759→          </div>
+   760→        </div>
+   761→      </div>
+   762→    </section>
+   763→  );
+   764→}

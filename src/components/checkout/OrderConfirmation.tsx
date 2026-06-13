@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Truck, ShoppingBag, MessageCircle, Package, Copy, PackageCheck, Clock } from 'lucide-react';
+import { CheckCircle2, Truck, ShoppingBag, MessageCircle, Package, Copy, PackageCheck, Clock, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 
@@ -13,6 +13,27 @@ const TRACKER_STEPS = [
   { label: 'Entregado', icon: PackageCheck },
 ];
 
+const CONFETTI_COLORS = ['#dc2626', '#ef4444', '#ffffff', '#991b1b', '#f87171', '#fbbf24'];
+
+function getBusinessDaysFromNow(minDays: number, maxDays: number) {
+  const addBusinessDays = (date: Date, days: number) => {
+    let d = new Date(date);
+    let added = 0;
+    while (added < days) {
+      d.setDate(d.getDate() + 1);
+      const day = d.getDay();
+      if (day !== 0 && day !== 6) added++;
+    }
+    return d;
+  };
+  const now = new Date();
+  const from = addBusinessDays(now, minDays);
+  const to = addBusinessDays(now, maxDays);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  return { from: fmt(from), to: fmt(to) };
+}
+
 export default function OrderConfirmation() {
   const navigate = useNavigationStore((s) => s.navigate);
   const [copied, setCopied] = useState(false);
@@ -22,6 +43,8 @@ export default function OrderConfirmation() {
     return `KOP-${digits}`;
   }, []);
 
+  const deliveryEstimate = useMemo(() => getBusinessDaysFromNow(3, 5), []);
+
   const handleCopyOrderNumber = async () => {
     try {
       await navigator.clipboard.writeText(orderNumber);
@@ -30,6 +53,24 @@ export default function OrderConfirmation() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('No se pudo copiar');
+    }
+  };
+
+  const handleShareOrder = async () => {
+    const text = `¡Acabo de hacer un pedido en KOP STUDIO! Orden: ${orderNumber}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'KOP STUDIO - Pedido', text });
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast.success('¡Pedido copiado al portapapeles!');
+      } catch {
+        toast.error('No se pudo compartir');
+      }
     }
   };
 
@@ -61,8 +102,34 @@ export default function OrderConfirmation() {
         ))}
       </div>
 
+      {/* Confetti burst on mount — 24 pieces falling from top */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+        {Array.from({ length: 24 }).map((_, i) => {
+          const isCircle = i % 3 === 0;
+          const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+          const left = `${5 + (i * 4.1) % 90}%`;
+          const size = 4 + (i % 4) * 2;
+          return (
+            <div
+              key={`confetti-${i}`}
+              className="confetti-piece absolute"
+              style={{
+                left,
+                top: '-10px',
+                width: `${size}px`,
+                height: isCircle ? `${size}px` : `${size * 1.5}px`,
+                backgroundColor: color,
+                borderRadius: isCircle ? '50%' : '1px',
+                ['--fall-duration' as string]: `${1.5 + (i % 5) * 0.4}s`,
+                ['--fall-delay' as string]: `${i * 0.06}s`,
+              }}
+            />
+          );
+        })}
+      </div>
+
       <div className="max-w-lg mx-auto text-center space-y-8 relative z-10">
-        {/* Animated Checkmark with Bounce + Confetti */}
+        {/* Animated Checkmark with Pulsing Glow */}
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -74,13 +141,17 @@ export default function OrderConfirmation() {
           }}
           className="flex justify-center relative"
         >
-          <CheckCircle2 className="size-20 text-green-500" />
+          {/* Pulsing glow behind checkmark */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-green-500/10 pulsing-glow-green" />
+          </div>
+          <CheckCircle2 className="size-20 text-green-500 relative z-10" />
 
-          {/* Confetti particles */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Confetti particles (original smaller burst) */}
+          <div className="absolute inset-0 pointer-events-none overflow-visible">
             {Array.from({ length: 12 }).map((_, i) => (
               <motion.div
-                key={i}
+                key={`micro-${i}`}
                 className="absolute w-1.5 h-1.5 rounded-full"
                 style={{
                   backgroundColor: i % 3 === 0 ? '#dc2626' : i % 3 === 1 ? '#ffffff' : '#991b1b',
@@ -215,17 +286,25 @@ export default function OrderConfirmation() {
           </div>
         </motion.div>
 
-        {/* Estimated Delivery */}
+        {/* Estimated Delivery — calculated 3-5 business days */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.45 }}
-          className="flex items-center justify-center gap-2 text-sm"
+          className="flex flex-col items-center gap-1.5"
         >
-          <Truck className="size-4 text-neutral-400" />
-          <span className="text-neutral-400 text-xs uppercase tracking-widest font-bold">
-            Envío estimado: 2-4 días hábiles
-          </span>
+          <div className="flex items-center gap-2">
+            <Truck className="size-4 text-neutral-400" />
+            <span className="text-neutral-400 text-xs uppercase tracking-widest font-bold">
+              Envío estimado
+            </span>
+          </div>
+          <p className="text-white text-sm font-bold">
+            {deliveryEstimate.from} — {deliveryEstimate.to}
+          </p>
+          <p className="text-neutral-500 text-[11px]">
+            3-5 días hábiles
+          </p>
         </motion.div>
 
         {/* Buttons */}
@@ -248,6 +327,13 @@ export default function OrderConfirmation() {
           >
             <Package className="size-4" />
             Ver mis pedidos
+          </button>
+          <button
+            onClick={handleShareOrder}
+            className="flex items-center gap-2 border border-[#333] text-neutral-300 hover:border-white hover:text-white uppercase text-xs tracking-widest font-bold px-6 py-3.5 transition-all duration-200 btn-press"
+          >
+            <Share2 className="size-4" />
+            Compartir mi pedido
           </button>
         </motion.div>
 

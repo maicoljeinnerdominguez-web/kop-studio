@@ -1,0 +1,1110 @@
+     1→     1→@import "tailwindcss";
+     2→     2→@import "tw-animate-css";
+     3→     3→
+     4→     4→@custom-variant dark (&:is(.dark *));
+     5→     5→
+     6→     6→@theme inline {
+     7→     7→  --color-background: var(--background);
+     8→     8→  --color-foreground: var(--foreground);
+     9→     9→  --font-sans: var(--font-geist-sans);
+    10→    10→  --font-mono: var(--font-geist-mono);
+    11→    11→  --color-sidebar-ring: var(--sidebar-ring);
+    12→    12→  --color-sidebar-border: var(--sidebar-border);
+    13→    13→  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    14→    14→  --color-sidebar-accent: var(--sidebar-accent);
+    15→    15→  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    16→    16→  --color-sidebar-primary: var(--sidebar-primary);
+    17→    17→  --color-sidebar-foreground: var(--sidebar-foreground);
+    18→    18→  --color-sidebar: var(--sidebar);
+    19→    19→  --color-chart-5: var(--chart-5);
+    20→    20→  --color-chart-4: var(--chart-4);
+    21→    21→  --color-chart-3: var(--chart-3);
+    22→    22→  --color-chart-2: var(--chart-2);
+    23→    23→  --color-chart-1: var(--chart-1);
+    24→    24→  --color-ring: var(--ring);
+    25→    25→  --color-input: var(--input);
+    26→    26→  --color-border: var(--border);
+    27→    27→  --color-destructive: var(--destructive);
+    28→    28→  --color-accent-foreground: var(--accent-foreground);
+    29→    29→  --color-accent: var(--accent);
+    30→    30→  --color-muted-foreground: var(--muted-foreground);
+    31→    31→  --color-muted: var(--muted);
+    32→    32→  --color-secondary-foreground: var(--secondary-foreground);
+    33→    33→  --color-secondary: var(--secondary);
+    34→    34→  --color-primary-foreground: var(--primary-foreground);
+    35→    35→  --color-primary: var(--primary);
+    36→    36→  --color-popover-foreground: var(--popover-foreground);
+    37→    37→  --color-popover: var(--popover);
+    38→    38→  --color-card-foreground: var(--card-foreground);
+    39→    39→  --color-card: var(--card);
+    40→    40→  --radius-sm: calc(var(--radius) - 4px);
+    41→    41→  --radius-md: calc(var(--radius) - 2px);
+    42→    42→  --radius-lg: var(--radius);
+    43→    43→  --radius-xl: calc(var(--radius) + 4px);
+    44→    44→  --color-red-accent: #dc2626;
+    45→    45→  --color-red-accent-foreground: #ffffff;
+    46→    46→}
+    47→    47→
+    48→    48→:root {
+    49→    49→  --radius: 0.625rem;
+    50→    50→  --background: #000000;
+    51→    51→  --foreground: #f5f5f5;
+    52→    52→  --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    53→    53→  --card: #0a0a0a;
+    54→    54→  --card-foreground: #f5f5f5;
+    55→    55→  --popover: #111111;
+    56→    56→  --popover-foreground: #f5f5f5;
+    57→    57→  --primary: #ffffff;
+    58→    58→  --primary-foreground: #000000;
+    59→    59→  --secondary: #1a1a1a;
+    60→    60→  --secondary-foreground: #f5f5f5;
+    61→    61→  --muted: #1a1a1a;
+    62→    62→  --muted-foreground: #737373;
+    63→    63→  --accent: #dc2626;
+    64→    64→  --accent-foreground: #ffffff;
+    65→    65→  --destructive: #dc2626;
+    66→    66→  --border: #262626;
+    67→    67→  --input: #262626;
+    68→    68→  --ring: #dc2626;
+    69→    69→  --chart-1: #dc2626;
+    70→    70→  --chart-2: #f5f5f5;
+    71→    71→  --chart-3: #737373;
+    72→    72→  --chart-4: #404040;
+    73→    73→  --chart-5: #a3a3a3;
+    74→    74→  --sidebar: #0a0a0a;
+    75→    75→  --sidebar-foreground: #f5f5f5;
+    76→    76→  --sidebar-primary: #dc2626;
+    77→    77→  --sidebar-primary-foreground: #ffffff;
+    78→    78→  --sidebar-accent: #1a1a1a;
+    79→    79→  --sidebar-accent-foreground: #f5f5f5;
+    80→    80→  --sidebar-border: #262626;
+    81→    81→  --sidebar-ring: #dc2626;
+    82→    82→}
+    83→    83→
+    84→    84→@layer base {
+    85→    85→  * {
+    86→    86→    @apply border-border outline-ring/50 focus-visible:ring-1 focus-visible:ring-red-600 focus-visible:ring-offset-1 focus-visible:ring-offset-black focus-visible:outline-none;
+    87→    87→  }
+    88→    88→  body {
+    89→    89→    @apply bg-background text-foreground antialiased selection:bg-red-600 selection:text-white;
+    90→    90→  }
+    91→    91→}
+    92→    92→
+    93→    93→/* Marquee animation */
+    94→    94→@keyframes marquee {
+    95→    95→  0% { transform: translateX(0%); }
+    96→    96→  100% { transform: translateX(-50%); }
+    97→    97→}
+    98→    98→.animate-marquee {
+    99→    99→  animation: marquee 20s linear infinite;
+   100→   100→}
+   101→   101→
+   102→   102→/* Thin page scrollbar */
+   103→   103→html {
+   104→   104→  scrollbar-width: thin;
+   105→   105→  scrollbar-color: #333 transparent;
+   106→   106→}
+   107→   107→
+   108→   108→/* Custom scrollbar */
+   109→   109→::-webkit-scrollbar {
+   110→   110→  width: 6px;
+   111→   111→}
+   112→   112→::-webkit-scrollbar-track {
+   113→   113→  background: #0a0a0a;
+   114→   114→}
+   115→   115→::-webkit-scrollbar-thumb {
+   116→   116→  background: #404040;
+   117→   117→  border-radius: 3px;
+   118→   118→}
+   119→   119→::-webkit-scrollbar-thumb:hover {
+   120→   120→  background: #525252;
+   121→   121→}
+   122→   122→
+   123→   123→/* Announcement bar gradient — enhanced version at bottom of file */
+   124→   124→
+   125→   125→@keyframes shimmer {
+   126→   126→  0% { background-position: -200% 0; }
+   127→   127→  100% { background-position: 200% 0; }
+   128→   128→}
+   129→   129→
+   130→   130→/* Product card hover */
+   131→   131→.product-card-image {
+   132→   132→  transition: opacity 0.3s ease;
+   133→   133→}
+   134→   134→.product-card:hover .product-card-image-primary {
+   135→   135→  opacity: 0;
+   136→   136→}
+   137→   137→.product-card:hover .product-card-image-secondary {
+   138→   138→  opacity: 1;
+   139→   139→}
+   140→   140→.product-card .product-card-image-secondary {
+   141→   141→  opacity: 0;
+   142→   142→  position: absolute;
+   143→   143→  inset: 0;
+   144→   144→}
+   145→   145→
+   146→   146→/* Badge pulse */
+   147→   147→@keyframes badge-pulse {
+   148→   148→  0%, 100% { transform: scale(1); }
+   149→   149→  50% { transform: scale(1.1); }
+   150→   150→}
+   151→   151→.badge-pulse {
+   152→   152→  animation: badge-pulse 2s ease-in-out infinite;
+   153→   153→}
+   154→   154→
+   155→   155→/* Progress bar fill animation */
+   156→   156→@keyframes progress-fill {
+   157→   157→  from { width: 0%; }
+   158→   158→}
+   159→   159→.progress-fill {
+   160→   160→  animation: progress-fill 0.5s ease-out;
+   161→   161→}
+   162→   162→
+   163→   163→/* Dark input styles */
+   164→   164→input[type="text"],
+   165→   165→input[type="email"],
+   166→   166→input[type="password"],
+   167→   167→input[type="tel"],
+   168→   168→input[type="number"],
+   169→   169→textarea,
+   170→   170→select {
+   171→   171→  color-scheme: dark;
+   172→   172→}
+   173→   173→
+   174→   174→/* Hide number input spinners */
+   175→   175→input[type="number"]::-webkit-outer-spin-button,
+   176→   176→input[type="number"]::-webkit-inner-spin-button {
+   177→   177→  -webkit-appearance: none;
+   178→   178→  margin: 0;
+   179→   179→}
+   180→   180→input[type="number"] {
+   181→   181→  -moz-appearance: textfield;
+   182→   182→}
+   183→   183→
+   184→   184→/* Search command palette scrollbar */
+   185→   185→.search-palette-scrollbar::-webkit-scrollbar {
+   186→   186→  width: 4px;
+   187→   187→}
+   188→   188→.search-palette-scrollbar::-webkit-scrollbar-track {
+   189→   189→  background: transparent;
+   190→   190→}
+   191→   191→.search-palette-scrollbar::-webkit-scrollbar-thumb {
+   192→   192→  background: #333;
+   193→   193→  border-radius: 2px;
+   194→   194→}
+   195→   195→.search-palette-scrollbar::-webkit-scrollbar-thumb:hover {
+   196→   196→  background: #525252;
+   197→   197→}
+   198→   198→
+   199→   199→/* Smooth scroll behavior */
+   200→   200→html {
+   201→   201→  scroll-behavior: smooth;
+   202→   202→}
+   203→   203→
+   204→   204→/* Shimmer text effect for announcement bar */
+   205→   205→@keyframes shimmer-text {
+   206→   206→  0% { background-position: -200% center; }
+   207→   207→  100% { background-position: 200% center; }
+   208→   208→}
+   209→   209→.shimmer-text {
+   210→   210→  background: linear-gradient(
+   211→   211→    90deg,
+   212→   212→    rgba(255,255,255,0.8) 0%,
+   213→   213→    rgba(255,255,255,1) 25%,
+   214→   214→    rgba(255,255,255,0.6) 50%,
+   215→   215→    rgba(255,255,255,1) 75%,
+   216→   216→    rgba(255,255,255,0.8) 100%
+   217→   217→  );
+   218→   218→  background-size: 200% auto;
+   219→   219→  -webkit-background-clip: text;
+   220→   220→  background-clip: text;
+   221→   221→  -webkit-text-fill-color: transparent;
+   222→   222→  animation: shimmer-text 3s linear infinite;
+   223→   223→}
+   224→   224→
+   225→   225→/* Gradient line for header bottom */
+   226→   226→@keyframes gradient-line-pulse {
+   227→   227→  0%, 100% { opacity: 0.6; }
+   228→   228→  50% { opacity: 1; }
+   229→   229→}
+   230→   230→.gradient-line {
+   231→   231→  background: linear-gradient(90deg, transparent, #dc2626, #991b1b, #dc2626, transparent);
+   232→   232→  animation: gradient-line-pulse 3s ease-in-out infinite;
+   233→   233→}
+   234→   234→
+   235→   235→/* Shine effect for product card image */
+   236→   236→.shine-effect {
+   237→   237→  position: relative;
+   238→   238→  overflow: hidden;
+   239→   239→}
+   240→   240→.shine-effect::after {
+   241→   241→  content: '';
+   242→   242→  position: absolute;
+   243→   243→  top: -50%;
+   244→   244→  left: -60%;
+   245→   245→  width: 40%;
+   246→   246→  height: 200%;
+   247→   247→  background: linear-gradient(
+   248→   248→    105deg,
+   249→   249→    transparent 40%,
+   250→   250→    rgba(255, 255, 255, 0.08) 45%,
+   251→   251→    rgba(255, 255, 255, 0.15) 50%,
+   252→   252→    rgba(255, 255, 255, 0.08) 55%,
+   253→   253→    transparent 60%
+   254→   254→  );
+   255→   255→  transform: translateX(-100%);
+   256→   256→  transition: transform 0.6s ease;
+   257→   257→  pointer-events: none;
+   258→   258→  z-index: 10;
+   259→   259→}
+   260→   260→.shine-effect:hover::after {
+   261→   261→  transform: translateX(200%);
+   262→   262→}
+   263→   263→
+   264→   264→/* Subtle red text glow for headings */
+   265→   265→.text-glow {
+   266→   266→  text-shadow: 0 0 20px rgba(220, 38, 38, 0.3), 0 0 40px rgba(220, 38, 38, 0.1);
+   267→   267→}
+   268→   268→
+   269→   269→/* Footer link hover underline animation */
+   270→   270→.footer-link-hover {
+   271→   271→  position: relative;
+   272→   272→}
+   273→   273→.footer-link-hover::after {
+   274→   274→  content: '';
+   275→   275→  position: absolute;
+   276→   276→  bottom: -2px;
+   277→   277→  left: 0;
+   278→   278→  width: 0;
+   279→   279→  height: 1px;
+   280→   280→  background: #dc2626;
+   281→   281→  transition: width 0.3s ease;
+   282→   282→}
+   283→   283→.footer-link-hover:hover::after {
+   284→   284→  width: 100%;
+   285→   285→}
+   286→   286→
+   287→   287→/* Mobile menu slide-in backdrop */
+   288→   288→.mobile-menu-backdrop {
+   289→   289→  backdrop-filter: blur(12px);
+   290→   290→  -webkit-backdrop-filter: blur(12px);
+   291→   291→}
+   292→   292→
+   293→   293→/* Mobile menu slide-in animation */
+   294→   294→@keyframes slideInLeft {
+   295→   295→  from { transform: translateX(-100%); }
+   296→   296→  to { transform: translateX(0); }
+   297→   297→}
+   298→   298→
+   299→   299→/* ===== NEW ENHANCEMENTS ===== */
+   300→   300→
+   301→   301→/* Subtle dot grid background pattern */
+   302→   302→body::before {
+   303→   303→  content: '';
+   304→   304→  position: fixed;
+   305→   305→  inset: 0;
+   306→   306→  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+   307→   307→  background-size: 24px 24px;
+   308→   308→  opacity: 0.03;
+   309→   309→  pointer-events: none;
+   310→   310→  z-index: 0;
+   311→   311→}
+   312→   312→
+   313→   313→/* Glow pulse animation for red accent elements */
+   314→   314→@keyframes glowPulse {
+   315→   315→  0%, 100% { box-shadow: 0 0 0px rgba(220, 38, 38, 0); }
+   316→   316→  50% { box-shadow: 0 0 12px rgba(220, 38, 38, 0.35), 0 0 24px rgba(220, 38, 38, 0.1); }
+   317→   317→}
+   318→   318→.glow-pulse:hover {
+   319→   319→  animation: glowPulse 1.5s ease-in-out infinite;
+   320→   320→}
+   321→   321→
+   322→   322→/* Slide up fade in animation */
+   323→   323→@keyframes slideUpFadeIn {
+   324→   324→  from {
+   325→   325→    opacity: 0;
+   326→   326→    transform: translateY(24px);
+   327→   327→  }
+   328→   328→  to {
+   329→   329→    opacity: 1;
+   330→   330→    transform: translateY(0);
+   331→   331→  }
+   332→   332→}
+   333→   333→.slide-up-fade-in {
+   334→   334→  animation: slideUpFadeIn 0.6s ease-out both;
+   335→   335→}
+   336→   336→
+   337→   337→/* Text reveal animation for hero heading */
+   338→   338→@keyframes textReveal {
+   339→   339→  from {
+   340→   340→    opacity: 0;
+   341→   341→    transform: translateY(100%);
+   342→   342→    filter: blur(4px);
+   343→   343→  }
+   344→   344→  to {
+   345→   345→    opacity: 1;
+   346→   346→    transform: translateY(0);
+   347→   347→    filter: blur(0);
+   348→   348→  }
+   349→   349→}
+   350→   350→.text-reveal {
+   351→   351→  animation: textReveal 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+   352→   352→}
+   353→   353→
+   354→   354→/* Shimmer loading placeholder */
+   355→   355→@keyframes shimmerLoad {
+   356→   356→  0% { background-position: -200% 0; }
+   357→   357→  100% { background-position: 200% 0; }
+   358→   358→}
+   359→   359→.shimmer-loading {
+   360→   360→  background: linear-gradient(
+   361→   361→    90deg,
+   362→   362→    #111 0%,
+   363→   363→    #1a1a1a 20%,
+   364→   364→    #222 40%,
+   365→   365→    #1a1a1a 60%,
+   366→   366→    #111 80%,
+   367→   367→    #111 100%
+   368→   368→  );
+   369→   369→  background-size: 200% 100%;
+   370→   370→  animation: shimmerLoad 2s ease-in-out infinite;
+   371→   371→}
+   372→   372→
+   373→   373→/* Improved announcement bar - vibrant animated gradient */
+   374→   374→.announcement-gradient {
+   375→   375→  background: linear-gradient(90deg, #dc2626, #b91c1c, #991b1b, #dc2626, #ef4444, #dc2626);
+   376→   376→  background-size: 300% 100%;
+   377→   377→  animation: announcementFlow 4s linear infinite;
+   378→   378→  box-shadow: 0 1px 0 0 rgba(220, 38, 38, 0.4), inset 0 -1px 0 0 rgba(220, 38, 38, 0.3);
+   379→   379→}
+   380→   380→@keyframes announcementFlow {
+   381→   381→  0% { background-position: 0% 50%; }
+   382→   382→  100% { background-position: 300% 50%; }
+   383→   383→}
+   384→   384→
+   385→   385→/* Hover lift utility class */
+   386→   386→.hover-lift {
+   387→   387→  transition: transform 0.3s var(--transition-bounce), box-shadow 0.3s ease;
+   388→   388→}
+   389→   389→.hover-lift:hover {
+   390→   390→  transform: translateY(-4px);
+   391→   391→  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.5), 0 4px 8px -4px rgba(220, 38, 38, 0.08);
+   392→   392→}
+   393→   393→
+   394→   394→/* Animated border-bottom for headings */
+   395→   395→@keyframes borderExpand {
+   396→   396→  from { transform: scaleX(0); }
+   397→   397→  to { transform: scaleX(1); }
+   398→   398→}
+   399→   399→.animated-border-bottom {
+   400→   400→  position: relative;
+   401→   401→}
+   402→   402→.animated-border-bottom::after {
+   403→   403→  content: '';
+   404→   404→  position: absolute;
+   405→   405→  bottom: -4px;
+   406→   406→  left: 0;
+   407→   407→  width: 100%;
+   408→   408→  height: 2px;
+   409→   409→  background: linear-gradient(90deg, #dc2626, #991b1b, transparent);
+   410→   410→  transform-origin: left;
+   411→   411→  animation: borderExpand 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+   412→   412→}
+   413→   413→
+   414→   414→/* Filter button hover animation */
+   415→   415→.filter-btn {
+   416→   416→  transition: all 0.2s var(--transition-bounce);
+   417→   417→}
+   418→   418→.filter-btn:hover {
+   419→   419→  transform: scale(1.05);
+   420→   420→  border-color: #dc2626;
+   421→   421→  color: #f5f5f5;
+   422→   422→}
+   423→   423→.filter-btn.active {
+   424→   424→  transform: scale(1);
+   425→   425→}
+   426→   426→
+   427→   427→/* Mobile menu accent line */
+   428→   428→.mobile-menu-item {
+   429→   429→  position: relative;
+   430→   430→  transition: all 0.2s ease;
+   431→   431→}
+   432→   432→.mobile-menu-item::before {
+   433→   433→  content: '';
+   434→   434→  position: absolute;
+   435→   435→  left: 0;
+   436→   436→  top: 50%;
+   437→   437→  transform: translateY(-50%) scaleY(0);
+   438→   438→  width: 3px;
+   439→   439→  height: 60%;
+   440→   440→  background: #dc2626;
+   441→   441→  border-radius: 0 2px 2px 0;
+   442→   442→  transition: transform 0.25s var(--transition-bounce);
+   443→   443→}
+   444→   444→.mobile-menu-item:hover::before,
+   445→   445→.mobile-menu-item.active::before {
+   446→   446→  transform: translateY(-50%) scaleY(1);
+   447→   447→}
+   448→   448→
+   449→   449→/* Trust feature hover */
+   450→   450→.trust-feature-icon {
+   451→   451→  transition: transform 0.3s var(--transition-bounce), color 0.3s ease;
+   452→   452→}
+   453→   453→.trust-feature-icon:hover {
+   454→   454→  transform: scale(1.2);
+   455→   455→  color: #ef4444;
+   456→   456→}
+   457→   457→
+   458→   458→/* Pulsing ring on truck icon */
+   459→   459→@keyframes truckPulseRing {
+   460→   460→  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+   461→   461→  70% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+   462→   462→  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+   463→   463→}
+   464→   464→.truck-pulse-ring {
+   465→   465→  animation: truckPulseRing 2s ease-in-out infinite;
+   466→   466→}
+   467→   467→
+   468→   468→/* Footer brand glow on hover */
+   469→   469→.footer-brand-glow:hover {
+   470→   470→  text-shadow: 0 0 20px rgba(220, 38, 38, 0.5), 0 0 40px rgba(220, 38, 38, 0.2);
+   471→   471→  transition: text-shadow 0.3s ease;
+   472→   472→}
+   473→   473→
+   474→   474→/* Footer divider animation */
+   475→   475→.footer-divider {
+   476→   476→  position: relative;
+   477→   477→  height: 1px;
+   478→   478→  background: transparent;
+   479→   479→}
+   480→   480→.footer-divider::after {
+   481→   481→  content: '';
+   482→   482→  position: absolute;
+   483→   483→  top: 0;
+   484→   484→  left: 50%;
+   485→   485→  width: 60px;
+   486→   486→  height: 1px;
+   487→   487→  background: linear-gradient(90deg, transparent, #dc2626, transparent);
+   488→   488→  transform: translateX(-50%);
+   489→   489→  animation: dividerGlow 3s ease-in-out infinite;
+   490→   490→}
+   491→   491→@keyframes dividerGlow {
+   492→   492→  0%, 100% { opacity: 0.3; width: 60px; }
+   493→   493→  50% { opacity: 0.8; width: 120px; }
+   494→   494→}
+   495→   495→
+   496→   496→/* Payment method pill hover */
+   497→   497→.payment-pill {
+   498→   498→  transition: all 0.2s var(--transition-bounce);
+   499→   499→}
+   500→   500→.payment-pill:hover {
+   501→   501→  border-color: #dc2626;
+   502→   502→  color: #f5f5f5;
+   503→   503→  transform: translateY(-1px);
+   504→   504→  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+   505→   505→}
+   506→   506→
+   507→   507→/* Discount badge glow */
+   508→   508→.discount-badge-glow {
+   509→   509→  box-shadow: 0 0 8px rgba(220, 38, 38, 0.5), 0 0 16px rgba(220, 38, 38, 0.2);
+   510→   510→}
+   511→   511→
+   512→   512→/* Results count animation */
+   513→   513→@keyframes countFadeIn {
+   514→   514→  from {
+   515→   515→    opacity: 0;
+   516→   516→    transform: translateX(-8px);
+   517→   517→  }
+   518→   518→  to {
+   519→   519→    opacity: 1;
+   520→   520→    transform: translateX(0);
+   521→   521→  }
+   522→   522→}
+   523→   523→.count-animate {
+   524→   524→  animation: countFadeIn 0.4s ease-out both;
+   525→   525→}
+   526→   526→
+   527→   527→/* NUEVO badge red pulse */
+   528→   528→@keyframes pulse-red {
+   529→   529→  0%, 100% {
+   530→   530→    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+   531→   531→  }
+   532→   532→  50% {
+   533→   533→    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+   534→   534→  }
+   535→   535→}
+   536→   536→.animate-\[pulse-red_2s_ease-in-out_infinite\] {
+   537→   537→  animation: pulse-red 2s ease-in-out infinite;
+   538→   538→}
+   539→   539→
+   540→   540→/* ────────────────────────────────────────────
+   541→   541→   Mobile-Specific Improvements
+   542→   542→   ──────────────────────────────────────────── */
+   543→   543→
+   544→   544→/* Safe area padding for iOS */
+   545→   545→@supports (padding-bottom: env(safe-area-inset-bottom)) {
+   546→   546→  .safe-area-bottom {
+   547→   547→    padding-bottom: env(safe-area-inset-bottom);
+   548→   548→  }
+   549→   549→}
+   550→   550→
+   551→   551→/* Better touch targets on mobile */
+   552→   552→@media (max-width: 768px) {
+   553→   553→  .touch-target {
+   554→   554→    min-height: 44px;
+   555→   555→    min-width: 44px;
+   556→   556→  }
+   557→   557→}
+   558→   558→
+   559→   559→/* Smooth image loading for product images */
+   560→   560→.product-image-load {
+   561→   561→  background: linear-gradient(135deg, #111 0%, #0a0a0a 50%, #111 100%);
+   562→   562→  background-size: 200% 200%;
+   563→   563→  animation: productImageShimmer 1.5s ease-in-out infinite;
+   564→   564→}
+   565→   565→@keyframes productImageShimmer {
+   566→   566→  0% { background-position: 0% 50%; }
+   567→   567→  50% { background-position: 100% 50%; }
+   568→   568→  100% { background-position: 0% 50%; }
+   569→   569→}
+   570→   570→
+   571→   571→/* Hide scrollbar for thumbnail galleries on mobile */
+   572→   572→.scrollbar-none::-webkit-scrollbar {
+   573→   573→  display: none;
+   574→   574→}
+   575→   575→.scrollbar-none {
+   576→   576→  -ms-overflow-style: none;
+   577→   577→  scrollbar-width: none;
+   578→   578→}
+   579→   579→
+   580→   580→/* ===== ROUND 3 ENHANCEMENTS ===== */
+   581→   581→
+   582→   582→/* Smooth image loading with blur-up effect */
+   583→   583→.img-blur-up {
+   584→   584→  animation: blurUp 0.4s ease-out both;
+   585→   585→}
+   586→   586→@keyframes blurUp {
+   587→   587→  from { filter: blur(20px); opacity: 0; transform: scale(1.05); }
+   588→   588→  to { filter: blur(0); opacity: 1; transform: scale(1); }
+   589→   589→}
+   590→   590→
+   591→   591→/* Subtle red underline on hover for text links */
+   592→   592→.hover-underline-red {
+   593→   593→  position: relative;
+   594→   594→  display: inline-block;
+   595→   595→}
+   596→   596→.hover-underline-red::after {
+   597→   597→  content: '';
+   598→   598→  position: absolute;
+   599→   599→  bottom: -1px;
+   600→   600→  left: 0;
+   601→   601→  width: 0;
+   602→   602→  height: 1px;
+   603→   603→  background: #dc2626;
+   604→   604→  transition: width 0.3s ease;
+   605→   605→}
+   606→   606→.hover-underline-red:hover::after {
+   607→   607→  width: 100%;
+   608→   608→}
+   609→   609→
+   610→   610→/* Button press effect */
+   611→   611→.btn-press:active {
+   612→   612→  transform: scale(0.96) !important;
+   613→   613→}
+   614→   614→
+   615→   615→/* Card shine sweep on hover */
+   616→   616→.card-shine {
+   617→   617→  position: relative;
+   618→   618→  overflow: hidden;
+   619→   619→}
+   620→   620→.card-shine::before {
+   621→   621→  content: '';
+   622→   622→  position: absolute;
+   623→   623→  top: 0;
+   624→   624→  left: -100%;
+   625→   625→  width: 50%;
+   626→   626→  height: 100%;
+   627→   627→  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+   628→   628→  transition: left 0.5s ease;
+   629→   629→  pointer-events: none;
+   630→   630→  z-index: 20;
+   631→   631→}
+   632→   632→.card-shine:hover::before {
+   633→   633→  left: 150%;
+   634→   634→}
+   635→   635→
+   636→   636→/* Subtle breathing glow for accent elements */
+   637→   637→@keyframes breathe {
+   638→   638→  0%, 100% { opacity: 0.6; }
+   639→   639→  50% { opacity: 1; }
+   640→   640→}
+   641→   641→.breathe {
+   642→   642→  animation: breathe 3s ease-in-out infinite;
+   643→   643→}
+   644→   644→
+   645→   645→/* Text shadow glow for important headings */
+   646→   646→.text-shadow-red {
+   647→   647→  text-shadow: 0 0 30px rgba(220, 38, 38, 0.4), 0 0 60px rgba(220, 38, 38, 0.15);
+   648→   648→}
+   649→   649→
+   650→   650→/* Smooth border radius transition */
+   651→   651→.border-radius-animate {
+   652→   652→  transition: border-radius 0.3s ease, border-color 0.3s ease;
+   653→   653→}
+   654→   654→.border-radius-animate:hover {
+   655→   655→  border-radius: 2px;
+   656→   656→}
+   657→   657→
+   658→   658→/* Gradient text for special headings */
+   659→   659→.gradient-text-red {
+   660→   660→  background: linear-gradient(135deg, #ef4444, #dc2626, #991b1b);
+   661→   661→  -webkit-background-clip: text;
+   662→   662→  background-clip: text;
+   663→   663→  -webkit-text-fill-color: transparent;
+   664→   664→}
+   665→   665→
+   666→   666→/* Skeleton shimmer for loading states */
+   667→   667→.skeleton-shine {
+   668→   668→  position: relative;
+   669→   669→  overflow: hidden;
+   670→   670→}
+   671→   671→.skeleton-shine::after {
+   672→   672→  content: '';
+   673→   673→  position: absolute;
+   674→   674→  inset: 0;
+   675→   675→  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
+   676→   676→  animation: skeletonShimmer 1.5s ease-in-out infinite;
+   677→   677→}
+   678→   678→@keyframes skeletonShimmer {
+   679→   679→  from { transform: translateX(-100%); }
+   680→   680→  to { transform: translateX(100%); }
+   681→   681→}
+   682→   682→
+   683→   683→/* Subtle hover scale for interactive elements */
+   684→   684→.hover-scale {
+   685→   685→  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+   686→   686→}
+   687→   687→.hover-scale:hover {
+   688→   688→  transform: scale(1.02);
+   689→   689→}
+   690→   690→
+   691→   691→/* Focus ring improvement */
+   692→   692→.focus-ring-red:focus-visible {
+   693→   693→  outline: none;
+   694→   694→  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.5);
+   695→   695→}
+   696→   696→
+   697→   697→/* Scroll-triggered fade in utility */
+   698→   698→.reveal {
+   699→   699→  opacity: 0;
+   700→   700→  transform: translateY(20px);
+   701→   701→  transition: opacity 0.6s ease, transform 0.6s ease;
+   702→   702→}
+   703→   703→.reveal.visible {
+   704→   704→  opacity: 1;
+   705→   705→  transform: translateY(0);
+   706→   706→}
+   707→   707→
+   708→   708→/* Separator line with red dot */
+   709→   709→.separator-dot {
+   710→   710→  display: flex;
+   711→   711→  align-items: center;
+   712→   712→  gap: 12px;
+   713→   713→}
+   714→   714→.separator-dot::before,
+   715→   715→.separator-dot::after {
+   716→   716→  content: '';
+   717→   717→  flex: 1;
+   718→   718→  height: 1px;
+   719→   719→  background: #1a1a1a;
+   720→   720→}
+   721→   721→.separator-dot::before {
+   722→   722→  margin-right: auto;
+   723→   723→}
+   724→   724→.separator-dot::after {
+   725→   725→  margin-left: auto;
+   726→   726→}
+   727→   727→
+   728→   728→/* Price flash animation for discounts */
+   729→   729→@keyframes priceFlash {
+   730→   730→  0%, 100% { color: #f5f5f5; }
+   731→   731→  50% { color: #ef4444; }
+   732→   732→}
+   733→   733→.price-flash {
+   734→   734→  animation: priceFlash 2s ease-in-out 1;
+   735→   735→}
+   736→   736→
+   737→   737→/* ===== ROUND 4 ENHANCEMENTS ===== */
+   738→   738→
+   739→   739→/* Animated gradient border */
+   740→   740→.animated-gradient-border {
+   741→   741→  position: relative;
+   742→   742→}
+   743→   743→.animated-gradient-border::before {
+   744→   744→  content: '';
+   745→   745→  position: absolute;
+   746→   746→  inset: 0;
+   747→   747→  border-radius: inherit;
+   748→   748→  padding: 1px;
+   749→   749→  background: linear-gradient(135deg, #dc2626, #991b1b, #dc2626, #7f1d1d);
+   750→   750→  background-size: 300% 300%;
+   751→   751→  animation: gradientBorderMove 4s ease infinite;
+   752→   752→  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+   753→   753→  -webkit-mask-composite: xor;
+   754→   754→  mask-composite: exclude;
+   755→   755→  pointer-events: none;
+   756→   756→}
+   757→   757→@keyframes gradientBorderMove {
+   758→   758→  0%, 100% { background-position: 0% 50%; }
+   759→   759→  50% { background-position: 100% 50%; }
+   760→   760→}
+   761→   761→
+   762→   762→/* Noise texture overlay */
+   763→   763→.noise-overlay {
+   764→   764→  position: relative;
+   765→   765→}
+   766→   766→.noise-overlay::after {
+   767→   767→  content: '';
+   768→   768→  position: absolute;
+   769→   769→  inset: 0;
+   770→   770→  opacity: 0.02;
+   771→   771→  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+   772→   772→  background-repeat: repeat;
+   773→   773→  background-size: 128px 128px;
+   774→   774→  pointer-events: none;
+   775→   775→  z-index: 1;
+   776→   776→}
+   777→   777→
+   778→   778→/* Red dot indicator */
+   779→   779→.red-dot-indicator {
+   780→   780→  width: 8px;
+   781→   781→  height: 8px;
+   782→   782→  background: #dc2626;
+   783→   783→  border-radius: 50%;
+   784→   784→  box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+   785→   785→  display: inline-block;
+   786→   786→  flex-shrink: 0;
+   787→   787→}
+   788→   788→
+   789→   789→/* Stagger animation utility */
+   790→   790→.stagger-1 { animation-delay: 0.05s; }
+   791→   791→.stagger-2 { animation-delay: 0.1s; }
+   792→   792→.stagger-3 { animation-delay: 0.15s; }
+   793→   793→.stagger-4 { animation-delay: 0.2s; }
+   794→   794→.stagger-5 { animation-delay: 0.25s; }
+   795→   795→
+   796→   796→/* Glass morphism card */
+   797→   797→.glass-card {
+   798→   798→  background: rgba(10, 10, 10, 0.8);
+   799→   799→  backdrop-filter: blur(12px);
+   800→   800→  -webkit-backdrop-filter: blur(12px);
+   801→   801→  border: 1px solid rgba(255, 255, 255, 0.06);
+   802→   802→}
+   803→   803→
+   804→   804→/* Floating particles animation */
+   805→   805→@keyframes float-particle {
+   806→   806→  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0; }
+   807→   807→  10% { opacity: 1; }
+   808→   808→  90% { opacity: 1; }
+   809→   809→  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+   810→   810→}
+   811→   811→
+   812→   812→/* Checkout progress line animation */
+   813→   813→@keyframes checkoutProgressPulse {
+   814→   814→  0% { opacity: 0.4; }
+   815→   815→  50% { opacity: 1; }
+   816→   816→  100% { opacity: 0.4; }
+   817→   817→}
+   818→   818→.checkout-progress-line {
+   819→   819→  background: linear-gradient(90deg, transparent 0%, #dc2626 20%, #991b1b 50%, #dc2626 80%, transparent 100%);
+   820→   820→  background-size: 200% 100%;
+   821→   821→  animation: checkoutProgressSlide 2.5s linear infinite, checkoutProgressPulse 3s ease-in-out infinite;
+   822→   822→}
+   823→   823→@keyframes checkoutProgressSlide {
+   824→   824→  0% { background-position: 100% 50%; }
+   825→   825→  100% { background-position: -100% 50%; }
+   826→   826→}
+   827→   827→
+   828→   828→/* Input red glow on focus */
+   829→   829→.input-glow-red:focus {
+   830→   830→  border-color: rgba(220, 38, 38, 0.5) !important;
+   831→   831→  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1), 0 0 16px rgba(220, 38, 38, 0.06);
+   832→   832→}
+   833→   833→
+   834→   834→/* Subtle pulse glow for special cards */
+   835→   835→@keyframes subtlePulseGlow {
+   836→   836→  0%, 100% { box-shadow: 0 0 0px rgba(220, 38, 38, 0), 0 0 0px rgba(220, 38, 38, 0); }
+   837→   837→  50% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.15), 0 0 40px rgba(220, 38, 38, 0.05); }
+   838→   838→}
+   839→   839→.pulse-glow-red {
+   840→   840→  animation: subtlePulseGlow 3s ease-in-out infinite;
+   841→   841→}
+   842→   842→
+   843→   843→/* Timeline fill animation */
+   844→   844→@keyframes timelineFill {
+   845→   845→  from { width: 0%; }
+   846→   846→  to { width: var(--fill-width); }
+   847→   847→}
+   848→   848→.timeline-fill-animated {
+   849→   849→  animation: timelineFill 1s ease-out 0.3s both;
+   850→   850→}
+   851→   851→
+   852→   852→/* Stagger fade in for card lists */
+   853→   853→@keyframes staggerFadeIn {
+   854→   854→  from {
+   855→   855→    opacity: 0;
+   856→   856→    transform: translateY(16px);
+   857→   857→  }
+   858→   858→  to {
+   859→   859→    opacity: 1;
+   860→   860→    transform: translateY(0);
+   861→   861→  }
+   862→   862→}
+   863→   863→.stagger-fade-in {
+   864→   864→  opacity: 0;
+   865→   865→  animation: staggerFadeIn 0.5s ease-out both;
+   866→   866→}
+   867→   867→
+   868→   868→/* ===== ROUND 5 ENHANCEMENTS ===== */
+   869→   869→
+   870→   870→/* 1. Vignette overlay — cinematic dark edges */
+   871→   871→.vignette-overlay::before {
+   872→   872→  content: '';
+   873→   873→  position: absolute;
+   874→   874→  inset: 0;
+   875→   875→  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.65) 100%);
+   876→   876→  pointer-events: none;
+   877→   877→  z-index: 4;
+   878→   878→}
+   879→   879→
+   880→   880→/* 2. Glitch text animation (clip-path based) */
+   881→   881→@keyframes glitchClip1 {
+   882→   882→  0%, 100% { clip-path: inset(0 0 90% 0); transform: translate(-2px, 0); }
+   883→   883→  20% { clip-path: inset(30% 0 50% 0); transform: translate(2px, 0); }
+   884→   884→  40% { clip-path: inset(60% 0 10% 0); transform: translate(-1px, 0); }
+   885→   885→  60% { clip-path: inset(10% 0 70% 0); transform: translate(1px, 0); }
+   886→   886→  80% { clip-path: inset(80% 0 5% 0); transform: translate(-2px, 0); }
+   887→   887→}
+   888→   888→@keyframes glitchClip2 {
+   889→   889→  0%, 100% { clip-path: inset(90% 0 0 0); transform: translate(2px, 0); }
+   890→   890→  20% { clip-path: inset(50% 0 30% 0); transform: translate(-2px, 0); }
+   891→   891→  40% { clip-path: inset(10% 0 60% 0); transform: translate(1px, 0); }
+   892→   892→  60% { clip-path: inset(70% 0 10% 0); transform: translate(-1px, 0); }
+   893→   893→  80% { clip-path: inset(5% 0 80% 0); transform: translate(2px, 0); }
+   894→   894→}
+   895→   895→.text-glitch {
+   896→   896→  position: relative;
+   897→   897→}
+   898→   898→.text-glitch::before,
+   899→   899→.text-glitch::after {
+   900→   900→  content: attr(data-text);
+   901→   901→  position: absolute;
+   902→   902→  top: 0;
+   903→   903→  left: 0;
+   904→   904→  width: 100%;
+   905→   905→  height: 100%;
+   906→   906→  pointer-events: none;
+   907→   907→}
+   908→   908→.text-glitch::before {
+   909→   909→  color: rgba(220, 38, 38, 0.6);
+   910→   910→  animation: glitchClip1 4s infinite linear alternate-reverse;
+   911→   911→  z-index: -1;
+   912→   912→}
+   913→   913→.text-glitch::after {
+   914→   914→  color: rgba(0, 180, 255, 0.3);
+   915→   915→  animation: glitchClip2 4s infinite linear alternate-reverse;
+   916→   916→  z-index: -1;
+   917→   917→}
+   918→   918→
+   919→   919→/* 3. Animated gradient border (rotating) */
+   920→   920→@keyframes borderGradientRotate {
+   921→   921→  0% { --border-angle: 0deg; }
+   922→   922→  100% { --border-angle: 360deg; }
+   923→   923→}
+   924→   924→.border-animated-gradient {
+   925→   925→  position: relative;
+   926→   926→  border: none !important;
+   927→   927→  background: transparent;
+   928→   928→}
+   929→   929→.border-animated-gradient::before {
+   930→   930→  content: '';
+   931→   931→  position: absolute;
+   932→   932→  inset: -2px;
+   933→   933→  border-radius: inherit;
+   934→   934→  background: conic-gradient(from var(--border-angle, 0deg), #dc2626, #991b1b, #7f1d1d, #dc2626, #ef4444, #dc2626);
+   935→   935→  z-index: -2;
+   936→   936→  animation: borderGradientRotate 3s linear infinite;
+   937→   937→}
+   938→   938→.border-animated-gradient::after {
+   939→   939→  content: '';
+   940→   940→  position: absolute;
+   941→   941→  inset: 0;
+   942→   942→  border-radius: inherit;
+   943→   943→  background: inherit;
+   944→   944→  z-index: -1;
+   945→   945→}
+   946→   946→
+   947→   947→/* 4. Perspective card container */
+   948→   948→.perspective-card {
+   949→   949→  perspective: 1000px;
+   950→   950→  transform-style: preserve-3d;
+   951→   951→}
+   952→   952→
+   953→   953→/* 5. Shine-follow (mouse-following shine sweep) */
+   954→   954→.shine-follow {
+   955→   955→  position: relative;
+   956→   956→  overflow: hidden;
+   957→   957→}
+   958→   958→.shine-follow::after {
+   959→   959→  content: '';
+   960→   960→  position: absolute;
+   961→   961→  top: 0;
+   962→   962→  left: 0;
+   963→   963→  width: 80px;
+   964→   964→  height: 100%;
+   965→   965→  background: linear-gradient(
+   966→   966→    105deg,
+   967→   967→    transparent 30%,
+   968→   968→    rgba(255, 255, 255, 0.06) 45%,
+   969→   969→    rgba(255, 255, 255, 0.12) 50%,
+   970→   970→    rgba(255, 255, 255, 0.06) 55%,
+   971→   971→    transparent 70%
+   972→   972→  );
+   973→   973→  transform: translateX(-100px);
+   974→   974→  pointer-events: none;
+   975→   975→  z-index: 30;
+   976→   976→  transition: none;
+   977→   977→}
+   978→   978→
+   979→   979→/* 6. Step check-draw SVG path animation */
+   980→   980→.step-check-draw {
+   981→   981→  stroke-dasharray: 30;
+   982→   982→  stroke-dashoffset: 30;
+   983→   983→  animation: drawCheck 0.4s ease-out 0.1s forwards;
+   984→   984→}
+   985→   985→@keyframes drawCheck {
+   986→   986→  to { stroke-dashoffset: 0; }
+   987→   987→}
+   988→   988→
+   989→   989→/* 7. Breathing pulse — subtle scale */
+   990→   990→@keyframes breathingPulse {
+   991→   991→  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
+   992→   992→  50% { transform: scale(1.08); box-shadow: 0 0 12px 2px rgba(220, 38, 38, 0.15); }
+   993→   993→}
+   994→   994→.breathing-pulse {
+   995→   995→  animation: breathingPulse 2s ease-in-out infinite;
+   996→   996→}
+   997→   997→
+   998→   998→/* 8. Glass top edge — backdrop blur + gradient top */
+   999→   999→.glass-top-edge::before {
+  1000→  1000→  content: '';
+  1001→  1001→  position: absolute;
+  1002→  1002→  top: 0;
+  1003→  1003→  left: 0;
+  1004→  1004→  right: 0;
+  1005→  1005→  height: 60px;
+  1006→  1006→  background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  1007→  1007→  backdrop-filter: blur(12px);
+  1008→  1008→  -webkit-backdrop-filter: blur(12px);
+  1009→  1009→  pointer-events: none;
+  1010→  1010→  z-index: 2;
+  1011→  1011→}
+  1012→  1012→
+  1013→  1013→/* 9. Hover ripple (CSS-only) */
+  1014→  1014→.hover-ripple {
+  1015→  1015→  position: relative;
+  1016→  1016→  overflow: hidden;
+  1017→  1017→}
+  1018→  1018→.hover-ripple::after {
+  1019→  1019→  content: '';
+  1020→  1020→  position: absolute;
+  1021→  1021→  top: 50%;
+  1022→  1022→  left: 50%;
+  1023→  1023→  width: 0;
+  1024→  1024→  height: 0;
+  1025→  1025→  border-radius: 50%;
+  1026→  1026→  background: rgba(220, 38, 38, 0.08);
+  1027→  1027→  transform: translate(-50%, -50%) scale(0);
+  1028→  1028→  transition: width 0.5s ease, height 0.5s ease, opacity 0.5s ease;
+  1029→  1029→  opacity: 0;
+  1030→  1030→  pointer-events: none;
+  1031→  1031→}
+  1032→  1032→.hover-ripple:hover::after {
+  1033→  1033→  width: 200%;
+  1034→  1034→  height: 200%;
+  1035→  1035→  opacity: 1;
+  1036→  1036→}
+  1037→  1037→
+  1038→  1038→/* 10. Parallax card (CSS transform ready for JS control) */
+  1039→  1039→.parallax-card {
+  1040→  1040→  transition: transform 0.15s ease-out;
+  1041→  1041→  will-change: transform;
+  1042→  1042→}
+  1043→  1043→
+  1044→  1044→/* 11. Count-up animation */
+  1045→  1045→@keyframes countFadeUp {
+  1046→  1046→  from { opacity: 0; transform: translateY(8px); }
+  1047→  1047→  to { opacity: 1; transform: translateY(0); }
+  1048→  1048→}
+  1049→  1049→.count-up {
+  1050→  1050→  animation: countFadeUp 0.4s ease-out both;
+  1051→  1051→  display: inline-block;
+  1052→  1052→}
+  1053→  1053→
+  1054→  1054→/* 12. Grain texture overlay */
+  1055→  1055→.grain-texture::after {
+  1056→  1056→  content: '';
+  1057→  1057→  position: absolute;
+  1058→  1058→  inset: 0;
+  1059→  1059→  opacity: 0.04;
+  1060→  1060→  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  1061→  1061→  background-repeat: repeat;
+  1062→  1062→  background-size: 100px 100px;
+  1063→  1063→  pointer-events: none;
+  1064→  1064→  z-index: 1;
+  1065→  1065→  mix-blend-mode: overlay;
+  1066→  1066→}
+  1067→  1067→
+  1068→  1068→/* Mobile menu staggered slide-in */
+  1069→  1069→@keyframes mobileMenuSlideIn {
+  1070→  1070→  from { opacity: 0; transform: translateX(-16px); }
+  1071→  1071→  to { opacity: 1; transform: translateX(0); }
+  1072→  1072→}
+  1073→  1073→.mobile-menu-stagger {
+  1074→  1074→  opacity: 0;
+  1075→  1075→  animation: mobileMenuSlideIn 0.3s ease-out forwards;
+  1076→  1076→}
+  1077→  1077→
+  1078→  1078→/* Red accent line that animates down on mobile menu open */
+  1079→  1079→@keyframes redLineSlideDown {
+  1080→  1080→  from { height: 0; }
+  1081→  1081→  to { height: 100%; }
+  1082→  1082→}
+  1083→  1083→.mobile-menu-red-line {
+  1084→  1084→  position: absolute;
+  1085→  1085→  left: 0;
+  1086→  1086→  top: 0;
+  1087→  1087→  width: 3px;
+  1088→  1088→  background: linear-gradient(180deg, #dc2626, #991b1b, transparent);
+  1089→  1089→  animation: redLineSlideDown 0.4s ease-out 0.1s both;
+  1090→  1090→  pointer-events: none;
+  1091→  1091→}
+  1092→  1092→
+  1093→  1093→/* Glowing red line separator */
+  1094→  1094→.glowing-red-line {
+  1095→  1095→  height: 1px;
+  1096→  1096→  background: linear-gradient(90deg, transparent, #dc2626, #ef4444, #dc2626, transparent);
+  1097→  1097→  box-shadow: 0 0 8px rgba(220, 38, 38, 0.4), 0 0 16px rgba(220, 38, 38, 0.15);
+  1098→  1098→  animation: glowingRedPulse 3s ease-in-out infinite;
+  1099→  1099→}
+  1100→  1100→@keyframes glowingRedPulse {
+  1101→  1101→  0%, 100% { opacity: 0.6; box-shadow: 0 0 6px rgba(220, 38, 38, 0.3); }
+  1102→  1102→  50% { opacity: 1; box-shadow: 0 0 12px rgba(220, 38, 38, 0.5), 0 0 24px rgba(220, 38, 38, 0.2); }
+  1103→  1103→}
+  1104→  1104→
+  1105→  1105→/* @property for conic-gradient animation */
+  1106→  1106→@property --border-angle {
+  1107→  1107→  syntax: '<angle>';
+  1108→  1108→  initial-value: 0deg;
+  1109→  1109→  inherits: false;
+  1110→  1110→}
