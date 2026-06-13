@@ -19,6 +19,8 @@ import {
   Lock,
   Loader2,
   ShieldCheck,
+  Tag,
+  X,
 } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
@@ -33,6 +35,16 @@ import {
 } from '@/components/ui/select';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useCartStore } from '@/stores/useCartStore';
+
+/* ────────────────────────────────────────────
+   Promo Code Types
+   ──────────────────────────────────────────── */
+interface PromoData {
+  code: string;
+  type: string;
+  value: number;
+  discountAmount: number;
+}
 
 const contactSchema = z.object({
   firstName: z.string().min(1, 'Nombre es requerido'),
@@ -102,7 +114,7 @@ function StepIndicator({
           <div key={s.num} className="flex items-center">
             <div className="flex flex-col items-center">
               <div
-                className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${
+                className={`flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full transition-all duration-300 ${
                   isCompleted
                     ? 'bg-green-600 text-white'
                     : isActive
@@ -113,11 +125,11 @@ function StepIndicator({
                 {isCompleted ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  <span className="text-xs font-bold">{s.num}</span>
+                  <span className="text-[10px] sm:text-xs font-bold">{s.num}</span>
                 )}
               </div>
               <span
-                className={`text-[10px] mt-2 uppercase tracking-wider font-medium ${
+                className={`text-[10px] mt-2 uppercase tracking-wider font-medium hidden sm:block ${
                   isCompleted
                     ? 'text-green-500'
                     : isActive
@@ -143,14 +155,134 @@ function StepIndicator({
 }
 
 /* ────────────────────────────────────────────
+   Promo Code Section (reusable)
+   ──────────────────────────────────────────── */
+function PromoCodeSection({
+  promoApplied,
+  onApply,
+  onRemove,
+}: {
+  promoApplied: PromoData | null;
+  onApply: (data: PromoData) => void;
+  onRemove: () => void;
+}) {
+  const [code, setCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const subtotal = useCartStore((s) => s.getSubtotal());
+
+  const handleApply = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) return;
+
+    setPromoLoading(true);
+    setPromoError('');
+
+    try {
+      const res = await fetch('/api/promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: trimmed, subtotal }),
+      });
+      const data = await res.json();
+
+      if (data.valid) {
+        onApply(data);
+        setCode('');
+        toast.success('Código aplicado correctamente');
+      } else {
+        setPromoError(data.error);
+        setTimeout(() => setPromoError(''), 3000);
+      }
+    } catch {
+      setPromoError('Error de conexión');
+      setTimeout(() => setPromoError(''), 3000);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-[#1a1a1a] pt-4 mt-4">
+      <h4 className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold mb-3">
+        CÓDIGO DE DESCUENTO
+      </h4>
+
+      {!promoApplied ? (
+        <div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+              placeholder="INGRESA TU CÓDIGO"
+              className="bg-[#111] border border-[#333] text-white text-sm placeholder:text-neutral-600 h-10 px-3 flex-1 uppercase tracking-wider font-medium focus:outline-none focus:border-neutral-500 transition-colors"
+            />
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={promoLoading || !code.trim()}
+              className="bg-white text-black hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider h-10 px-4 transition-colors flex items-center gap-1.5"
+            >
+              {promoLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                'Aplicar'
+              )}
+            </button>
+          </div>
+          {promoError && (
+            <p className="text-red-400 text-[11px] mt-2">{promoError}</p>
+          )}
+        </div>
+      ) : (
+        <div className="bg-[#111] border border-[#333] flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2.5">
+            <Tag className="w-3.5 h-3.5 text-green-400" />
+            <span className="text-white text-xs uppercase font-bold">
+              {promoApplied.code}
+            </span>
+            <span className="text-green-400 text-xs">
+              {promoApplied.type === 'PERCENTAGE'
+                ? `${promoApplied.value}% de descuento`
+                : `${formatPrice(promoApplied.value)} de descuento`}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              onRemove();
+              toast.success('Código eliminado');
+            }}
+            className="text-neutral-500 hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────
    Order Summary Sidebar (Desktop sticky + Mobile collapsible)
    ──────────────────────────────────────────── */
-function OrderSummarySidebar() {
-  const { items, getSubtotal, getTotal, hasFreeShipping, getItemCount } = useCartStore();
+function OrderSummarySidebar({
+  promoApplied,
+  onApplyPromo,
+  onRemovePromo,
+}: {
+  promoApplied: PromoData | null;
+  onApplyPromo: (data: PromoData) => void;
+  onRemovePromo: () => void;
+}) {
+  const { items, getSubtotal, hasFreeShipping, getItemCount } = useCartStore();
   const subtotal = getSubtotal();
-  const total = getTotal();
+  const discount = promoApplied?.discountAmount ?? 0;
   const freeShipping = hasFreeShipping();
   const shipping = freeShipping ? 0 : 15000;
+  const total = subtotal + shipping - discount;
 
   const primaryImage = (product: { images: { url: string; isPrimary: boolean }[] }) =>
     product.images.find((img) => img.isPrimary)?.url || product.images[0]?.url || '';
@@ -189,11 +321,22 @@ function OrderSummarySidebar() {
           );
         })}
       </div>
+      <PromoCodeSection
+        promoApplied={promoApplied}
+        onApply={onApplyPromo}
+        onRemove={onRemovePromo}
+      />
       <div className="border-t border-[#1a1a1a] pt-3 space-y-2">
         <div className="flex justify-between text-xs">
           <span className="text-neutral-400">Subtotal</span>
           <span className="text-white">{formatPrice(subtotal)}</span>
         </div>
+        {discount > 0 && (
+          <div className="flex justify-between text-xs">
+            <span className="text-green-400">Descuento</span>
+            <span className="text-green-400">-{formatPrice(discount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-xs items-center">
           <span className="text-neutral-400">Envío</span>
           <span className={freeShipping ? 'text-green-500' : 'text-white'}>
@@ -214,13 +357,22 @@ function OrderSummarySidebar() {
   );
 }
 
-function MobileOrderSummary() {
+function MobileOrderSummary({
+  promoApplied,
+  onApplyPromo,
+  onRemovePromo,
+}: {
+  promoApplied: PromoData | null;
+  onApplyPromo: (data: PromoData) => void;
+  onRemovePromo: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
-  const { items, getSubtotal, getTotal, hasFreeShipping } = useCartStore();
+  const { items, getSubtotal, hasFreeShipping } = useCartStore();
   const subtotal = getSubtotal();
-  const total = getTotal();
+  const discount = promoApplied?.discountAmount ?? 0;
   const freeShipping = hasFreeShipping();
   const shipping = freeShipping ? 0 : 15000;
+  const total = subtotal + shipping - discount;
 
   const primaryImage = (product: { images: { url: string; isPrimary: boolean }[] }) =>
     product.images.find((img) => img.isPrimary)?.url || product.images[0]?.url || '';
@@ -243,6 +395,11 @@ function MobileOrderSummary() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-red-500 text-sm font-bold">{formatPrice(total)}</span>
+          {discount > 0 && (
+            <span className="text-green-400 text-[11px] ml-2">
+              -{formatPrice(discount)}
+            </span>
+          )}
           {expanded ? (
             <ChevronUp className="w-4 h-4 text-neutral-500" />
           ) : (
@@ -291,11 +448,22 @@ function MobileOrderSummary() {
                   );
                 })}
               </div>
+              <PromoCodeSection
+                promoApplied={promoApplied}
+                onApply={onApplyPromo}
+                onRemove={onRemovePromo}
+              />
               <div className="border-t border-[#1a1a1a] pt-3 space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-neutral-400">Subtotal</span>
                   <span className="text-white">{formatPrice(subtotal)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-green-400">Descuento</span>
+                    <span className="text-green-400">-{formatPrice(discount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-xs">
                   <span className="text-neutral-400">Envío</span>
                   <span className={freeShipping ? 'text-green-500' : 'text-white'}>
@@ -361,6 +529,7 @@ export default function CheckoutView() {
   const [nequiPhone, setNequiPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [promoApplied, setPromoApplied] = useState<PromoData | null>(null);
   const navigate = useNavigationStore();
   const cart = useCartStore();
 
@@ -438,9 +607,12 @@ export default function CheckoutView() {
 
       const shippingAddress = `${address.address}, ${address.neighborhood}, ${address.city} - ${address.department}, CP: ${address.postalCode}`;
 
+      const discount = promoApplied?.discountAmount ?? 0;
+      const finalTotal = Math.max(0, cart.getTotal() - discount);
+
       const orderData = {
         userId: 'guest-checkout',
-        totalAmount: cart.getTotal(),
+        totalAmount: finalTotal,
         shippingAddress,
         notes: '',
         paymentMethod,
@@ -530,9 +702,9 @@ export default function CheckoutView() {
   }
 
   const darkInput =
-    'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600 focus-visible:ring-red-600/20';
+    'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600 focus-visible:ring-red-600/20 h-12';
   const darkSelect =
-    'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600 data-[placeholder]:text-neutral-600';
+    'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600 data-[placeholder]:text-neutral-600 h-12';
 
   return (
     <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
@@ -557,7 +729,11 @@ export default function CheckoutView() {
 
         {/* Mobile Collapsible Order Summary (above steps) */}
         <div className="lg:hidden">
-          <MobileOrderSummary />
+          <MobileOrderSummary
+            promoApplied={promoApplied}
+            onApplyPromo={setPromoApplied}
+            onRemovePromo={() => setPromoApplied(null)}
+          />
         </div>
 
         {/* 2-Column Layout: Form (left) + Sidebar (right) */}
@@ -585,6 +761,7 @@ export default function CheckoutView() {
                         {...contactForm.register('firstName')}
                         className={darkInput}
                         placeholder="Juan"
+                        autoComplete="given-name"
                       />
                       {contactForm.formState.errors.firstName && (
                         <p className="text-red-500 text-xs">
@@ -600,6 +777,7 @@ export default function CheckoutView() {
                         {...contactForm.register('lastName')}
                         className={darkInput}
                         placeholder="Pérez"
+                        autoComplete="family-name"
                       />
                       {contactForm.formState.errors.lastName && (
                         <p className="text-red-500 text-xs">
@@ -614,8 +792,10 @@ export default function CheckoutView() {
                       <Input
                         {...contactForm.register('email')}
                         type="email"
+                        inputMode="email"
                         className={darkInput}
                         placeholder="juan@email.com"
+                        autoComplete="email"
                       />
                       {contactForm.formState.errors.email && (
                         <p className="text-red-500 text-xs">
@@ -629,8 +809,10 @@ export default function CheckoutView() {
                       </Label>
                       <Input
                         {...contactForm.register('phone')}
+                        inputMode="tel"
                         className={darkInput}
                         placeholder="+57 300 123 4567"
+                        autoComplete="tel"
                       />
                       {contactForm.formState.errors.phone && (
                         <p className="text-red-500 text-xs">
@@ -669,6 +851,7 @@ export default function CheckoutView() {
                         {...addressForm.register('address')}
                         className={darkInput}
                         placeholder="Calle 100 #15-20, Apto 302"
+                        autoComplete="street-address"
                       />
                       {addressForm.formState.errors.address && (
                         <p className="text-red-500 text-xs">
@@ -685,6 +868,7 @@ export default function CheckoutView() {
                           {...addressForm.register('city')}
                           className={darkInput}
                           placeholder="Bogotá"
+                          autoComplete="address-level2"
                         />
                         {addressForm.formState.errors.city && (
                           <p className="text-red-500 text-xs">
@@ -731,6 +915,7 @@ export default function CheckoutView() {
                           {...addressForm.register('neighborhood')}
                           className={darkInput}
                           placeholder="Chapinero"
+                          autoComplete="address-level3"
                         />
                         {addressForm.formState.errors.neighborhood && (
                           <p className="text-red-500 text-xs">
@@ -744,6 +929,7 @@ export default function CheckoutView() {
                         </Label>
                         <Input
                           {...addressForm.register('postalCode')}
+                          inputMode="numeric"
                           className={darkInput}
                           placeholder="110231"
                         />
@@ -1028,6 +1214,7 @@ export default function CheckoutView() {
                           <Input
                             value={nequiPhone}
                             onChange={(e) => setNequiPhone(e.target.value)}
+                            inputMode="tel"
                             className={darkInput}
                             placeholder="+57 300 123 4567"
                           />
@@ -1072,7 +1259,11 @@ export default function CheckoutView() {
           {/* Right: Order Summary Sidebar (desktop only, sticky) */}
           <div className="hidden lg:block w-1/3 flex-shrink-0">
             <div className="sticky top-24">
-              <OrderSummarySidebar />
+              <OrderSummarySidebar
+                promoApplied={promoApplied}
+                onApplyPromo={setPromoApplied}
+                onRemovePromo={() => setPromoApplied(null)}
+              />
             </div>
           </div>
         </div>

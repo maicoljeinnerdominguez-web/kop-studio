@@ -6,6 +6,7 @@ async function main() {
   // Clean existing data
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
+  await prisma.promoCode.deleteMany();
   await prisma.productImage.deleteMany();
   await prisma.productVariant.deleteMany();
   await prisma.product.deleteMany();
@@ -218,8 +219,9 @@ async function main() {
 
   // Create all products with their variants and images
   for (const pd of productsData) {
-    const product = await prisma.product.create({
-      data: {
+    const product = await prisma.product.upsert({
+      where: { slug: pd.slug },
+      create: {
         title: pd.title,
         slug: pd.slug,
         description: pd.description,
@@ -238,6 +240,7 @@ async function main() {
         },
       },
       include: { variants: true, images: true },
+      update: { title: pd.title },
     });
     console.log(`✓ Created product: ${product.title}`);
   }
@@ -267,6 +270,40 @@ async function main() {
     });
     console.log("✓ Created sample order");
   }
+
+  // Create promo codes
+  await prisma.promoCode.createMany({
+    data: [
+      { code: "KOP10", type: "PERCENTAGE", value: 10, minPurchase: 100000, maxUses: 100 },
+      { code: "BIENVENIDO", type: "FIXED", value: 15000, minPurchase: 50000, maxUses: 500 },
+      { code: "SILVER20", type: "PERCENTAGE", value: 20, minPurchase: 200000 },
+    ],
+  });
+  console.log("✓ Created promo codes");
+
+  // Create product reviews
+  const products = await prisma.product.findMany({ select: { id: true, slug: true } });
+  const hoodie = products.find((p) => p.slug === "sivere-hoodie-mandala");
+  const memento = products.find((p) => p.slug === "memento-tee-gothic-cross");
+  const cargo = products.find((p) => p.slug === "cargo-pants-tactical-black");
+  const angel = products.find((p) => p.slug === "ascension-tee-angel-wings");
+  const geometry = products.find((p) => p.slug === "fiat-lux-tee-oracion");
+
+  const reviewData: { productId: string; authorName: string; rating: number; title?: string; comment: string }[] = [
+    { productId: hoodie!.id, authorName: "Carlos M.", rating: 5, title: "El mejor hoodie que he tenido", comment: "La calidad del tejido es impresionante, súper pesado y cálido. El diseño del mandala es una obra de arte. Llegó en 3 días a Bogotá." },
+    { productId: hoodie!.id, authorName: "Sofía L.", rating: 5, comment: "Compré el negro y queda perfecto. El fit oversizado es justo lo que necesitaba." },
+    { productId: hoodie!.id, authorName: "Andrés R.", rating: 4, title: "Muy bueno pero tardó", comment: "Calidad 10/10 pero el envío tardó 5 días. De resto todo perfecto." },
+    { productId: memento!.id, authorName: "Valentina P.", rating: 5, comment: "La gráfica gótica es brutal. Ya quiero el de Fiat Lux también." },
+    { productId: memento!.id, authorName: "Diego F.", rating: 4, comment: "Buena calidad, talla correcta. Recomendado para quienes buscan estilo oscuro." },
+    { productId: cargo!.id, authorName: "Juan D.", rating: 5, title: "Cargo perfecto", comment: "La tela ripstop es de primera. Los bolsillos son enormes, ideal para el día a día." },
+    { productId: angel!.id, authorName: "María G.", rating: 5, comment: "Las alas de ángel se ven increíbles. Mucho mejor en persona que en las fotos." },
+    { productId: geometry!.id, authorName: "Camilo H.", rating: 4, title: "Diseño único", comment: "La geometría sagrada es muy original. Siento que es una prenda de colección." },
+  ];
+
+  for (const r of reviewData) {
+    await prisma.review.create({ data: r });
+  }
+  console.log(`✓ Created ${reviewData.length} reviews`);
 
   console.log("\n🎉 Seed completed successfully!");
   console.log(`Admin: admin@kopstudio.com / admin123`);

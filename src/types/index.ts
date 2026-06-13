@@ -131,3 +131,13 @@ export interface Review {
   comment: string;
   date: string;
 }
+
+export interface ProductReview {
+  id: string
+  authorName: string
+  rating: number
+  title?: string | null
+  comment: string
+  isVerified: boolean
+  createdAt: string
+}

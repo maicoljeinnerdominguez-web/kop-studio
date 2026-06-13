@@ -43,6 +43,7 @@ model Product {
   category       Category        @relation(fields: [categoryId], references: [id])
   variants       ProductVariant[]
   images         ProductImage[]
+  reviews        Review[]
   createdAt      DateTime        @default(now())
 }
 
@@ -84,4 +85,31 @@ model OrderItem {
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
   quantity         Int
   priceAtPurchase  Float
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  authorName  String
+  rating      Int
+  title       String?
+  comment     String
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+}
+
+model PromoCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  type        String    // "PERCENTAGE" or "FIXED"
+  value       Int       // percentage (e.g. 15) or fixed amount in COP (e.g. 20000)
+  minPurchase Int?      // minimum purchase amount to apply
+  maxUses     Int?      // max total uses (null = unlimited)
+  usedCount   Int       @default(0)
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
 }

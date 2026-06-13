@@ -52,6 +52,7 @@ import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useCartStore } from '@/stores/useCartStore'
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
 import ProductCard from '@/components/product/ProductCard'
+import ProductReviews from '@/components/product/ProductReviews'
 import type { Product, ProductVariant } from '@/types'
 
 const SIZE_CHART = [
@@ -690,6 +691,9 @@ function ProductDetailInner({ slug }: { slug: string }) {
             </div>
           </section>
         )}
+
+        {/* Reviews */}
+        <ProductReviews productId={product.id} />
       </div>
     </main>
   )

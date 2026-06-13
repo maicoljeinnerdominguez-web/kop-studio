@@ -2,40 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Star, ChevronLeft, ChevronRight, Truck, RotateCcw, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, Truck, RotateCcw, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
 import ProductCard from '@/components/product/ProductCard'
-import type { Product, Category, Review } from '@/types'
+import type { Product, Category } from '@/types'
 
-const STATIC_REVIEWS: Review[] = [
-  {
-    id: '1',
-    name: 'Carlos M.',
-    rating: 5,
-    comment:
-      'La calidad de las prendas es increíble. El hoodie Sivere es mi pieza favorita, el tejido es super pesado y cómodo.',
-    date: 'Mayo 2026',
-  },
-  {
-    id: '2',
-    name: 'Valentina R.',
-    rating: 5,
-    comment:
-      'Compré el cargo tactical y llegó super rápido. La tela ripstop es de primera. Ya quiero comprar en otro color.',
-    date: 'Abril 2026',
-  },
-  {
-    id: '3',
-    name: 'Juan D.',
-    rating: 4,
-    comment:
-      'Las gráficas de las camisetas son arte. Se nota el trabajo artesanal. 100% recomendado para quienes buscan estilo único.',
-    date: 'Mayo 2026',
-  },
-]
+
 
 const CATEGORIES_DISPLAY: { name: string; slug: string; image: string }[] = [
   { name: 'New Merch', slug: 'new-merch', image: '/images/products/hoodie-mandala-2.png' },
@@ -141,12 +116,12 @@ export default function HomeView() {
         {/* Bottom gradient fade to black */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black to-transparent z-[6]" />
 
-        <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
+        <div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16">
           <motion.h1
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-widest uppercase"
+            className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-widest uppercase"
           >
             ASCENSIÓN COLECCIÓN 2026
           </motion.h1>
@@ -154,7 +129,7 @@ export default function HomeView() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
-            className="mt-4 text-2xl text-white/80 italic tracking-[0.2em]"
+            className="mt-4 text-lg sm:text-2xl text-white/80 italic tracking-[0.2em]"
           >
             Built in Silence
           </motion.p>
@@ -179,6 +154,11 @@ export default function HomeView() {
             </Button>
           </motion.div>
         </div>
+
+        {/* Scroll-down indicator (mobile) */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 sm:hidden">
+          <ChevronDown className="w-6 h-6 text-white/40 animate-bounce" />
+        </div>
       </section>
 
       {/* ===== TRUST / FEATURES STRIP ===== */}
@@ -190,7 +170,7 @@ export default function HomeView() {
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-neutral-400">
                 {feature.title}
               </span>
-              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500">
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 hidden sm:block">
                 {feature.desc}
               </span>
             </div>
@@ -210,7 +190,7 @@ export default function HomeView() {
         >
           Categorías
         </motion.h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 max-w-5xl mx-auto">
           {CATEGORIES_DISPLAY.map((cat, i) => (
             <motion.div
               key={cat.slug}
@@ -498,73 +478,7 @@ export default function HomeView() {
         </section>
       )}
 
-      {/* ===== REVIEWS SECTION ===== */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          <motion.h2
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={fadeInUp}
-            custom={0}
-            className="text-center text-sm font-bold uppercase tracking-widest text-white mb-12"
-          >
-            Lo Que Dicen Nuestros Clientes
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {STATIC_REVIEWS.map((review, i) => (
-              <motion.div
-                key={review.id}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                variants={fadeInUp}
-                custom={i}
-                className="relative rounded-md border border-[#1a1a1a] bg-[#0a0a0a] p-6 space-y-4"
-              >
-                {/* Decorative red quote mark */}
-                <span className="absolute top-3 left-5 text-6xl text-red-600/20 leading-none select-none font-serif">
-                  &ldquo;
-                </span>
 
-                {/* Avatar circle */}
-                <div className="flex items-center gap-3 pt-4">
-                  <div className="w-10 h-10 rounded-full bg-red-600/20 text-red-600 font-bold flex items-center justify-center text-sm shrink-0">
-                    {review.name.charAt(0)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`size-3.5 ${
-                          star <= review.rating
-                            ? 'fill-red-600 text-red-600'
-                            : 'fill-[#333] text-[#333]'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Review comment */}
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  {review.comment}
-                </p>
-
-                {/* Divider + name / date */}
-                <div className="border-t border-[#1a1a1a] mt-6 pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-white">
-                      {review.name}
-                    </span>
-                    <span className="text-xs text-neutral-500">{review.date}</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
     </main>
   )
 }

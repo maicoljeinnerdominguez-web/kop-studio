@@ -82,10 +82,10 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 focus-visible:ring-1 focus-visible:ring-red-600 focus-visible:ring-offset-1 focus-visible:ring-offset-black focus-visible:outline-none;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased selection:bg-red-600 selection:text-white;
   }
 }
 
@@ -96,6 +96,12 @@
 }
 .animate-marquee {
   animation: marquee 20s linear infinite;
+}
+
+/* Thin page scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
 }
 
 /* Custom scrollbar */

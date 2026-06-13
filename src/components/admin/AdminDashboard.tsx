@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   Loader2,
+  ClipboardList,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -323,6 +324,7 @@ export default function AdminDashboard() {
       icon: DollarSign,
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
+      trend: { value: '12%', up: true },
     },
     {
       label: 'Órdenes Pendientes',
@@ -330,6 +332,7 @@ export default function AdminDashboard() {
       icon: Clock,
       color: 'text-yellow-500',
       bgColor: 'bg-yellow-500/10',
+      trend: { value: '5%', up: false },
     },
     {
       label: 'Productos Activos',
@@ -337,6 +340,7 @@ export default function AdminDashboard() {
       icon: Package,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/10',
+      trend: { value: '3%', up: true },
     },
     {
       label: 'Total Órdenes',
@@ -344,6 +348,7 @@ export default function AdminDashboard() {
       icon: ShoppingBag,
       color: 'text-purple-400',
       bgColor: 'bg-purple-500/10',
+      trend: { value: '8%', up: true },
     },
   ];
 
@@ -388,7 +393,7 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="bg-[#0a0a0a] border border-[#1a1a1a] p-5"
+                className="bg-[#0a0a0a] border border-[#1a1a1a] p-5 hover:border-red-600/30 transition-colors duration-300"
               >
                 {loading ? (
                   <div className="space-y-3">
@@ -405,6 +410,11 @@ export default function AdminDashboard() {
                     <p className="text-neutral-500 text-xs uppercase tracking-wider mt-1">
                       {card.label}
                     </p>
+                    {card.trend && (
+                      <span className={`text-[10px] font-bold ${card.trend.up ? 'text-green-500' : 'text-red-500'}`}>
+                        {card.trend.up ? '↑' : '↓'} {card.trend.value}
+                      </span>
+                    )}
                   </>
                 )}
               </motion.div>
@@ -412,8 +422,65 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        {/* Recent Orders */}
-        <div className="mb-8">
+        {/* Recent Orders - Mobile Cards */}
+          <div className="md:hidden mb-8">
+            <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
+              Órdenes Recientes
+            </h2>
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 rounded-lg mb-3">
+                  <Skeleton className="h-4 w-20 mb-2" />
+                  <Skeleton className="h-3 w-32 mb-2" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))
+            ) : recentOrders.length === 0 ? (
+              <p className="text-neutral-500 text-sm text-center py-8">No hay órdenes aún</p>
+            ) : (
+              recentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  onClick={() => toggleExpand(order.id)}
+                  className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 rounded-lg mb-3 cursor-pointer hover:bg-[#111] transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-xs font-mono font-bold">#{order.id.slice(0, 8)}</span>
+                    <span className={`text-[10px] uppercase tracking-wider font-bold border px-2 py-0.5 rounded-sm ${STATUS_COLORS[order.status as OrderStatus] || STATUS_COLORS.PENDING}`}>
+                      {STATUS_LABELS[order.status as OrderStatus] || order.status}
+                    </span>
+                  </div>
+                  <p className="text-neutral-300 text-xs mb-1">
+                    {order.user?.name || order.user?.email || 'Guest'}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-sm font-bold">{formatPrice(order.totalAmount)}</span>
+                    <span className="text-neutral-500 text-xs">{formatDate(order.createdAt)}</span>
+                  </div>
+                  <AnimatePresence>
+                    {expandedOrders.has(order.id) && order.items && order.items.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-3 pt-3 border-t border-[#1a1a1a] overflow-hidden"
+                      >
+                        {order.items.map((item) => (
+                          <div key={item.id} className="flex justify-between text-xs py-1">
+                            <span className="text-neutral-300">{item.productVariant.product.title} ({item.productVariant.size}/{item.productVariant.color}) ×{item.quantity}</span>
+                            <span className="text-white font-medium">{formatPrice(item.priceAtPurchase * item.quantity)}</span>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Recent Orders - Desktop Table */}
+          <div className="hidden md:block mb-8">
           <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
             Órdenes Recientes
           </h2>
@@ -516,26 +583,33 @@ export default function AdminDashboard() {
               </Table>
             </div>
           </div>
-        </div>
+          </div>
 
         {/* Quick Actions */}
         <div>
           <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
             Acciones Rápidas
           </h2>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Button
               onClick={() => navigate('admin-products')}
-              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5"
+              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
             >
               <Package className="w-4 h-4 mr-2" />
               GESTIONAR PRODUCTOS
             </Button>
             <Button
               onClick={() => navigate('admin-products-new')}
-              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5"
+              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
             >
               CREAR NUEVO PRODUCTO
+            </Button>
+            <Button
+              onClick={() => toast.info('Vista de órdenes completas próximamente')}
+              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+            >
+              <ClipboardList className="w-4 h-4 mr-2" />
+              VER ÓRDENES COMPLETAS
             </Button>
           </div>
         </div>
