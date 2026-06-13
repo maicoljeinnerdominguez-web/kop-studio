@@ -346,7 +346,7 @@ export default function Footer() {
       <div className="border-t border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-2">
           <p className="text-center text-neutral-600 text-xs tracking-wide">
-            Diseñado con pasión en Bogotá, Colombia 🇨🇴
+            Diseñado con pasión en La Unión, Nariño, Colombia 🇨🇴
           </p>
           <p className="text-center text-neutral-600 text-xs tracking-wide">
             © 2026 KOP STUDIO. Todos los derechos reservados.

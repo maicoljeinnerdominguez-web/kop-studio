@@ -1,0 +1,968 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useRef, useState } from 'react'
+     4→import { motion, useScroll, useTransform } from 'framer-motion'
+     5→import { ChevronLeft, ChevronRight, ChevronDown, Truck, RotateCcw, ShieldCheck, Eye } from 'lucide-react'
+     6→import { Button } from '@/components/ui/button'
+     7→import { Skeleton } from '@/components/ui/skeleton'
+     8→import { useNavigationStore } from '@/stores/useNavigationStore'
+     9→import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
+    10→import ProductCard from '@/components/product/ProductCard'
+    11→import SocialFeed from '@/components/home/SocialFeed'
+    12→import type { Product, Category } from '@/types'
+    13→
+    14→/* ── Animated count-up hook ── */
+    15→function useCountUp(end: number, duration = 1200, startOnView = false) {
+    16→  const [display, setDisplay] = useState(0)
+    17→  const [started, setStarted] = useState(!startOnView)
+    18→  const ref = useRef<HTMLSpanElement>(null)
+    19→
+    20→  useEffect(() => {
+    21→    if (!startOnView) return
+    22→    const el = ref.current
+    23→    if (!el) return
+    24→    const obs = new IntersectionObserver(
+    25→      ([entry]) => { if (entry.isIntersecting) { setStarted(true); obs.disconnect() } },
+    26→      { threshold: 0.5 }
+    27→    )
+    28→    obs.observe(el)
+    29→    return () => obs.disconnect()
+    30→  }, [startOnView])
+    31→
+    32→  useEffect(() => {
+    33→    if (!started) return
+    34→    let startTime: number | null = null
+    35→    let raf: number
+    36→    const animate = (ts: number) => {
+    37→      if (!startTime) startTime = ts
+    38→      const progress = Math.min((ts - startTime) / duration, 1)
+    39→      setDisplay(Math.floor(progress * end))
+    40→      if (progress < 1) raf = requestAnimationFrame(animate)
+    41→    }
+    42→    raf = requestAnimationFrame(animate)
+    43→    return () => cancelAnimationFrame(raf)
+    44→  }, [started, end, duration])
+    45→
+    46→  return { display, ref }
+    47→}
+    48→
+    49→/* ── Trust feature item with count-up ── */
+    50→function TrustFeatureItem({ icon: Icon, title, desc, countTarget, countSuffix, isFirst }: {
+    51→  icon: typeof Truck; title: string; desc: string; countTarget: number; countSuffix: string; isFirst: boolean
+    52→}) {
+    53→  const { display, ref: countRef } = useCountUp(countTarget, 1000, true)
+    54→  return (
+    55→    <motion.div
+    56→      className="flex flex-col items-center gap-1"
+    57→      whileHover={{ scale: 1.08 }}
+    58→      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+    59→    >
+    60→      <div className={`p-2 rounded-full ${isFirst ? 'truck-pulse-ring' : ''}`}>
+    61→        <Icon className="size-5 text-red-600 mb-0.5 trust-feature-icon" />
+    62→      </div>
+    63→      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-neutral-400">
+    64→        {title}
+    65→      </span>
+    66→      <span ref={countRef} className="text-sm sm:text-base font-black text-red-500 count-up">
+    67→        {display}{countSuffix}
+    68→      </span>
+    69→      <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 hidden sm:block">
+    70→        {desc}
+    71→      </span>
+    72→    </motion.div>
+    73→  )
+    74→}
+    75→
+    76→
+    77→
+    78→const HERO_WORDS = ['ASCENSIÓN', 'COLECCIÓN', '2026']
+    79→
+    80→const brandStats = [
+    81→  { value: '100+', label: 'Diseños' },
+    82→  { value: '5K+', label: 'Clientes' },
+    83→  { value: '4.9★', label: 'Rating' },
+    84→]
+    85→
+    86→const CATEGORIES_DISPLAY: { name: string; slug: string; image: string }[] = [
+    87→  { name: 'New Merch', slug: 'new-merch', image: '/images/products/hoodie-mandala-2.png' },
+    88→  { name: 'Camisetas', slug: 'camisetas', image: '/images/products/tshirt-gothic-1.png' },
+    89→  { name: 'Inferiores', slug: 'inferiores', image: '/images/products/cargo-black-3.png' },
+    90→  { name: 'Accesorios', slug: 'accesorios', image: '/images/products/puffer-bag-5.png' },
+    91→]
+    92→
+    93→const fadeInUp = {
+    94→  hidden: { opacity: 0, y: 30 },
+    95→  visible: (i: number) => ({
+    96→    opacity: 1,
+    97→    y: 0,
+    98→    transition: { delay: i * 0.1, duration: 0.6, ease: 'easeOut' },
+    99→  }),
+   100→}
+   101→
+   102→const trustFeatures = [
+   103→  { icon: Truck, title: 'ENVÍO EXPRESS', desc: '2-4 días hábiles', countTarget: 24, countSuffix: 'H' },
+   104→  { icon: RotateCcw, title: 'DEVOLUCIONES', desc: '30 días para cambios', countTarget: 30, countSuffix: 'DÍAS' },
+   105→  { icon: ShieldCheck, title: 'COMPRA SEGURA', desc: 'Pago protegido', countTarget: 100, countSuffix: '%' },
+   106→]
+   107→
+   108→const TOTAL_LOOKS = [
+   109→  {
+   110→    name: 'LOOK URBANO',
+   111→    description: 'Hoodie + Cargo + Accesorio',
+   112→    images: [
+   113→      '/images/products/hoodie-cristo.png',
+   114→      '/images/products/cargo-black-3.png',
+   115→      '/images/products/puffer-bag-chain.png',
+   116→    ],
+   117→  },
+   118→  {
+   119→    name: 'LOOK DARK NIGHT',
+   120→    description: 'T-shirt Gótica + Jogger + Beanie',
+   121→    images: [
+   122→      '/images/products/tshirt-gothic-1.png',
+   123→      '/images/products/jogger-6.png',
+   124→      '/images/products/beanie-9.png',
+   125→    ],
+   126→  },
+   127→  {
+   128→    name: 'LOOK STREET ESSENTIAL',
+   129→    description: 'Track Jacket + T-shirt + Jogger',
+   130→    images: [
+   131→      '/images/products/track-jacket-10.png',
+   132→      '/images/products/tshirt-72mas1.png',
+   133→      '/images/products/jogger-basic.png',
+   134→    ],
+   135→  },
+   136→]
+   137→
+   138→export default function HomeView() {
+   139→  const navigate = useNavigationStore((s) => s.navigate)
+   140→  const recentlyViewed = useRecentlyViewedStore((s) => s.recentlyViewed)
+   141→  const [categories, setCategories] = useState<Category[]>([])
+   142→  const [newProducts, setNewProducts] = useState<Product[]>([])
+   143→  const [bestsellerProducts, setBestsellerProducts] = useState<Product[]>([])
+   144→  const [loadingCategories, setLoadingCategories] = useState(true)
+   145→  const [loadingNew, setLoadingNew] = useState(true)
+   146→  const [loadingBest, setLoadingBest] = useState(true)
+   147→
+   148→  const carouselRef1 = useRef<HTMLDivElement>(null)
+   149→  const carouselRef2 = useRef<HTMLDivElement>(null)
+   150→  const carouselRef3 = useRef<HTMLDivElement>(null)
+   151→  const heroRef = useRef<HTMLElement>(null)
+   152→
+   153→  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+   154→  const heroImageY = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
+   155→  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
+   156→
+   157→  useEffect(() => {
+   158→    fetch('/api/categories')
+   159→      .then((r) => r.json())
+   160→      .then((data: (Category & { _count: { products: number } })[]) => {
+   161→        setCategories(
+   162→          data.map((c) => ({ ...c, children: undefined, parent: undefined }))
+   163→        )
+   164→      })
+   165→      .catch(() => {})
+   166→      .finally(() => setLoadingCategories(false))
+   167→  }, [])
+   168→
+   169→  useEffect(() => {
+   170→    fetch('/api/products?new=true')
+   171→      .then((r) => r.json())
+   172→      .then((data: Product[]) => setNewProducts(data))
+   173→      .catch(() => {})
+   174→      .finally(() => setLoadingNew(false))
+   175→  }, [])
+   176→
+   177→  useEffect(() => {
+   178→    fetch('/api/products?bestseller=true')
+   179→      .then((r) => r.json())
+   180→      .then((data: Product[]) => setBestsellerProducts(data))
+   181→      .catch(() => {})
+   182→      .finally(() => setLoadingBest(false))
+   183→  }, [])
+   184→
+   185→  const scroll = (ref: React.RefObject<HTMLDivElement | null>, dir: 'left' | 'right') => {
+   186→    if (!ref.current) return
+   187→    const amount = ref.current.clientWidth * 0.7
+   188→    ref.current.scrollBy({
+   189→      left: dir === 'left' ? -amount : amount,
+   190→      behavior: 'smooth',
+   191→    })
+   192→  }
+   193→
+   194→  const getCategoryCount = (slug: string) => {
+   195→    const cat = categories.find((c) => c.slug === slug)
+   196→    return cat ? (cat as Category & { _count?: { products: number } })._count?.products : 0
+   197→  }
+   198→
+   199→  return (
+   200→    <main>
+   201→      {/* ===== HERO SECTION ===== */}
+   202→      <section ref={heroRef} className="relative min-h-[70vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden vignette-overlay">
+   203→        <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
+   204→          <img
+   205→            src="/images/brand/ascension-collection-2026.jpeg"
+   206→            alt="KOP STUDIO - Ascensión Colección 2026"
+   207→            className="w-full h-full object-cover object-top"
+   208→          />
+   209→          <div className="absolute inset-0 bg-black/50" />
+   210→        </motion.div>
+   211→
+   212→        {/* Grain/noise texture overlay */}
+   213→        <div
+   214→          className="absolute inset-0 z-[5] pointer-events-none opacity-[0.35] mix-blend-overlay"
+   215→          style={{
+   216→            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+   217→            backgroundRepeat: 'repeat',
+   218→            backgroundSize: '128px 128px',
+   219→          }}
+   220→        />
+   221→
+   222→        {/* Bottom gradient fade to black */}
+   223→        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black to-transparent z-[6]" />
+   224→
+   225→        <motion.div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16" style={{ opacity: heroOpacity }}>
+   226→          <h1 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-widest uppercase">
+   227→            {HERO_WORDS.map((word, i) => (
+   228→              <span key={word}>
+   229→                <motion.span
+   230→                  initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+   231→                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+   232→                  transition={{ duration: 0.8, delay: 0.1 + i * 0.15, ease: 'easeOut' }}
+   233→                  className="inline-block"
+   234→                >
+   235→                  {word}
+   236→                </motion.span>{' '}
+   237→              </span>
+   238→            ))}
+   239→          </h1>
+   240→
+   241→          {/* Red line that draws itself under the heading */}
+   242→          <motion.div
+   243→            initial={{ scaleX: 0 }}
+   244→            animate={{ scaleX: 1 }}
+   245→            transition={{ duration: 0.8, delay: 0.65, ease: 'easeOut' }}
+   246→            className="mt-4 mx-auto h-[2px] w-24 bg-[#dc2626] origin-center"
+   247→          />
+   248→
+   249→          <motion.p
+   250→            initial={{ opacity: 0, y: 20 }}
+   251→            animate={{ opacity: 1, y: 0 }}
+   252→            transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+   253→            className="mt-4 text-lg sm:text-2xl text-white/80 italic tracking-[0.2em]"
+   254→          >
+   255→            Built in Silence
+   256→          </motion.p>
+   257→
+   258→          {/* Drop date with pulsing red dot */}
+   259→          <motion.div
+   260→            initial={{ opacity: 0, y: 15 }}
+   261→            animate={{ opacity: 1, y: 0 }}
+   262→            transition={{ duration: 0.6, delay: 0.7, ease: 'easeOut' }}
+   263→            className="mt-4 flex items-center justify-center gap-2"
+   264→          >
+   265→            <span className="relative flex h-2 w-2">
+   266→              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75" />
+   267→              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600" />
+   268→            </span>
+   269→            <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-500">
+   270→              DROP: 2026
+   271→            </span>
+   272→          </motion.div>
+   273→
+   274→          {/* CTA buttons staggered */}
+   275→          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+   276→            <motion.div
+   277→              initial={{ opacity: 0, y: 20 }}
+   278→              animate={{ opacity: 1, y: 0 }}
+   279→              transition={{ duration: 0.8, delay: 0.85, ease: 'easeOut' }}
+   280→            >
+   281→              <div className="border-animated-gradient rounded-none">
+   282→                <Button
+   283→                  onClick={() => navigate('collection', { category: 'new-merch' })}
+   284→                  className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none relative z-10"
+   285→                >
+   286→                  Explorar Colección
+   287→                </Button>
+   288→              </div>
+   289→            </motion.div>
+   290→            <motion.div
+   291→              initial={{ opacity: 0, y: 20 }}
+   292→              animate={{ opacity: 1, y: 0 }}
+   293→              transition={{ duration: 0.8, delay: 1.0, ease: 'easeOut' }}
+   294→            >
+   295→              <div className="border-animated-gradient rounded-none">
+   296→                <Button
+   297→                  variant="outline"
+   298→                  onClick={() => navigate('collection', { category: 'bestsellers' })}
+   299→                  className="border-white text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none bg-transparent relative z-10"
+   300→                >
+   301→                  Ver Bestsellers
+   302→                </Button>
+   303→              </div>
+   304→            </motion.div>
+   305→          </div>
+   306→        </motion.div>
+   307→
+   308→        {/* Scroll-down indicator (mobile) */}
+   309→        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 sm:hidden">
+   310→          <ChevronDown className="w-6 h-6 text-white/40 animate-bounce" />
+   311→        </div>
+   312→      </section>
+   313→
+   314→      {/* ===== TRUST / FEATURES STRIP ===== */}
+   315→      <section className="border-y border-[#1a1a1a] py-4 px-4" style={{ background: 'linear-gradient(180deg, rgba(220,38,38,0.03) 0%, transparent 100%)' }}>
+   316→        <div className="max-w-5xl mx-auto flex justify-around items-center">
+   317→          {trustFeatures.map((feature, idx) => (
+   318→            <TrustFeatureItem
+   319→              key={feature.title}
+   320→              icon={feature.icon}
+   321→              title={feature.title}
+   322→              desc={feature.desc}
+   323→              countTarget={feature.countTarget}
+   324→              countSuffix={feature.countSuffix}
+   325→              isFirst={idx === 0}
+   326→            />
+   327→          ))}
+   328→        </div>
+   329→      </section>
+   330→
+   331→      {/* ===== TOTAL LOOKS SECTION ===== */}
+   332→      <section className="py-20 px-4 bg-black">
+   333→        <div className="max-w-7xl mx-auto">
+   334→          <motion.div
+   335→            initial="hidden"
+   336→            whileInView="visible"
+   337→            viewport={{ once: true, amount: 0.2 }}
+   338→            variants={fadeInUp}
+   339→            custom={0}
+   340→            className="text-center mb-12"
+   341→          >
+   342→            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-widest">
+   343→              <span className="gradient-text-red">Total Looks</span>
+   344→            </h2>
+   345→            {/* Glowing red line separator */}
+   346→            <div className="glowing-red-line mt-3 mx-auto w-40" />
+   347→            <p className="mt-4 text-sm text-neutral-500 tracking-wider">
+   348→              Outfits completos curados por KOP STUDIO
+   349→            </p>
+   350→          </motion.div>
+   351→
+   352→          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+   353→            {TOTAL_LOOKS.map((look, i) => (
+   354→              <motion.div
+   355→                key={look.name}
+   356→                initial="hidden"
+   357→                whileInView="visible"
+   358→                viewport={{ once: true, amount: 0.2 }}
+   359→                variants={fadeInUp}
+   360→                custom={i}
+   361→                className="parallax-card group relative overflow-hidden cursor-pointer border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 grain-texture"
+   362→                onClick={() => navigate('collection', { category: 'total-looks' })}
+   363→                onMouseMove={(e) => {
+   364→                  const rect = e.currentTarget.getBoundingClientRect()
+   365→                  const x = (e.clientX - rect.left) / rect.width - 0.5
+   366→                  const y = (e.clientY - rect.top) / rect.height - 0.5
+   367→                  e.currentTarget.style.transform = `translate(${x * 8}px, ${y * 8}px)`
+   368→                }}
+   369→                onMouseLeave={(e) => {
+   370→                  e.currentTarget.style.transform = 'translate(0, 0)'
+   371→                }}
+   372→              >
+   373→                {/* Collage grid of product thumbnails */}
+   374→                <div className="relative aspect-[4/5] bg-[#0a0a0a] grid grid-cols-2 grid-rows-2 gap-0.5 p-0.5">
+   375→                  {/* Main image - spans 2 rows on left */}
+   376→                  <div className="relative row-span-2 overflow-hidden">
+   377→                    <img
+   378→                      src={look.images[0]}
+   379→                      alt={`${look.name} - Principal`}
+   380→                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+   381→                    />
+   382→                  </div>
+   383→                  {/* Top right */}
+   384→                  <div className="relative overflow-hidden">
+   385→                    <img
+   386→                      src={look.images[1]}
+   387→                      alt={`${look.name} - Secundario`}
+   388→                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 delay-100"
+   389→                    />
+   390→                  </div>
+   391→                  {/* Bottom right */}
+   392→                  <div className="relative overflow-hidden">
+   393→                    <img
+   394→                      src={look.images[2]}
+   395→                      alt={`${look.name} - Accesorio`}
+   396→                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 delay-200"
+   397→                    />
+   398→                  </div>
+   399→
+   400→                  {/* Dark overlay gradient */}
+   401→                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-[2]" />
+   402→
+   403→                  {/* Content overlay at bottom */}
+   404→                  <div className="absolute bottom-0 left-0 right-0 p-5 z-[3]">
+   405→                    <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium mb-1">
+   406→                      KOP STUDIO
+   407→                    </p>
+   408→                    <h3 className="text-base sm:text-lg font-bold uppercase tracking-wider text-white">
+   409→                      {look.name}
+   410→                    </h3>
+   411→                    <p className="text-xs text-neutral-400 mt-1 tracking-wide">
+   412→                      {look.description}
+   413→                    </p>
+   414→                    <div className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white group-hover:text-red-500 transition-colors duration-300">
+   415→                      <Eye className="size-4" />
+   416→                      <span>Ver Look</span>
+   417→                    </div>
+   418→                  </div>
+   419→                </div>
+   420→
+   421→                {/* Red bottom border on hover */}
+   422→                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-[4]" />
+   423→              </motion.div>
+   424→            ))}
+   425→          </div>
+   426→
+   427→          <motion.div
+   428→            initial="hidden"
+   429→            whileInView="visible"
+   430→            viewport={{ once: true, amount: 0.2 }}
+   431→            variants={fadeInUp}
+   432→            custom={4}
+   433→            className="text-center mt-10"
+   434→          >
+   435→            <Button
+   436→              onClick={() => navigate('collection', { category: 'total-looks' })}
+   437→              className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-4 h-auto rounded-none"
+   438→            >
+   439→              Ver Todos los Looks
+   440→            </Button>
+   441→          </motion.div>
+   442→
+   443→          <div className="mt-12 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
+   444→        </div>
+   445→      </section>
+   446→
+   447→      {/* ===== CATEGORIES GRID ===== */}
+   448→      <section className="py-16 px-4">
+   449→        <motion.h2
+   450→          initial="hidden"
+   451→          whileInView="visible"
+   452→          viewport={{ once: true, amount: 0.3 }}
+   453→          variants={fadeInUp}
+   454→          custom={0}
+   455→          className="text-center text-sm font-bold uppercase tracking-widest text-white mb-10"
+   456→        >
+   457→          Categorías
+   458→        </motion.h2>
+   459→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 max-w-5xl mx-auto">
+   460→          {CATEGORIES_DISPLAY.map((cat, i) => (
+   461→            <motion.div
+   462→              key={cat.slug}
+   463→              initial="hidden"
+   464→              whileInView="visible"
+   465→              viewport={{ once: true, amount: 0.2 }}
+   466→              variants={fadeInUp}
+   467→              custom={i}
+   468→              onClick={() => navigate('collection', { category: cat.slug })}
+   469→              className="group cursor-pointer relative overflow-hidden rounded-md border border-[#1a1a1a] hover:border-transparent hover:border-b-red-600 border-b-0 transition-colors duration-300 hover-scale"
+   470→              style={{ borderBottom: '2px solid transparent' }}
+   471→            >
+   472→              <div className="aspect-[3/4] overflow-hidden bg-[#0a0a0a]">
+   473→                <img
+   474→                  src={cat.image}
+   475→                  alt={cat.name}
+   476→                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+   477→                />
+   478→                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+   479→              </div>
+   480→              <div className="absolute inset-0 flex flex-col items-center justify-end pb-6">
+   481→                <h3 className="text-white text-sm font-bold uppercase tracking-wider">
+   482→                  {cat.name}
+   483→                </h3>
+   484→                {loadingCategories ? (
+   485→                  <Skeleton className="h-3 w-12 mt-1 bg-[#333]" />
+   486→                ) : (
+   487→                  <p className="text-white/60 text-xs mt-0.5">
+   488→                    {getCategoryCount(cat.slug)} productos
+   489→                  </p>
+   490→                )}
+   491→              </div>
+   492→              {/* Red bottom border on hover */}
+   493→              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+   494→            </motion.div>
+   495→          ))}
+   496→        </div>
+   497→      </section>
+   498→
+   499→      {/* ===== LO NUEVO CAROUSEL ===== */}
+   500→      <section className="py-16 px-4">
+   501→        <div className="max-w-7xl mx-auto">
+   502→          <div className="flex items-center justify-between mb-6">
+   503→            <div className="flex items-center gap-4">
+   504→              <div className="relative">
+   505→                <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   506→                  <span className="gradient-text-red">Lo Nuevo</span>
+   507→                </h2>
+   508→                <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
+   509→              </div>
+   510→              {!loadingNew && newProducts.length > 0 && (
+   511→                <button
+   512→                  onClick={() => navigate('collection', { category: 'new-merch' })}
+   513→                  className="text-xs tracking-wider text-neutral-500 hover:text-red-500 transition-colors uppercase"
+   514→                >
+   515→                  Ver Todos &rarr;
+   516→                </button>
+   517→              )}
+   518→            </div>
+   519→            <div className="flex items-center gap-2">
+   520→              <button
+   521→                onClick={() => scroll(carouselRef1, 'left')}
+   522→                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   523→                aria-label="Anterior"
+   524→              >
+   525→                <ChevronLeft className="size-4 text-white" />
+   526→              </button>
+   527→              <button
+   528→                onClick={() => scroll(carouselRef1, 'right')}
+   529→                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   530→                aria-label="Siguiente"
+   531→              >
+   532→                <ChevronRight className="size-4 text-white" />
+   533→              </button>
+   534→            </div>
+   535→          </div>
+   536→
+   537→          {loadingNew ? (
+   538→            <div className="flex gap-4 overflow-hidden">
+   539→              {[...Array(4)].map((_, i) => (
+   540→                <div key={i} className="min-w-[260px] sm:min-w-[280px]">
+   541→                  <Skeleton className="aspect-[3/4] w-full bg-[#111] rounded-md" />
+   542→                </div>
+   543→              ))}
+   544→            </div>
+   545→          ) : newProducts.length === 0 ? (
+   546→            <p className="text-gray-500 text-sm text-center py-12">
+   547→              No hay productos nuevos disponibles
+   548→            </p>
+   549→          ) : (
+   550→            <div
+   551→              ref={carouselRef1}
+   552→              className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2"
+   553→              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+   554→            >
+   555→              {newProducts.map((product, i) => (
+   556→                <div
+   557→                  key={product.id}
+   558→                  className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
+   559→                >
+   560→                  <ProductCard product={product} index={i} />
+   561→                </div>
+   562→              ))}
+   563→            </div>
+   564→          )}
+   565→
+   566→          {/* Subtle divider */}
+   567→          {!loadingNew && newProducts.length > 0 && (
+   568→            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
+   569→          )}
+   570→        </div>
+   571→      </section>
+   572→
+   573→      {/* ===== BEST SELLERS CAROUSEL ===== */}
+   574→      <section className="py-16 px-4">
+   575→        <div className="max-w-7xl mx-auto">
+   576→          <div className="flex items-center justify-between mb-6">
+   577→            <div className="flex items-center gap-4">
+   578→              <div className="relative">
+   579→                <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   580→                  <span className="gradient-text-red">Best Sellers</span>
+   581→                </h2>
+   582→                <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
+   583→              </div>
+   584→              {!loadingBest && bestsellerProducts.length > 0 && (
+   585→                <button
+   586→                  onClick={() => navigate('collection', { category: 'bestsellers' })}
+   587→                  className="text-xs tracking-wider text-neutral-500 hover:text-red-500 transition-colors uppercase"
+   588→                >
+   589→                  Ver Todos &rarr;
+   590→                </button>
+   591→              )}
+   592→            </div>
+   593→            <div className="flex items-center gap-2">
+   594→              <button
+   595→                onClick={() => scroll(carouselRef2, 'left')}
+   596→                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   597→                aria-label="Anterior"
+   598→              >
+   599→                <ChevronLeft className="size-4 text-white" />
+   600→              </button>
+   601→              <button
+   602→                onClick={() => scroll(carouselRef2, 'right')}
+   603→                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   604→                aria-label="Siguiente"
+   605→              >
+   606→                <ChevronRight className="size-4 text-white" />
+   607→              </button>
+   608→            </div>
+   609→          </div>
+   610→
+   611→          {loadingBest ? (
+   612→            <div className="flex gap-4 overflow-hidden">
+   613→              {[...Array(4)].map((_, i) => (
+   614→                <div key={i} className="min-w-[260px] sm:min-w-[280px]">
+   615→                  <Skeleton className="aspect-[3/4] w-full bg-[#111] rounded-md" />
+   616→                </div>
+   617→              ))}
+   618→            </div>
+   619→          ) : bestsellerProducts.length === 0 ? (
+   620→            <p className="text-gray-500 text-sm text-center py-12">
+   621→              No hay best sellers disponibles
+   622→            </p>
+   623→          ) : (
+   624→            <div
+   625→              ref={carouselRef2}
+   626→              className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
+   627→              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+   628→            >
+   629→              {bestsellerProducts.map((product, i) => (
+   630→                <div
+   631→                  key={product.id}
+   632→                  className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
+   633→                >
+   634→                  <ProductCard product={product} index={i} />
+   635→                </div>
+   636→              ))}
+   637→            </div>
+   638→          )}
+   639→
+   640→          {/* Subtle divider */}
+   641→          {!loadingBest && bestsellerProducts.length > 0 && (
+   642→            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
+   643→          )}
+   644→        </div>
+   645→      </section>
+   646→
+   647→      {/* ===== BRAND IDENTITY / LOGOS SECTION ===== */}
+   648→      <section className="bg-[#0a0a0a] py-20 px-4 overflow-hidden">
+   649→        <div className="max-w-6xl mx-auto">
+   650→          <motion.div
+   651→            initial="hidden"
+   652→            whileInView="visible"
+   653→            viewport={{ once: true, amount: 0.2 }}
+   654→            variants={fadeInUp}
+   655→            custom={0}
+   656→            className="text-center mb-14"
+   657→          >
+   658→            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-widest">
+   659→              <span className="gradient-text-red">Nuestra Identidad</span>
+   660→            </h2>
+   661→            <div className="glowing-red-line mt-3 mx-auto w-40" />
+   662→            <p className="mt-4 text-sm text-neutral-500 tracking-wider">
+   663→              Símbolos que definen a KOP STUDIO
+   664→            </p>
+   665→          </motion.div>
+   666→
+   667→          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+   668→            {/* Memento Vivere */}
+   669→            <motion.div
+   670→              initial="hidden"
+   671→              whileInView="visible"
+   672→              viewport={{ once: true, amount: 0.2 }}
+   673→              variants={fadeInUp}
+   674→              custom={0}
+   675→              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+   676→            >
+   677→              <img
+   678→                src="/images/brand/memento-vivere.jpeg"
+   679→                alt="Memento Vivere"
+   680→                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+   681→                loading="lazy"
+   682→              />
+   683→              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+   684→              <div className="absolute bottom-4 left-4 right-4">
+   685→                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Lema</p>
+   686→                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">Memento Vivere</p>
+   687→                <p className="text-neutral-500 text-[10px] mt-0.5 italic">&quot;Recuerda vivir&quot;</p>
+   688→              </div>
+   689→            </motion.div>
+   690→
+   691→            {/* KOP Monogram */}
+   692→            <motion.div
+   693→              initial="hidden"
+   694→              whileInView="visible"
+   695→              viewport={{ once: true, amount: 0.2 }}
+   696→              variants={fadeInUp}
+   697→              custom={1}
+   698→              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+   699→            >
+   700→              <img
+   701→                src="/images/brand/kop-monogram.jpeg"
+   702→                alt="KOP Monogram"
+   703→                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+   704→                loading="lazy"
+   705→              />
+   706→              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+   707→              <div className="absolute bottom-4 left-4 right-4">
+   708→                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Monograma</p>
+   709→                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">KOP</p>
+   710→                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Identidad caligráfica</p>
+   711→              </div>
+   712→            </motion.div>
+   713→
+   714→            {/* 72+1 */}
+   715→            <motion.div
+   716→              initial="hidden"
+   717→              whileInView="visible"
+   718→              viewport={{ once: true, amount: 0.2 }}
+   719→              variants={fadeInUp}
+   720→              custom={2}
+   721→              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+   722→            >
+   723→              <img
+   724→                src="/images/brand/72-plus-1.jpeg"
+   725→                alt="72+1"
+   726→                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+   727→                loading="lazy"
+   728→              />
+   729→              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+   730→              <div className="absolute bottom-4 left-4 right-4">
+   731→                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Símbolo</p>
+   732→                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">72+1</p>
+   733→                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Cruz & corona</p>
+   734→              </div>
+   735→            </motion.div>
+   736→
+   737→            {/* Praying Figure */}
+   738→            <motion.div
+   739→              initial="hidden"
+   740→              whileInView="visible"
+   741→              viewport={{ once: true, amount: 0.2 }}
+   742→              variants={fadeInUp}
+   743→              custom={3}
+   744→              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+   745→            >
+   746→              <img
+   747→                src="/images/brand/praying-figure-pink.jpeg"
+   748→                alt="Figura Orante"
+   749→                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+   750→                loading="lazy"
+   751→              />
+   752→              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+   753→              <div className="absolute bottom-4 left-4 right-4">
+   754→                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Arte</p>
+   755→                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">Oración</p>
+   756→                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Fe & resistencia</p>
+   757→              </div>
+   758→            </motion.div>
+   759→
+   760→            {/* Hooded Crown of Thorns */}
+   761→            <motion.div
+   762→              initial="hidden"
+   763→              whileInView="visible"
+   764→              viewport={{ once: true, amount: 0.2 }}
+   765→              variants={fadeInUp}
+   766→              custom={4}
+   767→              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+   768→            >
+   769→              <img
+   770→                src="/images/brand/hooded-crown-thorns.jpeg"
+   771→                alt="Corona de Espinas"
+   772→                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+   773→                loading="lazy"
+   774→              />
+   775→              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+   776→              <div className="absolute bottom-4 left-4 right-4">
+   777→                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Icono</p>
+   778→                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">Corona de Espinas</p>
+   779→                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Sacrificio & gloria</p>
+   780→              </div>
+   781→            </motion.div>
+   782→
+   783→            {/* Brand Collage */}
+   784→            <motion.div
+   785→              initial="hidden"
+   786→              whileInView="visible"
+   787→              viewport={{ once: true, amount: 0.2 }}
+   788→              variants={fadeInUp}
+   789→              custom={5}
+   790→              className="group relative overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 aspect-[4/5] bg-black"
+   791→            >
+   792→              <img
+   793→                src="/images/brand/brand-collage.jpeg"
+   794→                alt="KOP STUDIO Brand Identity"
+   795→                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+   796→                loading="lazy"
+   797→              />
+   798→              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+   799→              <div className="absolute bottom-4 left-4 right-4">
+   800→                <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium">Colección</p>
+   801→                <p className="text-white text-sm font-bold uppercase tracking-wider mt-0.5">Brand Collage</p>
+   802→                <p className="text-neutral-500 text-[10px] mt-0.5 italic">Todo en uno</p>
+   803→              </div>
+   804→            </motion.div>
+   805→          </div>
+   806→        </div>
+   807→      </section>
+   808→
+   809→      {/* ===== BRAND STORY SECTION ===== */}
+   810→      <section className="bg-[#0a0a0a] py-20 px-4 border-t border-[#1a1a1a]">
+   811→        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+   812→          {/* Left: Brand images - two stacked */}
+   813→          <motion.div
+   814→            initial="hidden"
+   815→            whileInView="visible"
+   816→            viewport={{ once: true, amount: 0.3 }}
+   817→            variants={fadeInUp}
+   818→            custom={0}
+   819→            className="flex flex-col gap-3"
+   820→          >
+   821→            <div className="overflow-hidden rounded-md">
+   822→              <img
+   823→                src="/images/brand/hooded-crown-thorns.jpeg"
+   824→                alt="KOP STUDIO - Icono Sagrado"
+   825→                className="w-full aspect-[4/3] object-cover grayscale hover:grayscale-0 transition-all duration-700"
+   826→                loading="lazy"
+   827→              />
+   828→            </div>
+   829→            <div className="grid grid-cols-2 gap-3">
+   830→              <div className="overflow-hidden rounded-md">
+   831→                <img
+   832→                  src="/images/brand/memento-vivere.jpeg"
+   833→                  alt="Memento Vivere"
+   834→                  className="w-full aspect-square object-cover grayscale hover:grayscale-0 transition-all duration-700"
+   835→                  loading="lazy"
+   836→                />
+   837→              </div>
+   838→              <div className="overflow-hidden rounded-md relative">
+   839→                <img
+   840→                  src="/images/brand/brand-collage.jpeg"
+   841→                  alt="KOP STUDIO"
+   842→                  className="w-full aspect-square object-cover grayscale hover:grayscale-0 transition-all duration-700"
+   843→                  loading="lazy"
+   844→                />
+   845→                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+   846→                  <span className="text-white text-3xl font-black uppercase tracking-widest" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>KOP</span>
+   847→                </div>
+   848→              </div>
+   849→            </div>
+   850→          </motion.div>
+   851→
+   852→          {/* Right: Brand text */}
+   853→          <motion.div
+   854→            initial="hidden"
+   855→            whileInView="visible"
+   856→            viewport={{ once: true, amount: 0.3 }}
+   857→            variants={fadeInUp}
+   858→            custom={1}
+   859→            className="flex flex-col gap-6"
+   860→          >
+   861→            <div className="flex items-center gap-3">
+   862→              <img
+   863→                src="/images/brand/kop-studio-text.jpeg"
+   864→                alt="KOP STUDIO"
+   865→                className="h-6 w-auto object-contain opacity-70"
+   866→              />
+   867→            </div>
+   868→            <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   869→              Built in Silence
+   870→            </h2>
+   871→            <p className="text-gray-300 leading-relaxed text-base">
+   872→              KOP STUDIO nació en las calles de Bogotá, donde la cultura urbana se
+   873→              encuentra con el arte. Cada prenda cuenta una historia de resistencia,
+   874→              identidad y estilo propio. No seguimos tendencias — las creamos.
+   875→            </p>
+   876→            <p className="text-gray-400 leading-relaxed text-sm">
+   877→              Nuestros símbolos — la corona de espinas, el &quot;Memento Vivere&quot;,
+   878→              el 72+1 — no son solo diseños. Son declaraciones de fe, poder y
+   879→              la búsqueda constante de la excelencia en cada detalle.
+   880→            </p>
+   881→            {/* Brand stats */}
+   882→            <div className="flex items-center gap-8 mt-2">
+   883→              {brandStats.map((stat, i) => (
+   884→                <motion.div
+   885→                  key={stat.label}
+   886→                  initial="hidden"
+   887→                  whileInView="visible"
+   888→                  viewport={{ once: true, amount: 0.3 }}
+   889→                  variants={fadeInUp}
+   890→                  custom={i + 2}
+   891→                  className="flex flex-col"
+   892→                >
+   893→                  <span className="text-xl font-bold text-red-600">{stat.value}</span>
+   894→                  <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">{stat.label}</span>
+   895→                </motion.div>
+   896→              ))}
+   897→            </div>
+   898→            <div>
+   899→              <Button
+   900→                variant="outline"
+   901→                onClick={() => navigate('collection')}
+   902→                className="border-white/30 text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-4 h-auto rounded-none bg-transparent transition-colors"
+   903→              >
+   904→                Ver Colección
+   905→              </Button>
+   906→            </div>
+   907→          </motion.div>
+   908→        </div>
+   909→      </section>
+   910→
+   911→      {/* ===== SOCIAL FEED / INSTAGRAM SECTION ===== */}
+   912→      <SocialFeed />
+   913→
+   914→      {/* ===== VISTOS RECIENTEMENTE CAROUSEL ===== */}
+   915→      {recentlyViewed.length >= 2 && (
+   916→        <section className="py-16 px-4">
+   917→          <div className="max-w-7xl mx-auto">
+   918→            <div className="flex items-center justify-between mb-6">
+   919→              <div className="flex items-center gap-4">
+   920→                <div className="relative">
+   921→                  <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   922→                    Vistos Recientemente
+   923→                  </h2>
+   924→                  <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
+   925→                </div>
+   926→              </div>
+   927→              <div className="flex items-center gap-2">
+   928→                <button
+   929→                  onClick={() => scroll(carouselRef3, 'left')}
+   930→                  className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   931→                  aria-label="Anterior"
+   932→                >
+   933→                  <ChevronLeft className="size-4 text-white" />
+   934→                </button>
+   935→                <button
+   936→                  onClick={() => scroll(carouselRef3, 'right')}
+   937→                  className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   938→                  aria-label="Siguiente"
+   939→                >
+   940→                  <ChevronRight className="size-4 text-white" />
+   941→                </button>
+   942→              </div>
+   943→            </div>
+   944→
+   945→            <div
+   946→              ref={carouselRef3}
+   947→              className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
+   948→              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+   949→            >
+   950→              {recentlyViewed.map((item, i) => (
+   951→                <div
+   952→                  key={item.id}
+   953→                  className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
+   954→                >
+   955→                  <ProductCard product={item as unknown as Product} index={i} />
+   956→                </div>
+   957→              ))}
+   958→            </div>
+   959→
+   960→            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
+   961→          </div>
+   962→        </section>
+   963→      )}
+   964→
+   965→
+   966→    </main>
+   967→  )
+   968→}

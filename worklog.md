@@ -1941,3 +1941,56 @@ Stage Summary:
 - All 4 bugs fixed with zero lint errors
 - Agent-browser QA confirmed: Total Loads shows "8 productos", Add Product navigates to "NUEVO PRODUCTO", no glitch/glow on hero
 - Admin back button now navigates to admin-dashboard (verified via production build test)
+
+---
+Task ID: bugfix-round2
+Agent: Main Agent
+Task: Fix 4 Issues - Admin Navigation, Hero Red Glow, Total Looks Connection, Location Update
+
+Work Log:
+- **Issue 1 (Bugs 1-3) - Admin Navigation Buttons Don't Work**: The `useNavigationStore` was wrapped with `persist` middleware that used `partialize: () => ({})`, meaning it persisted nothing but still triggered hydration/re-render issues with SSR. Removed the `persist` middleware entirely, making it a plain zustand store. This fixes the "AÑADIR NUEVO PRODUCTO" button, "Volver al Dashboard" button, and "Editar" (Pencil) button in AdminProducts.tsx.
+- **Issue 2 (Bug 4) - Hero Red Glow Effect**: Removed the `border-animated-gradient` wrapper divs around the two hero CTA buttons, which were creating an ugly red rotating gradient border. Replaced with clean `border border-white/30 hover:border-white` classes directly on the buttons. Also removed `relative z-10` since there's no pseudo-element overlay. Changed the pulsing `animate-ping` red dot to a simple static `<span className="w-2 h-2 rounded-full bg-red-600 inline-block" />`.
+- **Issue 3 (Bug 5) - Total Looks Products Not Connected**: Removed the hardcoded `TOTAL_LOOKS` array with mock data (3 fake looks with collage images). Added `totalLooksProducts` state and `loadingLooks` state. Added a `useEffect` to fetch `/api/products?active=true`. Replaced the static grid rendering with dynamic rendering of the first 3 products from the API, showing each product's primary image, title, and price. Added skeleton loading state and empty state message.
+- **Issue 4 - Update Location from Bogotá to La Unión, Nariño**: Updated 4 files:
+  - SocialProofNotification.tsx: "alguien en Bogotá" → "alguien en La Unión"
+  - HomeView.tsx: "las calles de Bogotá" → "las calles de La Unión, Nariño"
+  - Footer.tsx: "Diseñado con pasión en Bogotá, Colombia" → "Diseñado con pasión en La Unión, Nariño, Colombia"
+  - CheckoutView.tsx: DEPARTMENTS[0] from "Bogotá" to "Nariño", city placeholder from "Bogotá" to "La Unión"
+  - Kept "Banco de Bogotá" unchanged (it's a bank name, not a location)
+
+Stage Summary:
+- All 4 issues fixed, lint passes with zero errors
+- Dev server starts successfully, all API endpoints return 200
+- Navigation store is now a simple zustand store without hydration issues
+- Total Looks section now displays real products from the database
+- Hero section no longer has distracting red glow effects
+- All location references updated from Bogotá to La Unión, Nariño
+
+---
+Task ID: 7-bugfix
+Agent: Main Agent
+Task: Fix 5 reported bugs + update location to La Unión, Nariño
+
+Work Log:
+- Analyzed user-reported 5 bugs from conversation context
+- Identified Bug 1-3 root cause: `useNavigationStore` used `persist` middleware with `partialize: () => ({})` (persisting nothing) causing hydration/re-render issues that prevented admin navigation buttons from working
+- Fixed Bug 1-3: Removed `persist` middleware from `useNavigationStore.ts`, making it a plain zustand store
+- Identified Bug 4: Hero CTA buttons had `border-animated-gradient` class (rotating red conic gradient border) and `animate-ping` pulsing red dot, both causing distracting red visual effects near "ASCENSIÓN COLECCIÓN 2026" title
+- Fixed Bug 4: Removed `border-animated-gradient` wrapper divs from CTA buttons, replaced with clean `border border-white/30 hover:border-white`. Replaced `animate-ping` red dot with simple static dot
+- Identified Bug 5: "Total Looks" section on homepage used hardcoded `TOTAL_LOOKS` array with mock image collages, not connected to database. Clicking navigated to collection page which queried API but showed 0 products
+- Fixed Bug 5: Removed hardcoded `TOTAL_LOOKS` array, added `totalLooksProducts` state + `loadingLooks` state, added `useEffect` to fetch `/api/products?active=true`, renders first 3 real products with primary image/title/price
+- Fixed missing `formatPrice` function in HomeView.tsx (added function that formats COP currency)
+- Updated all "Bogotá" references to "La Unión, Nariño" in:
+  - `SocialProofNotification.tsx`: "alguien en Bogotá" → "alguien en La Unión"
+  - `HomeView.tsx`: "las calles de Bogotá" → "las calles de La Unión, Nariño"
+  - `Footer.tsx`: "Bogotá, Colombia" → "La Unión, Nariño, Colombia"
+  - `CheckoutView.tsx`: Department "Bogotá" → "Nariño", city placeholder "Bogotá" → "La Unión"
+  - Kept "Banco de Bogotá" unchanged (it's a bank name)
+- Verified all changes with SSR output analysis and lint check
+
+Stage Summary:
+- Files modified: `useNavigationStore.ts`, `HomeView.tsx`, `Footer.tsx`, `SocialProofNotification.tsx`, `CheckoutView.tsx`
+- All 5 user-reported bugs fixed
+- Location updated from Bogotá to La Unión, Nariño
+- Lint passes clean
+- SSR output confirms: no border-animated-gradient, no animate-ping, La Unión Nariño present, Bogotá absent

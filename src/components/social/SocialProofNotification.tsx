@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, ShoppingBag, X } from 'lucide-react'
 
 const MESSAGES = [
-  { text: 'alguien en Bogotá', action: 'acaba de comprar', product: 'Sivere Hoodie - Mandala Sacred', time: 'hace 2 min' },
+  { text: 'alguien en La Unión', action: 'acaba de comprar', product: 'Sivere Hoodie - Mandala Sacred', time: 'hace 2 min' },
   { text: 'personas viendo', product: 'Ascensión Tee - Angel Wings', count: 12 },
   { text: 'alguien en Medellín', action: 'agregó al carrito', product: 'Puffer Bag Urban - Chain Edition', time: 'hace 5 min' },
   { text: 'personas viendo', product: '72+1 Cargo Pants - Tactical Black', count: 8 },
@@ -31,7 +31,7 @@ export default function SocialProofNotification() {
 
     const initial = setTimeout(show, 8000)
 
-    let interval: ReturnType<typeof setInterval>
+    let interval: ReturnType<typeof setTimeout>
     const scheduleNext = () => {
       const delay = 20000 + Math.random() * 15000
       interval = setTimeout(() => {

@@ -65,7 +65,7 @@ type ContactData = z.infer<typeof contactSchema>;
 type AddressData = z.infer<typeof addressSchema>;
 
 const DEPARTMENTS = [
-  'Bogotá',
+  'Nariño',
   'Medellín',
   'Cali',
   'Barranquilla',
@@ -980,7 +980,7 @@ export default function CheckoutView() {
                         <Input
                           {...addressForm.register('city')}
                           className={darkInput}
-                          placeholder="Bogotá"
+                          placeholder="La Unión"
                           autoComplete="address-level2"
                         />
                         <AnimatePresence>
