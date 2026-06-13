@@ -71,13 +71,15 @@ export default function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="bg-black/80 mobile-menu-backdrop border-[#262626] w-72 sm:max-w-xs" style={{ animation: 'slideInLeft 0.3s ease-out' }}>
+                {/* Red accent line that animates down */}
+                <div className="mobile-menu-red-line" style={{ top: '60px', height: '0' }} />
                 <SheetHeader>
                   <SheetTitle className="text-white text-lg tracking-wider font-bold">
                     KOP STUDIO
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 mt-6 px-2">
-                  {NAV_LINKS.map((link) => (
+                  {NAV_LINKS.map((link, i) => (
                     <button
                       key={link.slug}
                       onClick={() => {
@@ -88,7 +90,8 @@ export default function Header() {
                         }
                         setMobileMenuOpen(false);
                       }}
-                      className="text-left text-sm text-neutral-300 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md tracking-wide uppercase font-medium flex items-center gap-2 mobile-menu-item"
+                      className="text-left text-sm text-neutral-300 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md tracking-wide uppercase font-medium flex items-center gap-2 mobile-menu-item mobile-menu-stagger"
+                      style={{ animationDelay: `${0.05 + i * 0.05}s` }}
                     >
                       {'icon' in link && link.icon && <link.icon className="size-4" />}
                       {link.label}
@@ -100,7 +103,8 @@ export default function Header() {
                       navigate('admin-dashboard');
                       setMobileMenuOpen(false);
                     }}
-                    className="text-left text-sm text-neutral-400 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md tracking-wide uppercase font-medium mobile-menu-item"
+                    className="text-left text-sm text-neutral-400 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md tracking-wide uppercase font-medium mobile-menu-item mobile-menu-stagger"
+                    style={{ animationDelay: `${0.05 + NAV_LINKS.length * 0.05}s` }}
                   >
                     Admin
                   </button>

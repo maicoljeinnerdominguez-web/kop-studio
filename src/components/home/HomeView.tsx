@@ -8,7 +8,70 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
 import ProductCard from '@/components/product/ProductCard'
+import SocialFeed from '@/components/home/SocialFeed'
 import type { Product, Category } from '@/types'
+
+/* ── Animated count-up hook ── */
+function useCountUp(end: number, duration = 1200, startOnView = false) {
+  const [display, setDisplay] = useState(0)
+  const [started, setStarted] = useState(!startOnView)
+  const ref = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (!startOnView) return
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setStarted(true); obs.disconnect() } },
+      { threshold: 0.5 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [startOnView])
+
+  useEffect(() => {
+    if (!started) return
+    let startTime: number | null = null
+    let raf: number
+    const animate = (ts: number) => {
+      if (!startTime) startTime = ts
+      const progress = Math.min((ts - startTime) / duration, 1)
+      setDisplay(Math.floor(progress * end))
+      if (progress < 1) raf = requestAnimationFrame(animate)
+    }
+    raf = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(raf)
+  }, [started, end, duration])
+
+  return { display, ref }
+}
+
+/* ── Trust feature item with count-up ── */
+function TrustFeatureItem({ icon: Icon, title, desc, countTarget, countSuffix, isFirst }: {
+  icon: typeof Truck; title: string; desc: string; countTarget: number; countSuffix: string; isFirst: boolean
+}) {
+  const { display, ref: countRef } = useCountUp(countTarget, 1000, true)
+  return (
+    <motion.div
+      className="flex flex-col items-center gap-1"
+      whileHover={{ scale: 1.08 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+    >
+      <div className={`p-2 rounded-full ${isFirst ? 'truck-pulse-ring' : ''}`}>
+        <Icon className="size-5 text-red-600 mb-0.5 trust-feature-icon" />
+      </div>
+      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-neutral-400">
+        {title}
+      </span>
+      <span ref={countRef} className="text-sm sm:text-base font-black text-red-500 count-up">
+        {display}{countSuffix}
+      </span>
+      <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 hidden sm:block">
+        {desc}
+      </span>
+    </motion.div>
+  )
+}
 
 
 
@@ -37,9 +100,9 @@ const fadeInUp = {
 }
 
 const trustFeatures = [
-  { icon: Truck, title: 'ENVÍO EXPRESS', desc: '2-4 días hábiles' },
-  { icon: RotateCcw, title: 'DEVOLUCIONES', desc: '30 días para cambios' },
-  { icon: ShieldCheck, title: 'COMPRA SEGURA', desc: 'Pago protegido' },
+  { icon: Truck, title: 'ENVÍO EXPRESS', desc: '2-4 días hábiles', countTarget: 24, countSuffix: 'H' },
+  { icon: RotateCcw, title: 'DEVOLUCIONES', desc: '30 días para cambios', countTarget: 30, countSuffix: 'DÍAS' },
+  { icon: ShieldCheck, title: 'COMPRA SEGURA', desc: 'Pago protegido', countTarget: 100, countSuffix: '%' },
 ]
 
 const TOTAL_LOOKS = [
@@ -136,7 +199,7 @@ export default function HomeView() {
   return (
     <main>
       {/* ===== HERO SECTION ===== */}
-      <section ref={heroRef} className="relative min-h-[70vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative min-h-[70vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden vignette-overlay">
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
           <img
             src="/images/hero/hero-main.png"
@@ -167,7 +230,8 @@ export default function HomeView() {
                   initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
                   animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                   transition={{ duration: 0.8, delay: 0.1 + i * 0.15, ease: 'easeOut' }}
-                  className="inline-block"
+                  className="inline-block text-glitch"
+                  data-text={word}
                 >
                   {word}
                 </motion.span>{' '}
@@ -215,25 +279,29 @@ export default function HomeView() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.85, ease: 'easeOut' }}
             >
-              <Button
-                onClick={() => navigate('collection', { category: 'new-merch' })}
-                className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none"
-              >
-                Explorar Colección
-              </Button>
+              <div className="border-animated-gradient rounded-none">
+                <Button
+                  onClick={() => navigate('collection', { category: 'new-merch' })}
+                  className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none relative z-10"
+                >
+                  Explorar Colección
+                </Button>
+              </div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.0, ease: 'easeOut' }}
             >
-              <Button
-                variant="outline"
-                onClick={() => navigate('collection', { category: 'bestsellers' })}
-                className="border-white text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none bg-transparent"
-              >
-                Ver Bestsellers
-              </Button>
+              <div className="border-animated-gradient rounded-none">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('collection', { category: 'bestsellers' })}
+                  className="border-white text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none bg-transparent relative z-10"
+                >
+                  Ver Bestsellers
+                </Button>
+              </div>
             </motion.div>
           </div>
         </motion.div>
@@ -248,22 +316,15 @@ export default function HomeView() {
       <section className="border-y border-[#1a1a1a] py-4 px-4" style={{ background: 'linear-gradient(180deg, rgba(220,38,38,0.03) 0%, transparent 100%)' }}>
         <div className="max-w-5xl mx-auto flex justify-around items-center">
           {trustFeatures.map((feature, idx) => (
-            <motion.div
+            <TrustFeatureItem
               key={feature.title}
-              className="flex flex-col items-center gap-1"
-              whileHover={{ scale: 1.08 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            >
-              <div className={`p-2 rounded-full ${idx === 0 ? 'truck-pulse-ring' : ''}`}>
-                <feature.icon className={`size-5 text-red-600 mb-0.5 trust-feature-icon`} />
-              </div>
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-neutral-400">
-                {feature.title}
-              </span>
-              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 hidden sm:block">
-                {feature.desc}
-              </span>
-            </motion.div>
+              icon={feature.icon}
+              title={feature.title}
+              desc={feature.desc}
+              countTarget={feature.countTarget}
+              countSuffix={feature.countSuffix}
+              isFirst={idx === 0}
+            />
           ))}
         </div>
       </section>
@@ -282,7 +343,8 @@ export default function HomeView() {
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-widest">
               <span className="gradient-text-red">Total Looks</span>
             </h2>
-            <div className="mt-3 mx-auto h-0.5 w-16 bg-[#dc2626]" />
+            {/* Glowing red line separator */}
+            <div className="glowing-red-line mt-3 mx-auto w-40" />
             <p className="mt-4 text-sm text-neutral-500 tracking-wider">
               Outfits completos curados por KOP STUDIO
             </p>
@@ -297,8 +359,17 @@ export default function HomeView() {
                 viewport={{ once: true, amount: 0.2 }}
                 variants={fadeInUp}
                 custom={i}
-                className="group relative overflow-hidden cursor-pointer border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300"
+                className="parallax-card group relative overflow-hidden cursor-pointer border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300 grain-texture"
                 onClick={() => navigate('collection', { category: 'total-looks' })}
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  const x = (e.clientX - rect.left) / rect.width - 0.5
+                  const y = (e.clientY - rect.top) / rect.height - 0.5
+                  e.currentTarget.style.transform = `translate(${x * 8}px, ${y * 8}px)`
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translate(0, 0)'
+                }}
               >
                 {/* Collage grid of product thumbnails */}
                 <div className="relative aspect-[4/5] bg-[#0a0a0a] grid grid-cols-2 grid-rows-2 gap-0.5 p-0.5">
@@ -328,10 +399,10 @@ export default function HomeView() {
                   </div>
 
                   {/* Dark overlay gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-[2]" />
 
                   {/* Content overlay at bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <div className="absolute bottom-0 left-0 right-0 p-5 z-[3]">
                     <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium mb-1">
                       KOP STUDIO
                     </p>
@@ -349,7 +420,7 @@ export default function HomeView() {
                 </div>
 
                 {/* Red bottom border on hover */}
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left z-[4]" />
               </motion.div>
             ))}
           </div>
@@ -639,6 +710,9 @@ export default function HomeView() {
           </motion.div>
         </div>
       </section>
+
+      {/* ===== SOCIAL FEED / INSTAGRAM SECTION ===== */}
+      <SocialFeed />
 
       {/* ===== VISTOS RECIENTEMENTE CAROUSEL ===== */}
       {recentlyViewed.length >= 2 && (

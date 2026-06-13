@@ -63,7 +63,8 @@ import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
 import { useCompareStore } from '@/stores/useCompareStore'
 import ProductCard from '@/components/product/ProductCard'
 import ProductReviews from '@/components/product/ProductReviews'
-import ImageLightbox from '@/components/product/ImageLightbox'
+import ProductLightbox from '@/components/product/ProductLightbox'
+import SizeQuizDialog from '@/components/product/SizeQuizDialog'
 import type { Product, ProductVariant } from '@/types'
 
 const SIZE_CHART = [
@@ -248,6 +249,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [sizeQuizOpen, setSizeQuizOpen] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
 
   useEffect(() => {
@@ -630,7 +632,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   )}
                 </h3>
                 <div className="flex items-center ml-auto">
-                  <span className="text-[11px] text-neutral-500 mr-1">¿No sabes tu talla?</span>
+                  <button
+                    onClick={() => setSizeQuizOpen(true)}
+                    className="text-[11px] text-neutral-500 mr-1 hover:text-red-500 transition-colors underline underline-offset-2 decoration-neutral-600 hover:decoration-red-500"
+                  >
+                    ¿No sabes tu talla?
+                  </button>
                   <SizeGuideDialog />
                 </div>
               </div>
@@ -925,8 +932,20 @@ function ProductDetailInner({ slug }: { slug: string }) {
         <ProductReviews productId={product.id} />
       </div>
 
-      {/* Image Lightbox */}
-      <ImageLightbox
+      {/* Size Quiz Dialog */}
+      <SizeQuizDialog
+        open={sizeQuizOpen}
+        onOpenChange={setSizeQuizOpen}
+        onSizeSelect={(size) => {
+          const variant = product.variants.find(
+            (v) => v.size === size && v.stockQuantity > 0 && (!effectiveColor || v.color === effectiveColor)
+          )
+          if (variant) setSelectedVariant(variant)
+        }}
+      />
+
+      {/* Product Lightbox */}
+      <ProductLightbox
         images={product.images.map((img) => ({ url: img.url, altText: img.altText }))}
         initialIndex={selectedImageIndex}
         open={lightboxOpen}

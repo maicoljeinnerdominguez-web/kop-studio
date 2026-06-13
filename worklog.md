@@ -1553,3 +1553,185 @@ KOP STUDIO is a mature, feature-rich dark gothic streetwear e-commerce SPA at ~9
 8. Size recommendation/fit finder quiz
 9. Instagram/TikTok feed integration on homepage
 10. Multi-language support (ES/EN)
+
+---
+Task ID: r5-features
+Agent: full-stack-developer subagent
+Task: Phase 5 - 3 New Features (ProductLightbox, SizeQuizDialog, SocialFeed)
+
+Work Log:
+- Created `/src/components/product/ProductLightbox.tsx` — Enhanced full-screen image lightbox with:
+  - useReducer-based state management for all lightbox state (currentIndex, scale, translate, dragging)
+  - Mouse wheel zoom (1x-3x) with automatic reset at 1x
+  - Pinch-to-zoom support for mobile (CSS transform scale)
+  - Drag-to-pan when zoomed in (mouse and touch)
+  - Double-click to toggle zoom (1x ↔ 2x)
+  - Thumbnail strip at bottom with red accent on active thumbnail
+  - Left/right arrow navigation with zoom reset
+  - Swipe gesture navigation on mobile (when not zoomed)
+  - Image counter display and zoom percentage indicator
+  - Close via X button, ESC key, or clicking backdrop
+  - Smooth framer-motion fade+scale open/close animation
+  - Dark theme: bg-black/95, white arrows, red accent thumbnails
+- Created `/src/components/product/SizeQuizDialog.tsx` — Multi-step size recommendation quiz:
+  - 4-step quiz flow: Gender → Height → Weight → Preferred Fit
+  - Step indicator with checkmark animation (matching checkout style)
+  - Height ranges: 1.50-1.60m through 1.80m+ (6 options)
+  - Weight ranges: 45-55kg through 80+kg (6 options)
+  - Fit options: Ajustado, Regular, Oversize with descriptions
+  - Simple size recommendation algorithm based on height/weight/fit/gender scoring
+  - Result screen with animated size badge and summary
+  - "COMPRAR ESTA TALLA" button selects recommended size and closes dialog
+  - Framer-motion slide animation between steps
+  - "Volver a empezar" option on result screen
+  - Dark theme with red accents throughout
+- Created `/src/components/home/SocialFeed.tsx` — Instagram-style social feed section:
+  - @KOPSTUDIO heading with Instagram icon
+  - "SÍGUENOS EN INSTAGRAM" subtitle
+  - 4-column (2-col mobile) grid of 8 product images in square aspect ratio
+  - Grayscale filter by default, color + scale(1.05) on hover
+  - Hover overlay with heart (likes) and comment icons with mock counts
+  - Instagram icon appears on hover (top-right corner)
+  - Staggered fade-in animation using framer-motion useInView + container variants
+  - "Seguir en Instagram" CTA button below grid
+  - Dark divider lines above and below section
+- Modified `/src/components/product/ProductDetailView.tsx`:
+  - Replaced ImageLightbox import with ProductLightbox
+  - Added SizeQuizDialog import
+  - Added sizeQuizOpen state
+  - Made "¿No sabes tu talla?" text clickable (opens SizeQuizDialog) with underline hover effect
+  - Added SizeQuizDialog component with onSizeSelect callback that auto-selects the recommended variant
+  - Replaced ImageLightbox usage with ProductLightbox
+- Modified `/src/components/home/HomeView.tsx`:
+  - Added SocialFeed import
+  - Added SocialFeed component after "NUESTRA HISTORIA" section (before "VISTOS RECIENTEMENTE")
+
+Stage Summary:
+- 3 new components created: ProductLightbox, SizeQuizDialog, SocialFeed
+- 2 existing components modified: ProductDetailView, HomeView
+- All lint errors resolved (0 errors)
+- No new AppView types needed (features are components, not routes)
+- Addresses priority recommendations #3 (pinch-to-zoom lightbox), #8 (size quiz), #9 (social feed)
+
+---
+Task ID: r5-styling
+Agent: frontend-styling-expert subagent
+Task: Styling polish round 5 — Deep styling enhancements
+
+Work Log:
+- Added 12 new CSS utility classes to globals.css: .vignette-overlay, .text-glitch, .border-animated-gradient, .perspective-card, .shine-follow, .step-check-draw, .breathing-pulse, .glass-top-edge, .hover-ripple, .parallax-card, .count-up, .grain-texture
+- Added @property --border-angle for conic-gradient rotation animation
+- Added mobile menu staggered slide-in animations (.mobile-menu-stagger, .mobile-menu-red-line)
+- Added .glowing-red-line separator with pulse animation
+
+**HomeView.tsx:**
+- Added .vignette-overlay to hero section for cinematic dark edge effect
+- Added .text-glitch class with data-text attribute to hero heading words (ASCENSIÓN, COLECCIÓN, 2026) for subtle clip-path glitch animation
+- Created useCountUp hook for animated number counting on IntersectionObserver trigger
+- Created TrustFeatureItem component with count-up display (24H, 30DÍAS, 100%) in trust strip
+- Wrapped hero CTA buttons in .border-animated-gradient containers for rotating conic gradient border effect
+- Replaced static red line with .glowing-red-line separator in Total Looks section
+- Added .parallax-card + .grain-texture to Total Looks cards with onMouseMove/Leave handlers for mouse-tracking translate
+
+**ProductCard.tsx:**
+- Added 3D tilt effect: perspective(1000px) + rotateX/rotateY based on mouse position
+- Added .perspective-card class on outer container
+- Added .shine-follow class on inner card div
+- Added dedicated .shine-follow-shine element positioned via JS on mouse move
+- Image container uses translateZ(20px) on hover via group-hover for 3D depth
+- Added cardRef, tiltStyle state, handleMouseMove/handleMouseLeave handlers
+
+**CheckoutView.tsx:**
+- Enhanced step transitions: increased slide distance (30→60px), added blur(4px) filter on exit, refined easing curve
+- Replaced Check icon with inline SVG + .step-check-draw class for animated path draw effect
+- Added .breathing-pulse class to active step indicator circle
+- Active step scale animation changed to [1, 1.1, 1] for pulse feel
+
+**Footer.tsx:**
+- Added .glass-top-edge class to footer element
+- Added 2px gradient red separator line (transparent→red→transparent) at top z-[3]
+- Added glass blur layer (backdrop-filter: blur(12px)) at top 16px
+- Added .hover-ripple class to all footer navigation links (shop + info)
+
+**Header.tsx:**
+- Added .mobile-menu-red-line element that animates from height:0 to 100%
+- Added .mobile-menu-stagger class to all mobile menu items with incremental animationDelay (0.05s per item)
+- Admin button also staggered with delay after all nav links
+- Blur backdrop already present via .mobile-menu-backdrop
+
+Stage Summary:
+- 6 files modified: globals.css, HomeView.tsx, ProductCard.tsx, CheckoutView.tsx, Footer.tsx, Header.tsx
+- All changes pass `bun run lint` with 0 errors
+- 12+ new CSS utility classes added for reuse across the application
+- Visible enhancements: cinematic vignette, glitch text, animated counters, rotating gradient borders, parallax cards, 3D tilt product cards, breathing pulse checkout, glass morphism footer, staggered mobile menu
+
+---
+Task ID: r5-main
+Agent: Main Agent
+Task: Cron Review Round 5 — QA, Bug Fix, Styling, New Features
+
+## Current Project Status Assessment
+KOP STUDIO e-commerce is at ~9.7/10 polish. 5 build phases + 5 enhancement rounds complete. 14 view components, 7 Zustand stores, 10+ API routes, 8 Prisma models.
+
+## Completed Modifications
+
+### 1. BUG FIX: Missing useRef Import (CRITICAL)
+- **Root cause**: Styling subagent added `useRef` usage in ProductCard.tsx (for 3D tilt `cardRef`) but forgot to include it in the import statement
+- **Fix**: Added `useRef` to the import line: `import { useState, useEffect, useRef } from 'react'`
+- **Impact**: Without this fix, the entire React app crashed on hydration with "useRef is not defined" — a blank white page
+
+### 2. QA Testing (Pre-Development)
+- Homepage: all sections rendering (hero, total looks, categories, new products, bestsellers, brand story, social feed, footer)
+- Collection view: filters, chips, product count working
+- Cart drawer: opens with empty state
+- Admin dashboard: orders table, stats, quick actions, status management
+- Search command palette: opens via button click and Cmd+K (confirmed functional via JS eval)
+- All API routes returning 200
+- Zero lint errors
+
+### 3. Styling Enhancements (via subagent)
+- 12 new CSS utility classes in globals.css (vignette-overlay, text-glitch, border-animated-gradient, perspective-card, shine-follow, step-check-draw, breathing-pulse, glass-top-edge, hover-ripple, parallax-card, count-up, grain-texture)
+- HomeView: cinematic vignette on hero, glitch text animation on heading, animated count-up numbers (24H, 30DÍAS, 100%) in trust strip, rotating gradient border on CTA buttons, glowing red line separator, parallax mouse-tracking on Total Looks cards, grain texture overlay
+- ProductCard: 3D tilt effect (perspective + rotateX/rotateY based on mouse position), mouse-following shine sweep, translateZ(20px) depth on image hover
+- CheckoutView: enhanced slide transitions (60px + blur), SVG checkmark draw animation, breathing pulse on active step
+- Footer: glass morphism top edge (backdrop-blur), gradient red separator, hover ripple on links
+- Header: staggered slide-in mobile menu items, red accent line animation, blur backdrop
+
+### 4. New Features (via subagent)
+- **ProductLightbox**: Full-screen image viewer with mouse wheel zoom (1x-3x), pinch-to-zoom, drag-to-pan, double-click toggle, thumbnail strip, swipe navigation, image counter, ESC/click-to-close
+- **SizeQuizDialog**: 4-step quiz (Gender → Height → Weight → Fit preference) with size recommendation algorithm, animated step transitions, "COMPRAR ESTA TALLA" auto-select button, dark theme with red accents
+- **SocialFeed**: Instagram-style grid section (@KOPSTUDIO) with 8 product images, grayscale-to-color hover, heart/comment icons with mock counts, staggered fade-in animation, "Seguir en Instagram" CTA
+
+### 5. Bug Fix Verification
+- Post-fix: fresh browser session loads cleanly, all 6 homepage h2 sections confirmed via DOM query
+- "SÍGUENOS EN INSTAGRAM" confirmed present in DOM
+- Footer confirmed present
+- Zero console errors on clean load
+- Zero lint errors
+
+## Verification Results
+- ESLint: 0 errors, 0 warnings
+- Dev Server: 200 OK on all routes
+- API Routes: All returning 200
+- JS Console: Zero errors on clean page load (post-fix)
+- Screenshots: r5-qa-home.png, r5-qa-pdp.png, r5-qa-collection.png, r5-qa-admin.png, r5-qa-search.png, r5-qa-after-fixes.png, r5-qa-fix-verification.png, r5-final-homepage.png
+
+## Unresolved Issues / Risks
+- HMR (Hot Module Replacement) can cause transient React hook order errors when files are modified by external agents — resolved by full page reload
+- Agent-browser clicks on framer-motion wrapped elements don't always propagate (tool limitation)
+- Checkout payment processing still simulated
+- Admin passwords stored as plaintext (bcrypt comparison works but no auto-migration to hashed)
+- No image upload in admin product form
+- No real email notification system
+
+## Priority Recommendations for Next Phase
+1. Image upload functionality in admin product form
+2. "Total Looks" linked to actual bundled products with discount pricing
+3. Product image gallery with real zoom on mobile (verify lightbox works on mobile viewport)
+4. Email notification system for order confirmations
+5. Customer order history linked to email via session/auth
+6. Dark/light theme toggle
+7. Multi-language support (ES/EN)
+8. Product reviews from real API data on ProductCard (currently mock hash-based)
+9. Instagram/TikTok feed integration with real API
+10. Abandoned cart recovery with email/webhook

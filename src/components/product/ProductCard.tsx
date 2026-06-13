@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { Heart, ShoppingBag, Eye } from 'lucide-react'
@@ -46,6 +46,37 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
   const [quickViewOpen, setQuickViewOpen] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({})
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!cardRef.current) return
+    const rect = cardRef.current.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width
+    const y = (e.clientY - rect.top) / rect.height
+    const rotateX = (0.5 - y) * 12
+    const rotateY = (x - 0.5) * 12
+    setTiltStyle({
+      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+      transition: 'transform 0.1s ease-out',
+    })
+    // Move the shine follow element
+    const shineEl = cardRef.current.querySelector('.shine-follow-shine') as HTMLElement
+    if (shineEl) {
+      shineEl.style.transform = `translateX(${x * rect.width - 40}px)`
+    }
+  }
+
+  const handleMouseLeave = () => {
+    setTiltStyle({
+      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg)',
+      transition: 'transform 0.4s ease-out',
+    })
+    const shineEl = cardRef.current?.querySelector('.shine-follow-shine') as HTMLElement
+    if (shineEl) {
+      shineEl.style.transform = 'translateX(-100px)'
+    }
+  }
 
   // Auto-reset "added" state after 1.5 seconds
   useEffect(() => {
@@ -95,7 +126,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   return (
     <motion.div
-      className="product-card group cursor-pointer"
+      className="product-card group cursor-pointer perspective-card"
       variants={cardVariants}
       initial="hidden"
       whileInView="visible"
@@ -104,10 +135,22 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
       onClick={handleClick}
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
-      <div className={`relative overflow-hidden rounded-md bg-[#0a0a0a] border transition-all duration-300 hover:shadow-lg hover:shadow-red-600/20 ${wishlisted ? 'border-red-600/40' : 'border-[#1a1a1a] hover:border-red-600/50 hover:shadow-[0_0_15px_rgba(220,38,38,0.15)]'}`}>
+      <div
+        className={`relative overflow-hidden rounded-md bg-[#0a0a0a] border transition-all duration-300 hover:shadow-lg hover:shadow-red-600/20 shine-follow ${wishlisted ? 'border-red-600/40' : 'border-[#1a1a1a] hover:border-red-600/50 hover:shadow-[0_0_15px_rgba(220,38,38,0.15)]'}`}
+        style={tiltStyle}
+      >
+        {/* Shine-follow element */}
+        <div className="shine-follow-shine absolute top-0 left-0 w-20 h-full pointer-events-none z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{
+          background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 55%, transparent 70%)',
+          transform: 'translateX(-100px)',
+        }} />
+
         {/* Image container */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-[#111] shine-effect">
+        <div className="relative aspect-[3/4] overflow-hidden bg-[#111] shine-effect group-hover:[transform:translateZ(20px)] transition-transform duration-500" style={{ transformStyle: 'preserve-3d' }}>
           {!imageError && primaryImage ? (
             <img
               src={primaryImage.url}

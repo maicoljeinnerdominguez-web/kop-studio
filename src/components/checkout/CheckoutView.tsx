@@ -120,16 +120,18 @@ function StepIndicator({
                     isCompleted
                       ? 'bg-green-600 text-white'
                       : isActive
-                        ? 'bg-red-600 text-white'
+                        ? 'bg-red-600 text-white breathing-pulse'
                         : 'bg-[#1a1a1a] text-neutral-500 border border-[#333]'
                   }`}
                   animate={{
-                    scale: isActive ? 1.1 : 1,
+                    scale: isActive ? [1, 1.1, 1] : 1,
                   }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                 >
                   {isCompleted ? (
-                    <Check className="w-4 h-4" />
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12l5 5L20 7" className="step-check-draw" />
+                    </svg>
                   ) : (
                     <span className="text-[10px] sm:text-xs font-bold">{s.num}</span>
                   )}
@@ -816,10 +818,10 @@ export default function CheckoutView() {
               {step === 1 && (
                 <motion.div
                   key="step1"
-                  initial={{ opacity: 0, x: 30 }}
+                  initial={{ opacity: 0, x: 60 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.25 }}
+                  exit={{ opacity: 0, x: -60, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
                   className="bg-[#0a0a0a] border border-[#1a1a1a] p-6"
                 >
                   <StepHeading>Información de Contacto</StepHeading>
@@ -938,10 +940,10 @@ export default function CheckoutView() {
               {step === 2 && (
                 <motion.div
                   key="step2"
-                  initial={{ opacity: 0, x: 30 }}
+                  initial={{ opacity: 0, x: 60 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.25 }}
+                  exit={{ opacity: 0, x: -60, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
                   className="bg-[#0a0a0a] border border-[#1a1a1a] p-6"
                 >
                   <StepHeading>Dirección de Envío</StepHeading>
@@ -1108,10 +1110,10 @@ export default function CheckoutView() {
               {step === 3 && (
                 <motion.div
                   key="step3"
-                  initial={{ opacity: 0, x: 30 }}
+                  initial={{ opacity: 0, x: 60 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.25 }}
+                  exit={{ opacity: 0, x: -60, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
                   className="bg-[#0a0a0a] border border-[#1a1a1a] p-6"
                 >
                   <StepHeading>Método de Pago</StepHeading>

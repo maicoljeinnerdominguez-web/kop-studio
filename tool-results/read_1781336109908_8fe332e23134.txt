@@ -1,0 +1,697 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useEffect, useRef, useState } from 'react'
+     4→     4→import { motion, useScroll, useTransform } from 'framer-motion'
+     5→     5→import { ChevronLeft, ChevronRight, ChevronDown, Truck, RotateCcw, ShieldCheck, Eye } from 'lucide-react'
+     6→     6→import { Button } from '@/components/ui/button'
+     7→     7→import { Skeleton } from '@/components/ui/skeleton'
+     8→     8→import { useNavigationStore } from '@/stores/useNavigationStore'
+     9→     9→import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
+    10→    10→import ProductCard from '@/components/product/ProductCard'
+    11→    11→import type { Product, Category } from '@/types'
+    12→    12→
+    13→    13→
+    14→    14→
+    15→    15→const HERO_WORDS = ['ASCENSIÓN', 'COLECCIÓN', '2026']
+    16→    16→
+    17→    17→const brandStats = [
+    18→    18→  { value: '100+', label: 'Diseños' },
+    19→    19→  { value: '5K+', label: 'Clientes' },
+    20→    20→  { value: '4.9★', label: 'Rating' },
+    21→    21→]
+    22→    22→
+    23→    23→const CATEGORIES_DISPLAY: { name: string; slug: string; image: string }[] = [
+    24→    24→  { name: 'New Merch', slug: 'new-merch', image: '/images/products/hoodie-mandala-2.png' },
+    25→    25→  { name: 'Camisetas', slug: 'camisetas', image: '/images/products/tshirt-gothic-1.png' },
+    26→    26→  { name: 'Inferiores', slug: 'inferiores', image: '/images/products/cargo-black-3.png' },
+    27→    27→  { name: 'Accesorios', slug: 'accesorios', image: '/images/products/puffer-bag-5.png' },
+    28→    28→]
+    29→    29→
+    30→    30→const fadeInUp = {
+    31→    31→  hidden: { opacity: 0, y: 30 },
+    32→    32→  visible: (i: number) => ({
+    33→    33→    opacity: 1,
+    34→    34→    y: 0,
+    35→    35→    transition: { delay: i * 0.1, duration: 0.6, ease: 'easeOut' },
+    36→    36→  }),
+    37→    37→}
+    38→    38→
+    39→    39→const trustFeatures = [
+    40→    40→  { icon: Truck, title: 'ENVÍO EXPRESS', desc: '2-4 días hábiles' },
+    41→    41→  { icon: RotateCcw, title: 'DEVOLUCIONES', desc: '30 días para cambios' },
+    42→    42→  { icon: ShieldCheck, title: 'COMPRA SEGURA', desc: 'Pago protegido' },
+    43→    43→]
+    44→    44→
+    45→    45→const TOTAL_LOOKS = [
+    46→    46→  {
+    47→    47→    name: 'LOOK URBANO',
+    48→    48→    description: 'Hoodie + Cargo + Accesorio',
+    49→    49→    images: [
+    50→    50→      '/images/products/hoodie-cristo.png',
+    51→    51→      '/images/products/cargo-black-3.png',
+    52→    52→      '/images/products/puffer-bag-chain.png',
+    53→    53→    ],
+    54→    54→  },
+    55→    55→  {
+    56→    56→    name: 'LOOK DARK NIGHT',
+    57→    57→    description: 'T-shirt Gótica + Jogger + Beanie',
+    58→    58→    images: [
+    59→    59→      '/images/products/tshirt-gothic-1.png',
+    60→    60→      '/images/products/jogger-6.png',
+    61→    61→      '/images/products/beanie-9.png',
+    62→    62→    ],
+    63→    63→  },
+    64→    64→  {
+    65→    65→    name: 'LOOK STREET ESSENTIAL',
+    66→    66→    description: 'Track Jacket + T-shirt + Jogger',
+    67→    67→    images: [
+    68→    68→      '/images/products/track-jacket-10.png',
+    69→    69→      '/images/products/tshirt-72mas1.png',
+    70→    70→      '/images/products/jogger-basic.png',
+    71→    71→    ],
+    72→    72→  },
+    73→    73→]
+    74→    74→
+    75→    75→export default function HomeView() {
+    76→    76→  const navigate = useNavigationStore()
+    77→    77→  const recentlyViewed = useRecentlyViewedStore((s) => s.recentlyViewed)
+    78→    78→  const [categories, setCategories] = useState<Category[]>([])
+    79→    79→  const [newProducts, setNewProducts] = useState<Product[]>([])
+    80→    80→  const [bestsellerProducts, setBestsellerProducts] = useState<Product[]>([])
+    81→    81→  const [loadingCategories, setLoadingCategories] = useState(true)
+    82→    82→  const [loadingNew, setLoadingNew] = useState(true)
+    83→    83→  const [loadingBest, setLoadingBest] = useState(true)
+    84→    84→
+    85→    85→  const carouselRef1 = useRef<HTMLDivElement>(null)
+    86→    86→  const carouselRef2 = useRef<HTMLDivElement>(null)
+    87→    87→  const carouselRef3 = useRef<HTMLDivElement>(null)
+    88→    88→  const heroRef = useRef<HTMLElement>(null)
+    89→    89→
+    90→    90→  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+    91→    91→  const heroImageY = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
+    92→    92→  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
+    93→    93→
+    94→    94→  useEffect(() => {
+    95→    95→    fetch('/api/categories')
+    96→    96→      .then((r) => r.json())
+    97→    97→      .then((data: (Category & { _count: { products: number } })[]) => {
+    98→    98→        setCategories(
+    99→    99→          data.map((c) => ({ ...c, children: undefined, parent: undefined }))
+   100→   100→        )
+   101→   101→      })
+   102→   102→      .catch(() => {})
+   103→   103→      .finally(() => setLoadingCategories(false))
+   104→   104→  }, [])
+   105→   105→
+   106→   106→  useEffect(() => {
+   107→   107→    fetch('/api/products?new=true')
+   108→   108→      .then((r) => r.json())
+   109→   109→      .then((data: Product[]) => setNewProducts(data))
+   110→   110→      .catch(() => {})
+   111→   111→      .finally(() => setLoadingNew(false))
+   112→   112→  }, [])
+   113→   113→
+   114→   114→  useEffect(() => {
+   115→   115→    fetch('/api/products?bestseller=true')
+   116→   116→      .then((r) => r.json())
+   117→   117→      .then((data: Product[]) => setBestsellerProducts(data))
+   118→   118→      .catch(() => {})
+   119→   119→      .finally(() => setLoadingBest(false))
+   120→   120→  }, [])
+   121→   121→
+   122→   122→  const scroll = (ref: React.RefObject<HTMLDivElement | null>, dir: 'left' | 'right') => {
+   123→   123→    if (!ref.current) return
+   124→   124→    const amount = ref.current.clientWidth * 0.7
+   125→   125→    ref.current.scrollBy({
+   126→   126→      left: dir === 'left' ? -amount : amount,
+   127→   127→      behavior: 'smooth',
+   128→   128→    })
+   129→   129→  }
+   130→   130→
+   131→   131→  const getCategoryCount = (slug: string) => {
+   132→   132→    const cat = categories.find((c) => c.slug === slug)
+   133→   133→    return cat ? (cat as Category & { _count?: { products: number } })._count?.products : 0
+   134→   134→  }
+   135→   135→
+   136→   136→  return (
+   137→   137→    <main>
+   138→   138→      {/* ===== HERO SECTION ===== */}
+   139→   139→      <section ref={heroRef} className="relative min-h-[70vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden">
+   140→   140→        <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
+   141→   141→          <img
+   142→   142→            src="/images/hero/hero-main.png"
+   143→   143→            alt="KOP STUDIO - Ascensión Colección 2026"
+   144→   144→            className="w-full h-full object-cover"
+   145→   145→          />
+   146→   146→          <div className="absolute inset-0 bg-black/60" />
+   147→   147→        </motion.div>
+   148→   148→
+   149→   149→        {/* Grain/noise texture overlay */}
+   150→   150→        <div
+   151→   151→          className="absolute inset-0 z-[5] pointer-events-none opacity-[0.35] mix-blend-overlay"
+   152→   152→          style={{
+   153→   153→            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+   154→   154→            backgroundRepeat: 'repeat',
+   155→   155→            backgroundSize: '128px 128px',
+   156→   156→          }}
+   157→   157→        />
+   158→   158→
+   159→   159→        {/* Bottom gradient fade to black */}
+   160→   160→        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black to-transparent z-[6]" />
+   161→   161→
+   162→   162→        <motion.div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16 text-shadow-red" style={{ opacity: heroOpacity }}>
+   163→   163→          <h1 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-widest uppercase">
+   164→   164→            {HERO_WORDS.map((word, i) => (
+   165→   165→              <span key={word}>
+   166→   166→                <motion.span
+   167→   167→                  initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+   168→   168→                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+   169→   169→                  transition={{ duration: 0.8, delay: 0.1 + i * 0.15, ease: 'easeOut' }}
+   170→   170→                  className="inline-block"
+   171→   171→                >
+   172→   172→                  {word}
+   173→   173→                </motion.span>{' '}
+   174→   174→              </span>
+   175→   175→            ))}
+   176→   176→          </h1>
+   177→   177→
+   178→   178→          {/* Red line that draws itself under the heading */}
+   179→   179→          <motion.div
+   180→   180→            initial={{ scaleX: 0 }}
+   181→   181→            animate={{ scaleX: 1 }}
+   182→   182→            transition={{ duration: 0.8, delay: 0.65, ease: 'easeOut' }}
+   183→   183→            className="mt-4 mx-auto h-[2px] w-24 bg-[#dc2626] origin-center"
+   184→   184→          />
+   185→   185→
+   186→   186→          <motion.p
+   187→   187→            initial={{ opacity: 0, y: 20 }}
+   188→   188→            animate={{ opacity: 1, y: 0 }}
+   189→   189→            transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+   190→   190→            className="mt-4 text-lg sm:text-2xl text-white/80 italic tracking-[0.2em]"
+   191→   191→          >
+   192→   192→            Built in Silence
+   193→   193→          </motion.p>
+   194→   194→
+   195→   195→          {/* Drop date with pulsing red dot */}
+   196→   196→          <motion.div
+   197→   197→            initial={{ opacity: 0, y: 15 }}
+   198→   198→            animate={{ opacity: 1, y: 0 }}
+   199→   199→            transition={{ duration: 0.6, delay: 0.7, ease: 'easeOut' }}
+   200→   200→            className="mt-4 flex items-center justify-center gap-2"
+   201→   201→          >
+   202→   202→            <span className="relative flex h-2 w-2">
+   203→   203→              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75" />
+   204→   204→              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600" />
+   205→   205→            </span>
+   206→   206→            <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-500">
+   207→   207→              DROP: 2026
+   208→   208→            </span>
+   209→   209→          </motion.div>
+   210→   210→
+   211→   211→          {/* CTA buttons staggered */}
+   212→   212→          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+   213→   213→            <motion.div
+   214→   214→              initial={{ opacity: 0, y: 20 }}
+   215→   215→              animate={{ opacity: 1, y: 0 }}
+   216→   216→              transition={{ duration: 0.8, delay: 0.85, ease: 'easeOut' }}
+   217→   217→            >
+   218→   218→              <Button
+   219→   219→                onClick={() => navigate('collection', { category: 'new-merch' })}
+   220→   220→                className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none"
+   221→   221→              >
+   222→   222→                Explorar Colección
+   223→   223→              </Button>
+   224→   224→            </motion.div>
+   225→   225→            <motion.div
+   226→   226→              initial={{ opacity: 0, y: 20 }}
+   227→   227→              animate={{ opacity: 1, y: 0 }}
+   228→   228→              transition={{ duration: 0.8, delay: 1.0, ease: 'easeOut' }}
+   229→   229→            >
+   230→   230→              <Button
+   231→   231→                variant="outline"
+   232→   232→                onClick={() => navigate('collection', { category: 'bestsellers' })}
+   233→   233→                className="border-white text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-6 h-auto rounded-none bg-transparent"
+   234→   234→              >
+   235→   235→                Ver Bestsellers
+   236→   236→              </Button>
+   237→   237→            </motion.div>
+   238→   238→          </div>
+   239→   239→        </motion.div>
+   240→   240→
+   241→   241→        {/* Scroll-down indicator (mobile) */}
+   242→   242→        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 sm:hidden">
+   243→   243→          <ChevronDown className="w-6 h-6 text-white/40 animate-bounce" />
+   244→   244→        </div>
+   245→   245→      </section>
+   246→   246→
+   247→   247→      {/* ===== TRUST / FEATURES STRIP ===== */}
+   248→   248→      <section className="border-y border-[#1a1a1a] py-4 px-4" style={{ background: 'linear-gradient(180deg, rgba(220,38,38,0.03) 0%, transparent 100%)' }}>
+   249→   249→        <div className="max-w-5xl mx-auto flex justify-around items-center">
+   250→   250→          {trustFeatures.map((feature, idx) => (
+   251→   251→            <motion.div
+   252→   252→              key={feature.title}
+   253→   253→              className="flex flex-col items-center gap-1"
+   254→   254→              whileHover={{ scale: 1.08 }}
+   255→   255→              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+   256→   256→            >
+   257→   257→              <div className={`p-2 rounded-full ${idx === 0 ? 'truck-pulse-ring' : ''}`}>
+   258→   258→                <feature.icon className={`size-5 text-red-600 mb-0.5 trust-feature-icon`} />
+   259→   259→              </div>
+   260→   260→              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-neutral-400">
+   261→   261→                {feature.title}
+   262→   262→              </span>
+   263→   263→              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-500 hidden sm:block">
+   264→   264→                {feature.desc}
+   265→   265→              </span>
+   266→   266→            </motion.div>
+   267→   267→          ))}
+   268→   268→        </div>
+   269→   269→      </section>
+   270→   270→
+   271→   271→      {/* ===== TOTAL LOOKS SECTION ===== */}
+   272→   272→      <section className="py-20 px-4 bg-black">
+   273→   273→        <div className="max-w-7xl mx-auto">
+   274→   274→          <motion.div
+   275→   275→            initial="hidden"
+   276→   276→            whileInView="visible"
+   277→   277→            viewport={{ once: true, amount: 0.2 }}
+   278→   278→            variants={fadeInUp}
+   279→   279→            custom={0}
+   280→   280→            className="text-center mb-12"
+   281→   281→          >
+   282→   282→            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-widest">
+   283→   283→              <span className="gradient-text-red">Total Looks</span>
+   284→   284→            </h2>
+   285→   285→            <div className="mt-3 mx-auto h-0.5 w-16 bg-[#dc2626]" />
+   286→   286→            <p className="mt-4 text-sm text-neutral-500 tracking-wider">
+   287→   287→              Outfits completos curados por KOP STUDIO
+   288→   288→            </p>
+   289→   289→          </motion.div>
+   290→   290→
+   291→   291→          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+   292→   292→            {TOTAL_LOOKS.map((look, i) => (
+   293→   293→              <motion.div
+   294→   294→                key={look.name}
+   295→   295→                initial="hidden"
+   296→   296→                whileInView="visible"
+   297→   297→                viewport={{ once: true, amount: 0.2 }}
+   298→   298→                variants={fadeInUp}
+   299→   299→                custom={i}
+   300→   300→                className="group relative overflow-hidden cursor-pointer border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300"
+   301→   301→                onClick={() => navigate('collection', { category: 'total-looks' })}
+   302→   302→              >
+   303→   303→                {/* Collage grid of product thumbnails */}
+   304→   304→                <div className="relative aspect-[4/5] bg-[#0a0a0a] grid grid-cols-2 grid-rows-2 gap-0.5 p-0.5">
+   305→   305→                  {/* Main image - spans 2 rows on left */}
+   306→   306→                  <div className="relative row-span-2 overflow-hidden">
+   307→   307→                    <img
+   308→   308→                      src={look.images[0]}
+   309→   309→                      alt={`${look.name} - Principal`}
+   310→   310→                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+   311→   311→                    />
+   312→   312→                  </div>
+   313→   313→                  {/* Top right */}
+   314→   314→                  <div className="relative overflow-hidden">
+   315→   315→                    <img
+   316→   316→                      src={look.images[1]}
+   317→   317→                      alt={`${look.name} - Secundario`}
+   318→   318→                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 delay-100"
+   319→   319→                    />
+   320→   320→                  </div>
+   321→   321→                  {/* Bottom right */}
+   322→   322→                  <div className="relative overflow-hidden">
+   323→   323→                    <img
+   324→   324→                      src={look.images[2]}
+   325→   325→                      alt={`${look.name} - Accesorio`}
+   326→   326→                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 delay-200"
+   327→   327→                    />
+   328→   328→                  </div>
+   329→   329→
+   330→   330→                  {/* Dark overlay gradient */}
+   331→   331→                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+   332→   332→
+   333→   333→                  {/* Content overlay at bottom */}
+   334→   334→                  <div className="absolute bottom-0 left-0 right-0 p-5">
+   335→   335→                    <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium mb-1">
+   336→   336→                      KOP STUDIO
+   337→   337→                    </p>
+   338→   338→                    <h3 className="text-base sm:text-lg font-bold uppercase tracking-wider text-white">
+   339→   339→                      {look.name}
+   340→   340→                    </h3>
+   341→   341→                    <p className="text-xs text-neutral-400 mt-1 tracking-wide">
+   342→   342→                      {look.description}
+   343→   343→                    </p>
+   344→   344→                    <div className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white group-hover:text-red-500 transition-colors duration-300">
+   345→   345→                      <Eye className="size-4" />
+   346→   346→                      <span>Ver Look</span>
+   347→   347→                    </div>
+   348→   348→                  </div>
+   349→   349→                </div>
+   350→   350→
+   351→   351→                {/* Red bottom border on hover */}
+   352→   352→                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+   353→   353→              </motion.div>
+   354→   354→            ))}
+   355→   355→          </div>
+   356→   356→
+   357→   357→          <motion.div
+   358→   358→            initial="hidden"
+   359→   359→            whileInView="visible"
+   360→   360→            viewport={{ once: true, amount: 0.2 }}
+   361→   361→            variants={fadeInUp}
+   362→   362→            custom={4}
+   363→   363→            className="text-center mt-10"
+   364→   364→          >
+   365→   365→            <Button
+   366→   366→              onClick={() => navigate('collection', { category: 'total-looks' })}
+   367→   367→              className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-4 h-auto rounded-none"
+   368→   368→            >
+   369→   369→              Ver Todos los Looks
+   370→   370→            </Button>
+   371→   371→          </motion.div>
+   372→   372→
+   373→   373→          <div className="mt-12 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
+   374→   374→        </div>
+   375→   375→      </section>
+   376→   376→
+   377→   377→      {/* ===== CATEGORIES GRID ===== */}
+   378→   378→      <section className="py-16 px-4">
+   379→   379→        <motion.h2
+   380→   380→          initial="hidden"
+   381→   381→          whileInView="visible"
+   382→   382→          viewport={{ once: true, amount: 0.3 }}
+   383→   383→          variants={fadeInUp}
+   384→   384→          custom={0}
+   385→   385→          className="text-center text-sm font-bold uppercase tracking-widest text-white mb-10"
+   386→   386→        >
+   387→   387→          Categorías
+   388→   388→        </motion.h2>
+   389→   389→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 max-w-5xl mx-auto">
+   390→   390→          {CATEGORIES_DISPLAY.map((cat, i) => (
+   391→   391→            <motion.div
+   392→   392→              key={cat.slug}
+   393→   393→              initial="hidden"
+   394→   394→              whileInView="visible"
+   395→   395→              viewport={{ once: true, amount: 0.2 }}
+   396→   396→              variants={fadeInUp}
+   397→   397→              custom={i}
+   398→   398→              onClick={() => navigate('collection', { category: cat.slug })}
+   399→   399→              className="group cursor-pointer relative overflow-hidden rounded-md border border-[#1a1a1a] hover:border-transparent hover:border-b-red-600 border-b-0 transition-colors duration-300 hover-scale"
+   400→   400→              style={{ borderBottom: '2px solid transparent' }}
+   401→   401→            >
+   402→   402→              <div className="aspect-[3/4] overflow-hidden bg-[#0a0a0a]">
+   403→   403→                <img
+   404→   404→                  src={cat.image}
+   405→   405→                  alt={cat.name}
+   406→   406→                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+   407→   407→                />
+   408→   408→                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+   409→   409→              </div>
+   410→   410→              <div className="absolute inset-0 flex flex-col items-center justify-end pb-6">
+   411→   411→                <h3 className="text-white text-sm font-bold uppercase tracking-wider">
+   412→   412→                  {cat.name}
+   413→   413→                </h3>
+   414→   414→                {loadingCategories ? (
+   415→   415→                  <Skeleton className="h-3 w-12 mt-1 bg-[#333]" />
+   416→   416→                ) : (
+   417→   417→                  <p className="text-white/60 text-xs mt-0.5">
+   418→   418→                    {getCategoryCount(cat.slug)} productos
+   419→   419→                  </p>
+   420→   420→                )}
+   421→   421→              </div>
+   422→   422→              {/* Red bottom border on hover */}
+   423→   423→              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+   424→   424→            </motion.div>
+   425→   425→          ))}
+   426→   426→        </div>
+   427→   427→      </section>
+   428→   428→
+   429→   429→      {/* ===== LO NUEVO CAROUSEL ===== */}
+   430→   430→      <section className="py-16 px-4">
+   431→   431→        <div className="max-w-7xl mx-auto">
+   432→   432→          <div className="flex items-center justify-between mb-6">
+   433→   433→            <div className="flex items-center gap-4">
+   434→   434→              <div className="relative">
+   435→   435→                <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   436→   436→                  <span className="gradient-text-red">Lo Nuevo</span>
+   437→   437→                </h2>
+   438→   438→                <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
+   439→   439→              </div>
+   440→   440→              {!loadingNew && newProducts.length > 0 && (
+   441→   441→                <button
+   442→   442→                  onClick={() => navigate('collection', { category: 'new-merch' })}
+   443→   443→                  className="text-xs tracking-wider text-neutral-500 hover:text-red-500 transition-colors uppercase"
+   444→   444→                >
+   445→   445→                  Ver Todos &rarr;
+   446→   446→                </button>
+   447→   447→              )}
+   448→   448→            </div>
+   449→   449→            <div className="flex items-center gap-2">
+   450→   450→              <button
+   451→   451→                onClick={() => scroll(carouselRef1, 'left')}
+   452→   452→                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   453→   453→                aria-label="Anterior"
+   454→   454→              >
+   455→   455→                <ChevronLeft className="size-4 text-white" />
+   456→   456→              </button>
+   457→   457→              <button
+   458→   458→                onClick={() => scroll(carouselRef1, 'right')}
+   459→   459→                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   460→   460→                aria-label="Siguiente"
+   461→   461→              >
+   462→   462→                <ChevronRight className="size-4 text-white" />
+   463→   463→              </button>
+   464→   464→            </div>
+   465→   465→          </div>
+   466→   466→
+   467→   467→          {loadingNew ? (
+   468→   468→            <div className="flex gap-4 overflow-hidden">
+   469→   469→              {[...Array(4)].map((_, i) => (
+   470→   470→                <div key={i} className="min-w-[260px] sm:min-w-[280px]">
+   471→   471→                  <Skeleton className="aspect-[3/4] w-full bg-[#111] rounded-md" />
+   472→   472→                </div>
+   473→   473→              ))}
+   474→   474→            </div>
+   475→   475→          ) : newProducts.length === 0 ? (
+   476→   476→            <p className="text-gray-500 text-sm text-center py-12">
+   477→   477→              No hay productos nuevos disponibles
+   478→   478→            </p>
+   479→   479→          ) : (
+   480→   480→            <div
+   481→   481→              ref={carouselRef1}
+   482→   482→              className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2"
+   483→   483→              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+   484→   484→            >
+   485→   485→              {newProducts.map((product, i) => (
+   486→   486→                <div
+   487→   487→                  key={product.id}
+   488→   488→                  className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
+   489→   489→                >
+   490→   490→                  <ProductCard product={product} index={i} />
+   491→   491→                </div>
+   492→   492→              ))}
+   493→   493→            </div>
+   494→   494→          )}
+   495→   495→
+   496→   496→          {/* Subtle divider */}
+   497→   497→          {!loadingNew && newProducts.length > 0 && (
+   498→   498→            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
+   499→   499→          )}
+   500→   500→        </div>
+   501→   501→      </section>
+   502→   502→
+   503→   503→      {/* ===== BEST SELLERS CAROUSEL ===== */}
+   504→   504→      <section className="py-16 px-4">
+   505→   505→        <div className="max-w-7xl mx-auto">
+   506→   506→          <div className="flex items-center justify-between mb-6">
+   507→   507→            <div className="flex items-center gap-4">
+   508→   508→              <div className="relative">
+   509→   509→                <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   510→   510→                  <span className="gradient-text-red">Best Sellers</span>
+   511→   511→                </h2>
+   512→   512→                <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
+   513→   513→              </div>
+   514→   514→              {!loadingBest && bestsellerProducts.length > 0 && (
+   515→   515→                <button
+   516→   516→                  onClick={() => navigate('collection', { category: 'bestsellers' })}
+   517→   517→                  className="text-xs tracking-wider text-neutral-500 hover:text-red-500 transition-colors uppercase"
+   518→   518→                >
+   519→   519→                  Ver Todos &rarr;
+   520→   520→                </button>
+   521→   521→              )}
+   522→   522→            </div>
+   523→   523→            <div className="flex items-center gap-2">
+   524→   524→              <button
+   525→   525→                onClick={() => scroll(carouselRef2, 'left')}
+   526→   526→                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   527→   527→                aria-label="Anterior"
+   528→   528→              >
+   529→   529→                <ChevronLeft className="size-4 text-white" />
+   530→   530→              </button>
+   531→   531→              <button
+   532→   532→                onClick={() => scroll(carouselRef2, 'right')}
+   533→   533→                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   534→   534→                aria-label="Siguiente"
+   535→   535→              >
+   536→   536→                <ChevronRight className="size-4 text-white" />
+   537→   537→              </button>
+   538→   538→            </div>
+   539→   539→          </div>
+   540→   540→
+   541→   541→          {loadingBest ? (
+   542→   542→            <div className="flex gap-4 overflow-hidden">
+   543→   543→              {[...Array(4)].map((_, i) => (
+   544→   544→                <div key={i} className="min-w-[260px] sm:min-w-[280px]">
+   545→   545→                  <Skeleton className="aspect-[3/4] w-full bg-[#111] rounded-md" />
+   546→   546→                </div>
+   547→   547→              ))}
+   548→   548→            </div>
+   549→   549→          ) : bestsellerProducts.length === 0 ? (
+   550→   550→            <p className="text-gray-500 text-sm text-center py-12">
+   551→   551→              No hay best sellers disponibles
+   552→   552→            </p>
+   553→   553→          ) : (
+   554→   554→            <div
+   555→   555→              ref={carouselRef2}
+   556→   556→              className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
+   557→   557→              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+   558→   558→            >
+   559→   559→              {bestsellerProducts.map((product, i) => (
+   560→   560→                <div
+   561→   561→                  key={product.id}
+   562→   562→                  className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
+   563→   563→                >
+   564→   564→                  <ProductCard product={product} index={i} />
+   565→   565→                </div>
+   566→   566→              ))}
+   567→   567→            </div>
+   568→   568→          )}
+   569→   569→
+   570→   570→          {/* Subtle divider */}
+   571→   571→          {!loadingBest && bestsellerProducts.length > 0 && (
+   572→   572→            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
+   573→   573→          )}
+   574→   574→        </div>
+   575→   575→      </section>
+   576→   576→
+   577→   577→      {/* ===== BRAND STORY SECTION ===== */}
+   578→   578→      <section className="bg-[#0a0a0a] py-20 px-4">
+   579→   579→        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+   580→   580→          {/* Left: Brand image */}
+   581→   581→          <motion.div
+   582→   582→            initial="hidden"
+   583→   583→            whileInView="visible"
+   584→   584→            viewport={{ once: true, amount: 0.3 }}
+   585→   585→            variants={fadeInUp}
+   586→   586→            custom={0}
+   587→   587→            className="overflow-hidden rounded-md"
+   588→   588→          >
+   589→   589→            <img
+   590→   590→              src="/images/products/hoodie-mandala-2.png"
+   591→   591→              alt="KOP STUDIO - Nuestra Historia"
+   592→   592→              className="w-full aspect-[4/5] object-cover grayscale hover:grayscale-0 transition-all duration-700"
+   593→   593→            />
+   594→   594→          </motion.div>
+   595→   595→
+   596→   596→          {/* Right: Brand text */}
+   597→   597→          <motion.div
+   598→   598→            initial="hidden"
+   599→   599→            whileInView="visible"
+   600→   600→            viewport={{ once: true, amount: 0.3 }}
+   601→   601→            variants={fadeInUp}
+   602→   602→            custom={1}
+   603→   603→            className="flex flex-col gap-6"
+   604→   604→          >
+   605→   605→            <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   606→   606→              Nuestra Historia
+   607→   607→            </h2>
+   608→   608→            <p className="text-gray-300 leading-relaxed text-base">
+   609→   609→              KOP STUDIO nació en las calles de Bogotá, donde la cultura urbana se
+   610→   610→              encuentra con el arte. Cada prenda cuenta una historia de resistencia,
+   611→   611→              identidad y estilo propio. No seguimos tendencias — las creamos.
+   612→   612→            </p>
+   613→   613→            {/* Brand stats */}
+   614→   614→            <div className="flex items-center gap-8 mt-2">
+   615→   615→              {brandStats.map((stat, i) => (
+   616→   616→                <motion.div
+   617→   617→                  key={stat.label}
+   618→   618→                  initial="hidden"
+   619→   619→                  whileInView="visible"
+   620→   620→                  viewport={{ once: true, amount: 0.3 }}
+   621→   621→                  variants={fadeInUp}
+   622→   622→                  custom={i + 2}
+   623→   623→                  className="flex flex-col"
+   624→   624→                >
+   625→   625→                  <span className="text-xl font-bold text-red-600">{stat.value}</span>
+   626→   626→                  <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">{stat.label}</span>
+   627→   627→                </motion.div>
+   628→   628→              ))}
+   629→   629→            </div>
+   630→   630→            <div>
+   631→   631→              <Button
+   632→   632→                variant="outline"
+   633→   633→                onClick={() => navigate('home')}
+   634→   634→                className="border-white/30 text-white hover:bg-white hover:text-black text-xs font-bold uppercase tracking-wider px-8 py-4 h-auto rounded-none bg-transparent transition-colors"
+   635→   635→              >
+   636→   636→                Conócenos
+   637→   637→              </Button>
+   638→   638→            </div>
+   639→   639→          </motion.div>
+   640→   640→        </div>
+   641→   641→      </section>
+   642→   642→
+   643→   643→      {/* ===== VISTOS RECIENTEMENTE CAROUSEL ===== */}
+   644→   644→      {recentlyViewed.length >= 2 && (
+   645→   645→        <section className="py-16 px-4">
+   646→   646→          <div className="max-w-7xl mx-auto">
+   647→   647→            <div className="flex items-center justify-between mb-6">
+   648→   648→              <div className="flex items-center gap-4">
+   649→   649→                <div className="relative">
+   650→   650→                  <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   651→   651→                    Vistos Recientemente
+   652→   652→                  </h2>
+   653→   653→                  <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
+   654→   654→                </div>
+   655→   655→              </div>
+   656→   656→              <div className="flex items-center gap-2">
+   657→   657→                <button
+   658→   658→                  onClick={() => scroll(carouselRef3, 'left')}
+   659→   659→                  className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   660→   660→                  aria-label="Anterior"
+   661→   661→                >
+   662→   662→                  <ChevronLeft className="size-4 text-white" />
+   663→   663→                </button>
+   664→   664→                <button
+   665→   665→                  onClick={() => scroll(carouselRef3, 'right')}
+   666→   666→                  className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+   667→   667→                  aria-label="Siguiente"
+   668→   668→                >
+   669→   669→                  <ChevronRight className="size-4 text-white" />
+   670→   670→                </button>
+   671→   671→              </div>
+   672→   672→            </div>
+   673→   673→
+   674→   674→            <div
+   675→   675→              ref={carouselRef3}
+   676→   676→              className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
+   677→   677→              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+   678→   678→            >
+   679→   679→              {recentlyViewed.map((item, i) => (
+   680→   680→                <div
+   681→   681→                  key={item.id}
+   682→   682→                  className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
+   683→   683→                >
+   684→   684→                  <ProductCard product={item as unknown as Product} index={i} />
+   685→   685→                </div>
+   686→   686→              ))}
+   687→   687→            </div>
+   688→   688→
+   689→   689→            <div className="mt-10 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
+   690→   690→          </div>
+   691→   691→        </section>
+   692→   692→      )}
+   693→   693→
+   694→   694→
+   695→   695→    </main>
+   696→   696→  )
+   697→   697→}

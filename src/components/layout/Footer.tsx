@@ -102,7 +102,13 @@ export default function Footer() {
   const isDisabled = status === 'loading' || status === 'success';
 
   return (
-    <footer className="safe-area-bottom bg-[#0a0a0a] border-t border-[#262626] relative overflow-hidden">
+    <footer className="safe-area-bottom bg-[#0a0a0a] border-t border-[#262626] relative overflow-hidden glass-top-edge">
+      {/* Gradient red separator above footer */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-600 to-transparent z-[3]" />
+
+      {/* Glass blur layer at top */}
+      <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-[2]" style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }} />
+
       {/* Large KOP watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
         <span className="text-[8rem] font-black text-white/[0.02] tracking-tighter leading-none">KOP</span>
@@ -157,7 +163,7 @@ export default function Footer() {
                 <li key={link.slug}>
                   <button
                     onClick={() => navigate('collection', { category: link.slug })}
-                    className="text-neutral-400 hover:text-white text-sm transition-colors footer-link-hover"
+                    className="text-neutral-400 hover:text-white text-sm transition-colors footer-link-hover hover-ripple py-1 px-1 -mx-1 rounded-sm"
                   >
                     {link.label}
                   </button>
@@ -182,7 +188,7 @@ export default function Footer() {
                         navigate('home');
                       }
                     }}
-                    className="text-neutral-400 hover:text-white text-sm transition-colors footer-link-hover"
+                    className="text-neutral-400 hover:text-white text-sm transition-colors footer-link-hover hover-ripple py-1 px-1 -mx-1 rounded-sm"
                   >
                     {link.label}
                   </button>
