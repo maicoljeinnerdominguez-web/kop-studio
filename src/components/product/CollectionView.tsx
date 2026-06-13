@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { SlidersHorizontal, X, ShoppingBag } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { SlidersHorizontal, X, ShoppingBag, ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -162,6 +162,83 @@ function FilterSidebar({
   )
 }
 
+function ActiveFilterChips({
+  selectedSizes,
+  toggleSize,
+  priceRange,
+  setPriceRange,
+  sortBy,
+  setSortBy,
+  onClear,
+}: {
+  selectedSizes: string[]
+  toggleSize: (size: string) => void
+  priceRange: string
+  setPriceRange: (v: string) => void
+  sortBy: string
+  setSortBy: (v: string) => void
+  onClear: () => void
+}) {
+  const chips: { label: string; onRemove: () => void }[] = []
+
+  selectedSizes.forEach((size) => {
+    chips.push({
+      label: `Talla: ${size}`,
+      onRemove: () => toggleSize(size),
+    })
+  })
+
+  if (priceRange !== 'all') {
+    const range = PRICE_RANGES.find((r) => r.value === priceRange)
+    if (range) {
+      chips.push({
+        label: `Precio: ${range.label}`,
+        onRemove: () => setPriceRange('all'),
+      })
+    }
+  }
+
+  if (sortBy !== 'newest') {
+    const sortLabels: Record<string, string> = {
+      'price-asc': 'Menor precio',
+      'price-desc': 'Mayor precio',
+      bestseller: 'Bestsellers',
+    }
+    chips.push({
+      label: `Orden: ${sortLabels[sortBy] || sortBy}`,
+      onRemove: () => setSortBy('newest'),
+    })
+  }
+
+  if (chips.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4">
+      {chips.map((chip, i) => (
+        <div
+          key={i}
+          className="bg-[#1a1a1a] border border-[#333] text-xs text-neutral-300 px-3 py-1.5 rounded-sm flex items-center gap-2"
+        >
+          <span>{chip.label}</span>
+          <button
+            onClick={chip.onRemove}
+            className="text-neutral-500 hover:text-white transition-colors"
+            aria-label={`Remove filter: ${chip.label}`}
+          >
+            <X className="size-3" />
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={onClear}
+        className="text-xs text-red-600 hover:text-red-500 uppercase tracking-wider font-medium transition-colors"
+      >
+        Limpiar todo
+      </button>
+    </div>
+  )
+}
+
 function CollectionInner({ categorySlug }: { categorySlug: string }) {
   const navigate = useNavigationStore((s) => s.navigate)
   const [allProducts, setAllProducts] = useState<Product[]>([])
@@ -170,6 +247,8 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
   const [priceRange, setPriceRange] = useState('all')
   const [sortBy, setSortBy] = useState<string>('newest')
   const [filterOpen, setFilterOpen] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const url = categorySlug
@@ -181,6 +260,19 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
       .catch(() => setAllProducts([]))
       .finally(() => setLoading(false))
   }, [categorySlug])
+
+  // Scroll to top detection for mobile floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
   const toggleSize = useCallback((size: string) => {
     setSelectedSizes((prev) =>
@@ -194,7 +286,7 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
     setSortBy('newest')
   }, [])
 
-  const activeFilters =
+  const hasActiveFilters =
     selectedSizes.length > 0 || priceRange !== 'all' || sortBy !== 'newest'
 
   const filteredProducts = useMemo(() => {
@@ -242,13 +334,13 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
       'new-merch': 'New Merch',
       bestsellers: 'Bestsellers',
       'total-looks': 'Total Looks',
-      camisetas: 'Camisetas',
-      inferiores: 'Inferiores',
-      basicos: 'Básicos',
-      accesorios: 'Accesorios',
-      descuentos: 'Descuentos',
+      camisetas: 'CAMISETAS',
+      inferiores: 'INFERIORES',
+      basicos: 'BÁSICOS',
+      accesorios: 'ACCESORIOS',
+      descuentos: 'DESCUENTOS',
     }
-    return map[categorySlug] || categorySlug
+    return map[categorySlug] || categorySlug.toUpperCase()
   }, [categorySlug])
 
   const filterContent = (
@@ -265,7 +357,7 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
   )
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen" ref={scrollContainerRef}>
       {/* Breadcrumb */}
       <div className="border-b border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -291,17 +383,22 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Header with product count */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white uppercase tracking-wider">
               {categoryName}
+              {!loading && (
+                <span className="text-neutral-500 font-normal text-lg sm:text-xl ml-2">
+                  ({filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''})
+                </span>
+              )}
             </h1>
           </div>
 
           {/* Mobile filter button */}
           <div className="flex items-center gap-3 lg:hidden">
-            {activeFilters && (
+            {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -320,16 +417,30 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
                   className="border border-[#333] text-white gap-2 rounded-none bg-transparent hover:border-white"
                 >
                   <SlidersHorizontal className="size-4" />
-                  FILTRAR{!loading && ` (${filteredProducts.length} productos)`}
+                  FILTRAR{!loading && ` (${filteredProducts.length})`}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 bg-[#0a0a0a] border-[#262626] p-6">
+              <SheetContent
+                side="left"
+                className="w-80 bg-[#0a0a0a] border-[#262626] p-6 flex flex-col"
+              >
                 <SheetHeader>
                   <SheetTitle className="text-white text-sm uppercase tracking-widest">
                     Filtros
                   </SheetTitle>
                 </SheetHeader>
-                <div className="mt-6">{filterContent}</div>
+                <div className="mt-6 flex-1 overflow-y-auto">
+                  {filterContent}
+                </div>
+                {/* Sticky apply button */}
+                <div className="sticky bottom-0 pt-4 pb-2 bg-[#0a0a0a] border-t border-[#262626]">
+                  <button
+                    onClick={() => setFilterOpen(false)}
+                    className="bg-red-600 text-white h-11 w-full uppercase text-xs font-bold tracking-widest hover:bg-red-700 transition-colors"
+                  >
+                    Aplicar Filtros
+                  </button>
+                </div>
               </SheetContent>
             </Sheet>
           </div>
@@ -372,6 +483,17 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
               </div>
             ) : (
               <>
+                {/* Active filter chips */}
+                <ActiveFilterChips
+                  selectedSizes={selectedSizes}
+                  toggleSize={toggleSize}
+                  priceRange={priceRange}
+                  setPriceRange={setPriceRange}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  onClear={clearFilters}
+                />
+
                 {/* Product count header */}
                 <div className="border-t border-[#1a1a1a] pt-6 mb-6">
                   <div className="flex items-center justify-between">
@@ -390,6 +512,17 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
           </div>
         </div>
       </div>
+
+      {/* Scroll to top button - mobile only */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="md:hidden fixed bottom-4 right-4 z-50 w-10 h-10 bg-[#1a1a1a] border border-[#333] text-white rounded-full flex items-center justify-center hover:border-white transition-colors"
+          aria-label="Volver arriba"
+        >
+          <ArrowUp className="size-4" />
+        </button>
+      )}
     </main>
   )
 }

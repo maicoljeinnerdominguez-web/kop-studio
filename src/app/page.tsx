@@ -2,8 +2,8 @@
 
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { AnimatePresence, motion } from 'framer-motion';
-import { lazy, Suspense } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { MessageCircle, ArrowUp } from 'lucide-react';
 import AnnouncementBar from '@/components/layout/AnnouncementBar';
 import Header from '@/components/layout/Header';
 import CartDrawer from '@/components/layout/CartDrawer';
@@ -64,6 +64,15 @@ function ViewRouter() {
 export default function Page() {
   const { currentView } = useNavigationStore();
   const isAdmin = currentView.startsWith('admin');
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -90,6 +99,25 @@ export default function Page() {
         >
           <MessageCircle className="size-6 text-white" fill="white" />
         </a>
+      )}
+
+      {/* Back to Top - only on non-admin views */}
+      {!isAdmin && (
+        <AnimatePresence>
+          {showBackToTop && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              aria-label="Volver arriba"
+              className="fixed bottom-6 left-6 z-50 w-11 h-11 bg-[#1a1a1a] border border-[#333] hover:bg-white hover:text-black text-white rounded-full flex items-center justify-center transition-colors duration-200"
+            >
+              <ArrowUp className="size-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft,
@@ -11,11 +11,29 @@ import {
   Truck,
   RotateCcw,
   Shield,
+  Ruler,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import {
   Accordion,
   AccordionContent,
@@ -32,14 +50,131 @@ import {
 } from '@/components/ui/breadcrumb'
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useCartStore } from '@/stores/useCartStore'
+import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
 import ProductCard from '@/components/product/ProductCard'
 import type { Product, ProductVariant } from '@/types'
+
+const SIZE_CHART = [
+  { size: 'S', pecho: 48, largo: 68, hombro: 43 },
+  { size: 'M', pecho: 52, largo: 71, hombro: 45 },
+  { size: 'L', pecho: 56, largo: 74, hombro: 48 },
+  { size: 'XL', pecho: 60, largo: 77, hombro: 50 },
+  { size: 'OS', pecho: 64, largo: 80, hombro: 52 },
+]
+
+function SizeGuideDialog() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <button className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors ml-3">
+          <Ruler className="size-3.5" />
+          <span className="text-[11px] uppercase tracking-wider font-medium">Guía de tallas</span>
+        </button>
+      </DialogTrigger>
+      <DialogContent className="bg-[#0a0a0a] border-[#1a1a1a] text-white sm:max-w-md rounded-none p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle className="text-sm font-bold uppercase tracking-widest text-white">
+            Guía de Tallas
+          </DialogTitle>
+          <DialogDescription className="text-neutral-500 text-xs">
+            Medidas en centímetros (cm)
+          </DialogDescription>
+        </DialogHeader>
+        <div className="px-6 pb-6 pt-4">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-[#1a1a1a] hover:bg-transparent">
+                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3">Talla</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Pecho</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Largo</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Hombro</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {SIZE_CHART.map((row) => (
+                <TableRow key={row.size} className="border-[#1a1a1a] hover:bg-white/5">
+                  <TableCell className="px-3 py-3 text-sm font-bold text-white">{row.size}</TableCell>
+                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.pecho} cm</TableCell>
+                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.largo} cm</TableCell>
+                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.hombro} cm</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <p className="text-[11px] text-neutral-500 mt-4 leading-relaxed">
+            Las medidas pueden variar ±2cm. Para un fit oversizado, recomendamos subir una talla.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ImageZoom({
+  src,
+  alt,
+  isSelected,
+}: {
+  src: string
+  alt: string
+  isSelected: boolean
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isZoomed, setIsZoomed] = useState(false)
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const x = ((e.clientX - rect.left) / rect.width) * 100
+      const y = ((e.clientY - rect.top) / rect.height) * 100
+      setZoomPosition({ x, y })
+    },
+    []
+  )
+
+  const handleMouseEnter = useCallback(() => setIsZoomed(true), [])
+  const handleMouseLeave = useCallback(() => setIsZoomed(false), [])
+
+  if (!isSelected) return null
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full overflow-hidden cursor-zoom-in"
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <motion.img
+        src={src}
+        alt={alt}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="w-full h-full object-cover transition-transform duration-200 ease-out"
+        style={
+          isZoomed
+            ? {
+                transform: 'scale(1.5)',
+                transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+              }
+            : {
+                transform: 'scale(1)',
+              }
+        }
+      />
+    </div>
+  )
+}
 
 function ProductDetailInner({ slug }: { slug: string }) {
   const navigate = useNavigationStore((s) => s.navigate)
   const goBack = useNavigationStore((s) => s.goBack)
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
+  const addViewedProduct = useRecentlyViewedStore((s) => s.addViewedProduct)
 
   const [product, setProduct] = useState<Product | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
@@ -54,6 +189,13 @@ function ProductDetailInner({ slug }: { slug: string }) {
         const found = data.find((p) => p.slug === slug) || null
         setProduct(found)
         if (found) {
+          addViewedProduct({
+            id: found.id,
+            title: found.title,
+            slug: found.slug,
+            price: found.price,
+            images: found.images.map((img) => ({ url: img.url, altText: img.altText })),
+          })
           const related = data
             .filter((p) => p.categoryId === found.categoryId && p.id !== found.id)
             .slice(0, 4)
@@ -101,11 +243,32 @@ function ProductDetailInner({ slug }: { slug: string }) {
     ? product.variants.every((v) => v.stockQuantity === 0)
     : false
 
+  const selectedVariantStock = selectedVariant?.stockQuantity ?? 0
+  const isLowStock = selectedVariantStock > 0 && selectedVariantStock < 5
+
   const handleAddToCart = () => {
     if (!product || !selectedVariant) return
     addItem(product, selectedVariant)
     toast.success('Producto añadido al carrito')
     openCart()
+  }
+
+  const handleShare = async () => {
+    const url = window.location.href
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success('Enlace copiado al portapapeles')
+    } catch {
+      toast.error('No se pudo copiar el enlace')
+    }
+  }
+
+  const generateSku = (title: string) => {
+    const words = title.split(' ').slice(0, 2)
+    const prefix = words.map((w) => w.substring(0, 3).toUpperCase()).join('-')
+    const hash = title.length.toString().padStart(3, '0')
+    const suffix = slug.slice(-3).toUpperCase()
+    return `KOP-${prefix}-${hash}-${suffix}`
   }
 
   if (loading) {
@@ -194,18 +357,16 @@ function ProductDetailInner({ slug }: { slug: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           {/* Image Gallery */}
           <div>
-            <div className="relative aspect-square overflow-hidden rounded-md bg-[#111] mb-4">
+            <div className="relative aspect-square overflow-hidden rounded-md bg-[#111] mb-3">
               <AnimatePresence mode="wait">
-                <motion.img
-                  key={selectedImageIndex}
-                  src={product.images[selectedImageIndex]?.url}
-                  alt={product.images[selectedImageIndex]?.altText}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-full h-full object-cover"
-                />
+                {product.images.map((image, i) => (
+                  <ImageZoom
+                    key={image.id}
+                    src={image.url}
+                    alt={image.altText}
+                    isSelected={i === selectedImageIndex}
+                  />
+                ))}
               </AnimatePresence>
 
               {/* Badges */}
@@ -223,9 +384,18 @@ function ProductDetailInner({ slug }: { slug: string }) {
               </div>
             </div>
 
+            {/* Image counter */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-neutral-500">
+                <span className="text-white font-medium">{selectedImageIndex + 1}</span>
+                {' / '}
+                {product.images.length}
+              </p>
+            </div>
+
             {/* Thumbnails */}
             {product.images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1">
                 {product.images.map((image, i) => (
                   <button
                     key={image.id}
@@ -253,16 +423,22 @@ function ProductDetailInner({ slug }: { slug: string }) {
               {product.title}
             </h1>
 
-            <div className="flex items-center gap-3 mt-3">
-              <span className="text-xl font-bold text-white">
+            {/* SKU */}
+            <p className="text-neutral-500 text-xs font-mono mt-2">
+              SKU: {product.sku || generateSku(product.title)}
+            </p>
+
+            {/* Price */}
+            <div className="flex items-baseline gap-3 mt-4">
+              <span className="text-2xl font-bold text-white">
                 {formatPrice(product.price)}
               </span>
               {hasDiscount && (
                 <>
-                  <span className="text-base text-gray-500 line-through">
+                  <span className="text-base text-neutral-500 line-through">
                     {formatPrice(product.compareAtPrice!)}
                   </span>
-                  <span className="text-sm font-bold text-[#dc2626]">
+                  <span className="text-sm font-bold text-red-600">
                     -{discountPercent}%
                   </span>
                 </>
@@ -271,11 +447,14 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
             {/* Icons row */}
             <div className="flex items-center gap-4 mt-6">
-              <button className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
+              <button className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors">
                 <Heart className="size-5" />
                 <span className="text-xs">Favorito</span>
               </button>
-              <button className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors"
+              >
                 <Share2 className="size-5" />
                 <span className="text-xs">Compartir</span>
               </button>
@@ -283,15 +462,18 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
             {/* Size selector */}
             <div className="mt-8">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-4">
-                Talla
-                {selectedVariant && (
-                  <span className="text-gray-500 font-normal normal-case tracking-normal ml-2">
-                    — {selectedVariant.size}
-                  </span>
-                )}
-              </h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex items-center">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white">
+                  Talla
+                  {selectedVariant && (
+                    <span className="text-neutral-500 font-normal normal-case tracking-normal ml-2">
+                      — {selectedVariant.size}
+                    </span>
+                  )}
+                </h3>
+                <SizeGuideDialog />
+              </div>
+              <div className="flex flex-wrap gap-3 mt-4">
                 {availableSizes.map((variant) => {
                   const inStock = variant.stockQuantity > 0
                   const isSelected = selectedVariant?.id === variant.id
@@ -314,7 +496,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                 })}
               </div>
               {isOutOfStock && (
-                <p className="text-sm text-[#dc2626] mt-3">Agotado</p>
+                <p className="text-sm text-red-600 mt-3">Agotado</p>
               )}
             </div>
 
@@ -328,7 +510,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   {availableColors.map((variant) => (
                     <span
                       key={variant.color}
-                      className="text-sm text-gray-300"
+                      className="text-sm text-neutral-300"
                     >
                       {variant.color}
                     </span>
@@ -339,16 +521,47 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
             {/* Add to Cart */}
             <div className="mt-8">
-              <Button
-                onClick={handleAddToCart}
-                disabled={!selectedVariant || isOutOfStock}
-                className="w-full bg-[#dc2626] hover:bg-[#b91c1c] text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed"
+              {/* Stock indicator */}
+              {selectedVariant && !isOutOfStock && (
+                <div className="flex items-center gap-2 mb-3">
+                  {isLowStock ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                      <span className="text-xs text-yellow-500 font-medium">Últimas unidades</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-xs text-green-500 font-medium">En stock</span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <motion.div
+                animate={
+                  selectedVariant && !isOutOfStock
+                    ? { scale: [1, 1.015, 1] }
+                    : { scale: 1 }
+                }
+                transition={
+                  selectedVariant && !isOutOfStock
+                    ? { repeat: Infinity, duration: 2, ease: 'easeInOut' }
+                    : {}
+                }
               >
-                <ShoppingBag className="size-5 mr-2" />
-                Añadir al Carrito
-              </Button>
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={!selectedVariant || isOutOfStock}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ShoppingBag className="size-5 mr-2" />
+                  Añadir al Carrito
+                </Button>
+              </motion.div>
+
               {!selectedVariant && !isOutOfStock && (
-                <p className="text-xs text-gray-500 mt-2 text-center">
+                <p className="text-xs text-neutral-500 mt-2 text-center">
                   Selecciona una talla
                 </p>
               )}
@@ -357,24 +570,24 @@ function ProductDetailInner({ slug }: { slug: string }) {
             {/* Benefits */}
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
-                <Truck className="size-5 text-gray-400 shrink-0" />
+                <Truck className="size-5 text-neutral-400 shrink-0" />
                 <div>
                   <p className="text-xs font-medium text-white">Envío Express</p>
-                  <p className="text-[10px] text-gray-500">2-4 días hábiles</p>
+                  <p className="text-[10px] text-neutral-500">2-4 días hábiles</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
-                <RotateCcw className="size-5 text-gray-400 shrink-0" />
+                <RotateCcw className="size-5 text-neutral-400 shrink-0" />
                 <div>
                   <p className="text-xs font-medium text-white">Devoluciones</p>
-                  <p className="text-[10px] text-gray-500">30 días para cambios</p>
+                  <p className="text-[10px] text-neutral-500">30 días para cambios</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
-                <Shield className="size-5 text-gray-400 shrink-0" />
+                <Shield className="size-5 text-neutral-400 shrink-0" />
                 <div>
                   <p className="text-xs font-medium text-white">Compra Segura</p>
-                  <p className="text-[10px] text-gray-500">Pago protegido</p>
+                  <p className="text-[10px] text-neutral-500">Pago protegido</p>
                 </div>
               </div>
             </div>
@@ -383,34 +596,43 @@ function ProductDetailInner({ slug }: { slug: string }) {
             <div className="mt-8 border-t border-[#1a1a1a]">
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="description" className="border-[#1a1a1a]">
-                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white">
+                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
                     Descripción
                   </AccordionTrigger>
-                  <AccordionContent className="text-sm text-gray-400 leading-relaxed">
+                  <AccordionContent className="text-sm text-neutral-400 leading-relaxed">
                     {product.description}
                   </AccordionContent>
                 </AccordionItem>
 
+                <AccordionItem value="material" className="border-[#1a1a1a]">
+                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+                    Material y Cuidado
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-neutral-400 leading-relaxed">
+                    100% Algodón Premium de 240gsm. Lavar a máquina en ciclo frío. No usar blanqueador. Secar a temperatura baja. Planchar del revés.
+                  </AccordionContent>
+                </AccordionItem>
+
                 <AccordionItem value="details" className="border-[#1a1a1a]">
-                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white">
+                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
                     Detalles de la prenda
                   </AccordionTrigger>
                   <AccordionContent>
-                    <ul className="text-sm text-gray-400 space-y-1.5">
+                    <ul className="text-sm text-neutral-400 space-y-1.5">
                       <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-[#dc2626]" />
+                        <Check className="size-3.5 text-red-600" />
                         Algodón premium 240gsm
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-[#dc2626]" />
+                        <Check className="size-3.5 text-red-600" />
                         Corte oversize
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-[#dc2626]" />
+                        <Check className="size-3.5 text-red-600" />
                         Impresión serigrafía
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-[#dc2626]" />
+                        <Check className="size-3.5 text-red-600" />
                         Hecho en Colombia
                       </li>
                     </ul>
@@ -418,25 +640,25 @@ function ProductDetailInner({ slug }: { slug: string }) {
                 </AccordionItem>
 
                 <AccordionItem value="care" className="border-[#1a1a1a]">
-                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white">
+                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
                     Guía de lavado
                   </AccordionTrigger>
                   <AccordionContent>
-                    <ul className="text-sm text-gray-400 space-y-1.5">
+                    <ul className="text-sm text-neutral-400 space-y-1.5">
                       <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-[#dc2626]" />
+                        <Check className="size-3.5 text-red-600" />
                         Lavar a mano con agua fría
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-[#dc2626]" />
+                        <Check className="size-3.5 text-red-600" />
                         No usar blanqueador
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-[#dc2626]" />
+                        <Check className="size-3.5 text-red-600" />
                         Secar a la sombra
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-[#dc2626]" />
+                        <Check className="size-3.5 text-red-600" />
                         Planchar a baja temperatura
                       </li>
                     </ul>
@@ -450,17 +672,20 @@ function ProductDetailInner({ slug }: { slug: string }) {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <section className="mt-20 pb-12">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center mb-8">
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-widest text-white">
                   También te puede interesar
                 </h2>
-                <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
+                <div className="h-0.5 w-12 bg-red-600 mt-2" />
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {/* Horizontal scrollable on mobile, grid on desktop */}
+            <div className="flex lg:grid lg:grid-cols-4 gap-4 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 snap-x snap-mandatory -mx-4 px-4 lg:mx-0 lg:px-0">
               {relatedProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <div key={p.id} className="min-w-[260px] sm:min-w-[280px] lg:min-w-0 snap-start">
+                  <ProductCard product={p} />
+                </div>
               ))}
             </div>
           </section>

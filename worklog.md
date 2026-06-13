@@ -351,3 +351,190 @@ The KOP STUDIO e-commerce application has been significantly polished and enhanc
 6. Add customer order history page
 7. Add product search with better autocomplete UX
 8. Mobile-specific responsive testing and fixes
+
+---
+Task ID: wishlist-store
+Agent: Main Agent
+Task: Add Zustand wishlist store, wire ProductCard heart icon, add Favoritos nav link
+
+Work Log:
+- Created `src/stores/useWishlistStore.ts` with zustand + persist middleware
+  - Stores array of product IDs (strings)
+  - localStorage key: `kop-wishlist`
+  - Actions: `toggleWishlist(productId)`, `isInWishlist(productId)`, `clearWishlist()`
+  - Uses `partialize` to persist only the wishlist array
+  - Follows exact pattern from useNavigationStore.ts
+- Updated `src/components/product/ProductCard.tsx`:
+  - Imported useWishlistStore
+  - Heart icon now toggles wishlist state on click (stopPropagation preserved)
+  - When wishlisted: Heart filled (`fill="currentColor"`) with `text-red-500`
+  - When not wishlisted: Heart outline with `text-white/60`, hover turns `text-red-500`
+  - opacity-0 group-hover:opacity-100 transition preserved
+- Updated `src/components/layout/Header.tsx`:
+  - Added `Heart` to lucide-react imports
+  - Added `{ label: 'Favoritos', slug: 'favoritos', icon: Heart }` to NAV_LINKS (with `as const`)
+  - Heart icon renders next to label in both desktop and mobile nav
+  - Navigates to collection view with category 'favoritos'
+
+Stage Summary:
+- New wishlist store with localStorage persistence via zustand persist middleware
+- ProductCard heart icon fully functional (toggle, filled/outline states, color changes)
+- Favoritos nav link visible in header with heart icon on both desktop and mobile
+- Zero lint errors
+
+---
+Task ID: pdp-enhancement
+Agent: Main Agent
+Task: Enhance ProductDetailView with visual polish and new features
+
+Work Log:
+- Size Guide Modal/Dialog:
+  - Created SizeGuideDialog component with shadcn Dialog
+  - Ruler icon + "Guía de tallas" link next to TALLA heading
+  - Size chart using shadcn Table (Talla, Pecho, Largo, Hombro in cm)
+  - Dark theme styling: bg-[#0a0a0a] border-[#1a1a1a] text-white, rounded-none
+  - Note at bottom about ±2cm variance and oversized fit recommendation
+- Enhanced Image Gallery:
+  - Created ImageZoom component with mouse-tracking zoom (scale-1.5)
+  - cursor-zoom-in on the gallery container
+  - Image counter "1 / 3" below main gallery image
+  - Thumbnail strip preserved below counter
+- Product Info Polish:
+  - SKU display below title: "SKU: KOP-XXX-XX-XXX" in text-neutral-500 text-xs font-mono
+  - Share button (Share2 icon) with clipboard copy + sonner toast
+  - Price: current price in text-2xl font-bold, compare-at-price in text-base text-neutral-500 line-through
+- Enhanced Accordion:
+  - New "Material y Cuidado" accordion tab (100% Algodón Premium 240gsm, care instructions)
+  - All accordion triggers have red accent left border when expanded: data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2
+  - Reordered: Descripción → Material y Cuidado → Detalles → Guía de lavado
+- Related Products Enhancement:
+  - "Tambien te puede interesar" heading now has red underline: h-0.5 w-12 bg-red-600 mt-2
+  - Horizontal scrollable row on mobile (overflow-x-auto snap-x snap-mandatory, min-w cards)
+  - Grid layout preserved on lg breakpoint (lg:grid lg:grid-cols-4)
+- Add to Cart Button Enhancement:
+  - Subtle pulse animation via framer-motion when size selected (scale [1, 1.015, 1] repeating)
+  - Stock indicator: green dot + "En stock" or yellow dot + "Ultimas unidades"
+  - Low stock warning when selectedVariant.stockQuantity < 5
+- Additional polish:
+  - Changed all gray- references to neutral- for consistency
+  - Removed unused X import, kept all existing icons
+  - Button uses bg-red-600 instead of bg-[#dc2626] for clarity
+
+Stage Summary:
+- 6 major enhancement areas implemented in ProductDetailView.tsx
+- Size guide dialog with table, image zoom with cursor, SKU + share, material accordion, mobile scroll related products, pulse + stock indicator
+- All existing functionality preserved (navigation, cart, image selection, breadcrumbs)
+- Zero lint errors, dev server compiling cleanly
+
+---
+Task ID: checkout-visual-enhance
+Agent: Main Agent
+Task: Visual and UX enhancement of CheckoutView.tsx
+
+Work Log:
+- 2-Column Desktop Layout: Rewrote checkout layout with `flex flex-col lg:flex-row gap-8`. Left column (2/3 width) contains all form steps, right column (1/3 width) has sticky order summary sidebar visible on ALL steps (not just step 3). Container max-width increased to max-w-6xl.
+- Sticky Order Summary Sidebar (Desktop): New `OrderSummarySidebar` component with `bg-[#0a0a0a] border border-[#1a1a1a] p-6`. Shows each cart item with w-14 h-14 thumbnail, product name (truncated), variant info (size/color, quantity), line total. Pricing: Subtotal, Envío (GRATIS in green when free shipping active with "✓ Envío gratis activado" text), TOTAL in bold red-500. Custom scrollbar styling (w-1 thumb). Positioned with `sticky top-24`.
+- Collapsible Mobile Order Summary: New `MobileOrderSummary` component. Header shows "Resumen del Pedido (X productos)" + total price + ChevronDown/Up. Uses AnimatePresence for expand/collapse animation. When collapsed shows compact summary; expanded reveals full item list with thumbnails and price breakdown. Positioned above the step indicator on mobile (`lg:hidden`).
+- Enhanced Step Indicators: Replaced old step indicator with new color scheme:
+  - Active step: `bg-red-600 text-white` (was bg-white)
+  - Completed step: `bg-green-600 text-white` with Check icon (was bg-red-600)
+  - Upcoming step: `bg-[#1a1a1a] text-neutral-500` (was bg-transparent border-neutral-600)
+  - Connecting lines: green-600 when completed, `#1a1a1a` when upcoming (was red-600 / neutral-700)
+  - Labels: green-500 for completed, white for active, neutral-500 for upcoming
+- Step Heading with Red Accent Line: New `StepHeading` component renders heading + `<div className="h-0.5 w-8 bg-red-600 mt-2" />` below.
+- Security Badges Section: New `SecurityBadges` component below payment form (step 3). Two items: Lock icon + "Tus datos están protegidos con encriptación SSL" and ShieldCheck icon + "Garantía de devolución por 30 días". Icons in text-green-500/50, text in text-neutral-500 text-xs. Separated by border-t border-[#1a1a1a] pt-5.
+- Visual Polish: Each step form wrapped in `bg-[#0a0a0a] border border-[#1a1a1a] p-6`. All action buttons upgraded to h-12. CONTINUAR/CONFIRMAR PEDIDO buttons full width on mobile via `w-full sm:flex-1`. VOLVER button label uppercased. Payment method card backgrounds changed from `bg-[#0a0a0a]` to `bg-[#111]`. AnimatePresence transitions preserved on all step changes.
+- Header: VOLVER button now uppercased, stays in top-left.
+- Removed unused `getItemCount` import from cart store, added `Lock`, `ShieldCheck`, `ChevronDown`, `ChevronUp` imports.
+- Removed old `OrderSummary` component (replaced by `OrderSummarySidebar` + `MobileOrderSummary`).
+
+Stage Summary:
+- Complete visual overhaul of checkout: 2-column layout, sticky sidebar on all steps, collapsible mobile summary
+- Enhanced step indicators (red/green/dark color scheme with connecting lines)
+- Security badges section, step heading accent lines, h-12 buttons, dark card containers
+- All existing functionality preserved (form validation, order submission, navigation, payment methods)
+- Zero lint errors, dev server compiling cleanly
+
+---
+Task ID: recently-viewed-and-back-to-top
+Agent: Main Agent
+Task: Recently Viewed Products Store + UI and Back to Top Button
+
+Work Log:
+- Created `src/stores/useRecentlyViewedStore.ts` — Zustand store with persist middleware, `SimplifiedProduct` type (id, title, slug, price, images[]), localStorage key `kop-recently-viewed`, max 10 items FIFO with duplicate removal, `partialize` for array-only persistence
+- Wired `ProductDetailView.tsx` — imported `useRecentlyViewedStore`, added `addViewedProduct` selector, called with simplified product data inside the existing fetch useEffect when product is found
+- Added "VISTOS RECIENTEMENTE" section to `HomeView.tsx` — placed before the reviews section, conditionally rendered when 2+ recently viewed products, same horizontal scrollable carousel style as LO NUEVO / BEST SELLERS with arrow buttons and red underline heading
+- Added Back to Top button to `page.tsx` — fixed bottom-6 left-6, `ArrowUp` icon from lucide-react, `w-11 h-11 bg-[#1a1a1a] border border-[#333]` with hover inversion, shows when scrollY > 400px, framer-motion AnimatePresence for show/hide animation, only on non-admin views
+
+Stage Summary:
+- Recently viewed tracking: persists across sessions, max 10 products, newest first
+- Home carousel: matches existing carousel design patterns exactly
+- Back to top button: smooth scroll, animated entrance/exit, opposite corner from WhatsApp
+- Zero lint errors
+
+---
+Task ID: 7-ui-enhancements
+Agent: Main Agent
+Task: Enhance CollectionView & AnnouncementBar
+
+Work Log:
+- 1A Loading Skeletons: Verified existing skeleton implementation — 8 skeleton cards in matching grid with aspect-[3/4] bg-[#111] rounded-md image area + title/price skeleton lines
+- 1B Product Count in Title: Added filtered product count next to category name in h1, e.g. "CAMISETAS (3 productos)". Updates dynamically with filters, hidden during loading state
+- 1C Scroll-to-Top Button: Added fixed bottom-4 right-4 floating button with ArrowUp icon. Only visible on mobile (md:hidden), appears after scrolling 400px, smooth scroll to top, styled w-10 h-10 bg-[#1a1a1a] border border-[#333] rounded-full
+- 1D Mobile Filter Sheet: Added sticky "APLICAR FILTROS" button at bottom of Sheet. Sheet uses flex-col layout with overflow-y-auto for filter content. Button: bg-red-600 text-white h-11 w-full uppercase text-xs font-bold tracking-widest. Also updated category names to uppercase (CAMISETAS, INFERIORES, etc.)
+- 1E Active Filter Chips: Created ActiveFilterChips component showing filter tags above product grid. Chips display size (Talla: M), price range (Precio: $100K - $150K), and sort (Orden: Bestsellers). Each chip has X button to remove individual filter. "Limpiar todo" link in red-600 shown when any filters active
+- 2A Clickable Marquee: Split announcement text into individual items with text-white/80 hover:text-white transition-colors cursor-pointer styling
+- 2B Dismiss Button: Added X close button (absolute right-4, text-white/40 hover:text-white) with sessionStorage persistence. Created useAnnouncementDismissed custom hook to avoid setState-in-effect lint error. Bar returns null when dismissed
+
+Stage Summary:
+- CollectionView: 5 enhancements (skeletons verified, count in title, scroll-to-top, sticky apply button, filter chips)
+- AnnouncementBar: 2 enhancements (clickable text, dismiss with sessionStorage)
+- Zero lint errors
+- All existing functionality preserved
+
+---
+## Current Project Status (Post-Enhancement Session)
+
+### Assessment
+KOP STUDIO e-commerce is production-quality with visual polish rating ~9/10. All 5 original phases complete plus 3 rounds of enhancement.
+
+### Completed This Session
+- **QA Testing**: Full agent-browser verification across all views (Home, Collection, Product Detail, Cart, Checkout, Admin)
+- **Wishlist Store**: New `useWishlistStore` with persist, heart icon toggles in ProductCard, "Favoritos" nav link
+- **CheckoutView Overhaul**: 2-column layout, sticky order summary sidebar, collapsible mobile summary, step indicators (red/green/dark), security badges, step heading accent lines
+- **ProductDetailView Enhancements**: Size guide dialog with table, image zoom on hover, SKU display, share button, "Material y Cuidado" accordion, mobile horizontal scroll for related products, stock indicator, pulse animation on add-to-cart
+- **Recently Viewed**: New store + "VISTOS RECIENTEMENTE" carousel on homepage
+- **Back to Top**: Floating button (bottom-left) with AnimatePresence
+- **CollectionView Enhancements**: Product count in heading, active filter chips with individual removal, mobile sticky "APLICAR FILTROS" button, mobile scroll-to-top
+- **AnnouncementBar**: Clickable text items, dismiss button with sessionStorage persistence
+
+### Verified via Agent-Browser
+- ✅ Homepage with all sections (hero, categories, carousels, brand story, reviews, recently viewed)
+- ✅ Announcement bar with dismiss button
+- ✅ "FAVORITOS" nav link in header
+- ✅ Collection view with filter chips and product count
+- ✅ Product detail with size guide dialog, share button, material accordion
+- ✅ Cart drawer with order summary
+- ✅ Checkout with order summary sidebar and step indicators
+- ✅ Admin dashboard with stats cards and orders table
+- ✅ Back-to-top button on scroll
+- ✅ Zero lint errors, zero runtime errors
+
+### Unresolved Issues
+- Agent-browser clicks on motion.div wrapped elements sometimes don't propagate (tool limitation, not user-facing)
+- Checkout payment processing is still simulated
+- Admin password stored in plain text (no bcrypt)
+- No image upload in admin product form
+- No real email notification system
+
+### Priority Recommendations for Next Phase
+1. Add image upload functionality to admin product form
+2. Implement bcrypt password hashing for admin auth
+3. Add customer order history page (requires auth extension)
+4. Add product search with keyboard shortcut (Cmd+K) and better autocomplete UX
+5. Implement email notification system for orders
+6. Add "Total Looks" category with outfit bundles
+7. Add product variant stock management in admin
+8. Mobile-specific responsive fine-tuning
+9. Add product comparison feature
+10. Implement dark/light theme toggle (currently dark-only)

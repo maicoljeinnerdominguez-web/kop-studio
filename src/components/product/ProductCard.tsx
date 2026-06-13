@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Heart, ShoppingBag, Star } from 'lucide-react'
 import { useCartStore } from '@/stores/useCartStore'
 import { useNavigationStore } from '@/stores/useNavigationStore'
+import { useWishlistStore } from '@/stores/useWishlistStore'
 import type { Product } from '@/types'
 
 interface ProductCardProps {
@@ -16,6 +17,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
   const navigate = useNavigationStore((s) => s.navigate)
+  const toggleWishlist = useWishlistStore((s) => s.toggleWishlist)
+  const isInWishlist = useWishlistStore((s) => s.isInWishlist)
+  const wishlisted = isInWishlist(product.id)
   const [imageError, setImageError] = useState(false)
 
   const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0]
@@ -91,11 +95,18 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {/* Wishlist heart icon - show on hover */}
           <button
-            onClick={(e) => { e.stopPropagation(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleWishlist(product.id);
+            }}
             className="absolute top-2 right-2 z-20 w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             aria-label="Agregar a favoritos"
           >
-            <Heart className="size-4 text-white/60 hover:text-red-500 transition-colors" />
+            <Heart
+              size={16}
+              className={wishlisted ? 'text-red-500 transition-colors' : 'text-white/60 hover:text-red-500 transition-colors'}
+              fill={wishlisted ? 'currentColor' : 'none'}
+            />
           </button>
 
           {/* Quick add button with slide-up effect */}

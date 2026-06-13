@@ -8,6 +8,7 @@ import {
   User,
   Menu,
   X,
+  Heart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +31,8 @@ const NAV_LINKS = [
   { label: 'Inferiores', slug: 'inferiores' },
   { label: 'Básicos', slug: 'basicos' },
   { label: 'Descuentos', slug: 'descuentos' },
-];
+  { label: 'Favoritos', slug: 'favoritos', icon: Heart },
+] as const;
 
 export default function Header() {
   const navigate = useNavigationStore((s) => s.navigate);
@@ -126,8 +128,9 @@ export default function Header() {
                         navigate('collection', { category: link.slug });
                         setMobileMenuOpen(false);
                       }}
-                      className="text-left text-sm text-neutral-300 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md transition-colors tracking-wide uppercase font-medium"
+                      className="text-left text-sm text-neutral-300 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md transition-colors tracking-wide uppercase font-medium flex items-center gap-2"
                     >
+                      {'icon' in link && link.icon && <link.icon className="size-4" />}
                       {link.label}
                     </button>
                   ))}
@@ -166,10 +169,11 @@ export default function Header() {
               <motion.button
                 key={link.slug}
                 onClick={() => navigate('collection', { category: link.slug })}
-                className="px-3 py-2 text-xs uppercase tracking-wider text-neutral-400 hover:text-white transition-colors font-medium relative group"
+                className="px-3 py-2 text-xs uppercase tracking-wider text-neutral-400 hover:text-white transition-colors font-medium relative group flex items-center gap-1.5"
                 whileHover={{ y: -1 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               >
+                {'icon' in link && link.icon && <link.icon className="size-3.5" />}
                 {link.label}
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-red-600 group-hover:w-full transition-all duration-300" />
               </motion.button>

@@ -6,6 +6,7 @@ import { Star, ChevronLeft, ChevronRight, Truck, RotateCcw, ShieldCheck } from '
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigationStore } from '@/stores/useNavigationStore'
+import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
 import ProductCard from '@/components/product/ProductCard'
 import type { Product, Category, Review } from '@/types'
 
@@ -60,6 +61,7 @@ const trustFeatures = [
 
 export default function HomeView() {
   const navigate = useNavigationStore()
+  const recentlyViewed = useRecentlyViewedStore((s) => s.recentlyViewed)
   const [categories, setCategories] = useState<Category[]>([])
   const [newProducts, setNewProducts] = useState<Product[]>([])
   const [bestsellerProducts, setBestsellerProducts] = useState<Product[]>([])
@@ -69,6 +71,7 @@ export default function HomeView() {
 
   const carouselRef1 = useRef<HTMLDivElement>(null)
   const carouselRef2 = useRef<HTMLDivElement>(null)
+  const carouselRef3 = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/categories')
@@ -443,6 +446,57 @@ export default function HomeView() {
           </motion.div>
         </div>
       </section>
+
+      {/* ===== VISTOS RECIENTEMENTE CAROUSEL ===== */}
+      {recentlyViewed.length >= 2 && (
+        <section className="py-16 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+                    Vistos Recientemente
+                  </h2>
+                  <div className="mt-1 h-0.5 w-12 bg-[#dc2626]" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => scroll(carouselRef3, 'left')}
+                  className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+                  aria-label="Anterior"
+                >
+                  <ChevronLeft className="size-4 text-white" />
+                </button>
+                <button
+                  onClick={() => scroll(carouselRef3, 'right')}
+                  className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 transition-colors"
+                  aria-label="Siguiente"
+                >
+                  <ChevronRight className="size-4 text-white" />
+                </button>
+              </div>
+            </div>
+
+            <div
+              ref={carouselRef3}
+              className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {recentlyViewed.map((item) => (
+                <div
+                  key={item.id}
+                  className="min-w-[55vw] sm:min-w-[260px] md:min-w-[280px] snap-start"
+                >
+                  <ProductCard product={item as unknown as Product} />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-10 border-t border-[#1a1a1a]" />
+          </div>
+        </section>
+      )}
 
       {/* ===== REVIEWS SECTION ===== */}
       <section className="py-20 px-4">

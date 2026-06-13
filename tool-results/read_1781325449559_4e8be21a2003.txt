@@ -1,0 +1,927 @@
+     1→'use client';
+     2→
+     3→import { useState } from 'react';
+     4→import { useForm } from 'react-hook-form';
+     5→import { z } from 'zod';
+     6→import { zodResolver } from '@hookform/resolvers/zod';
+     7→import { motion, AnimatePresence } from 'framer-motion';
+     8→import { toast } from 'sonner';
+     9→import {
+    10→  ArrowLeft,
+    11→  ArrowRight,
+    12→  CreditCard,
+    13→  Smartphone,
+    14→  Building2,
+    15→  Check,
+    16→  CheckCircle2,
+    17→  Loader2,
+    18→} from 'lucide-react';
+    19→
+    20→import { Input } from '@/components/ui/input';
+    21→import { Label } from '@/components/ui/label';
+    22→import { Button } from '@/components/ui/button';
+    23→import {
+    24→  Select,
+    25→  SelectContent,
+    26→  SelectItem,
+    27→  SelectTrigger,
+    28→  SelectValue,
+    29→} from '@/components/ui/select';
+    30→import { useNavigationStore } from '@/stores/useNavigationStore';
+    31→import { useCartStore } from '@/stores/useCartStore';
+    32→
+    33→const contactSchema = z.object({
+    34→  firstName: z.string().min(1, 'Nombre es requerido'),
+    35→  lastName: z.string().min(1, 'Apellido es requerido'),
+    36→  email: z.string().email('Email inválido'),
+    37→  phone: z.string().min(1, 'Teléfono es requerido'),
+    38→});
+    39→
+    40→const addressSchema = z.object({
+    41→  address: z.string().min(1, 'Dirección es requerida'),
+    42→  city: z.string().min(1, 'Ciudad es requerida'),
+    43→  department: z.string().min(1, 'Departamento es requerido'),
+    44→  neighborhood: z.string().min(1, 'Barrio es requerido'),
+    45→  postalCode: z.string().min(1, 'Código postal es requerido'),
+    46→});
+    47→
+    48→type ContactData = z.infer<typeof contactSchema>;
+    49→type AddressData = z.infer<typeof addressSchema>;
+    50→
+    51→const DEPARTMENTS = [
+    52→  'Bogotá',
+    53→  'Medellín',
+    54→  'Cali',
+    55→  'Barranquilla',
+    56→  'Cartagena',
+    57→  'Otro',
+    58→];
+    59→
+    60→const PSE_BANKS = [
+    61→  'Bancolombia',
+    62→  'Davivienda',
+    63→  'BBVA',
+    64→  'Banco de Bogotá',
+    65→  'Banco Popular',
+    66→  'Itaú',
+    67→  'Scotiabank Colpatria',
+    68→  'Occidente',
+    69→  'Banco Agrario',
+    70→  'Av Villas',
+    71→];
+    72→
+    73→function formatPrice(amount: number) {
+    74→  return `$${Math.round(amount).toLocaleString('es-CO')}`;
+    75→}
+    76→
+    77→function StepIndicator({
+    78→  currentStep,
+    79→  totalSteps,
+    80→}: {
+    81→  currentStep: number;
+    82→  totalSteps: number;
+    83→}) {
+    84→  const labels = ['CONTACTO', 'DIRECCIÓN', 'PAGO'];
+    85→
+    86→  return (
+    87→    <div className="flex items-center justify-center gap-0 mb-8 w-full max-w-md mx-auto">
+    88→      {labels.map((label, index) => {
+    89→        const stepNum = index + 1;
+    90→        const isActive = stepNum === currentStep;
+    91→        const isCompleted = stepNum < currentStep;
+    92→
+    93→        return (
+    94→          <div key={label} className="flex items-center">
+    95→            <div className="flex flex-col items-center">
+    96→              <div
+    97→                className={`flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all duration-300 ${
+    98→                  isCompleted
+    99→                    ? 'bg-red-600 border-red-600 text-white'
+   100→                    : isActive
+   101→                    ? 'bg-white border-white text-black'
+   102→                    : 'bg-transparent border-neutral-600 text-neutral-600'
+   103→                }`}
+   104→              >
+   105→                {isCompleted ? (
+   106→                  <Check className="w-4 h-4" />
+   107→                ) : (
+   108→                  <span className="text-xs font-bold">{stepNum}</span>
+   109→                )}
+   110→              </div>
+   111→              <span
+   112→                className={`text-[10px] mt-1.5 uppercase tracking-wider font-medium ${
+   113→                  isCompleted
+   114→                    ? 'text-red-500'
+   115→                    : isActive
+   116→                    ? 'text-white'
+   117→                    : 'text-neutral-600'
+   118→                }`}
+   119→              >
+   120→                {label}
+   121→              </span>
+   122→            </div>
+   123→            {index < labels.length - 1 && (
+   124→              <div
+   125→                className={`w-12 sm:w-20 h-[2px] mx-2 transition-colors duration-300 ${
+   126→                  stepNum < currentStep ? 'bg-red-600' : 'bg-neutral-700'
+   127→                }`}
+   128→              />
+   129→            )}
+   130→          </div>
+   131→        );
+   132→      })}
+   133→    </div>
+   134→  );
+   135→}
+   136→
+   137→function OrderSummary({ isMobile }: { isMobile: boolean }) {
+   138→  const { items, getSubtotal, getTotal, hasFreeShipping } = useCartStore();
+   139→  const subtotal = getSubtotal();
+   140→  const total = getTotal();
+   141→  const freeShipping = hasFreeShipping();
+   142→  const shipping = freeShipping ? 0 : 15000;
+   143→
+   144→  const primaryImage = (product: { images: { url: string; isPrimary: boolean }[] }) =>
+   145→    product.images.find((img) => img.isPrimary)?.url || product.images[0]?.url || '';
+   146→
+   147→  return (
+   148→    <div className={`bg-[#0a0a0a] border border-[#1a1a1a] p-5 ${isMobile ? 'mb-6' : ''}`}>
+   149→      <h3 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
+   150→        Resumen del Pedido
+   151→      </h3>
+   152→      <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
+   153→        {items.map((item) => {
+   154→          const img = primaryImage(item.product);
+   155→          return (
+   156→            <div key={item.variant.id} className="flex gap-3">
+   157→              <div className="w-14 h-14 flex-shrink-0 bg-[#1a1a1a] overflow-hidden">
+   158→                {img && (
+   159→                  <img
+   160→                    src={img}
+   161→                    alt={item.product.title}
+   162→                    className="w-full h-full object-cover"
+   163→                  />
+   164→                )}
+   165→              </div>
+   166→              <div className="flex-1 min-w-0">
+   167→                <p className="text-white text-xs font-medium truncate">
+   168→                  {item.product.title}
+   169→                </p>
+   170→                <p className="text-neutral-500 text-[11px] mt-0.5">
+   171→                  {item.variant.size} / {item.variant.color} — Cantidad: {item.quantity}
+   172→                </p>
+   173→                <p className="text-white text-xs font-bold mt-0.5">
+   174→                  {formatPrice(item.product.price * item.quantity)}
+   175→                </p>
+   176→              </div>
+   177→            </div>
+   178→          );
+   179→        })}
+   180→      </div>
+   181→      <div className="border-t border-[#1a1a1a] pt-3 space-y-2">
+   182→        <div className="flex justify-between text-xs">
+   183→          <span className="text-neutral-400">Subtotal</span>
+   184→          <span className="text-white">{formatPrice(subtotal)}</span>
+   185→        </div>
+   186→        <div className="flex justify-between text-xs">
+   187→          <span className="text-neutral-400">Envío</span>
+   188→          <span className={freeShipping ? 'text-green-500' : 'text-white'}>
+   189→            {freeShipping ? 'GRATIS' : formatPrice(shipping)}
+   190→          </span>
+   191→        </div>
+   192→        <div className="flex justify-between text-sm font-bold border-t border-[#1a1a1a] pt-2 mt-2">
+   193→          <span className="text-white">Total</span>
+   194→          <span className="text-red-500">{formatPrice(total)}</span>
+   195→        </div>
+   196→      </div>
+   197→    </div>
+   198→  );
+   199→}
+   200→
+   201→export default function CheckoutView() {
+   202→  const [step, setStep] = useState(1);
+   203→  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pse' | 'nequi'>('card');
+   204→  const [pseBank, setPseBank] = useState('');
+   205→  const [nequiPhone, setNequiPhone] = useState('');
+   206→  const [submitting, setSubmitting] = useState(false);
+   207→  const [orderPlaced, setOrderPlaced] = useState(false);
+   208→  const navigate = useNavigationStore();
+   209→  const cart = useCartStore();
+   210→
+   211→  const contactForm = useForm<ContactData>({
+   212→    resolver: zodResolver(contactSchema),
+   213→    defaultValues: {
+   214→      firstName: '',
+   215→      lastName: '',
+   216→      email: '',
+   217→      phone: '',
+   218→    },
+   219→  });
+   220→
+   221→  const addressForm = useForm<AddressData>({
+   222→    resolver: zodResolver(addressSchema),
+   223→    defaultValues: {
+   224→      address: '',
+   225→      city: '',
+   226→      department: '',
+   227→      neighborhood: '',
+   228→      postalCode: '',
+   229→    },
+   230→  });
+   231→
+   232→  const cardForm = useForm({
+   233→    defaultValues: {
+   234→      cardNumber: '',
+   235→      cardName: '',
+   236→      cardExpiry: '',
+   237→      cardCvc: '',
+   238→    },
+   239→  });
+   240→
+   241→  const formatCardNumber = (value: string) => {
+   242→    const v = value.replace(/\D/g, '').slice(0, 16);
+   243→    return v.replace(/(\d{4})(?=\d)/g, '$1 ');
+   244→  };
+   245→
+   246→  const formatExpiry = (value: string) => {
+   247→    const v = value.replace(/\D/g, '').slice(0, 4);
+   248→    if (v.length >= 2) return v.slice(0, 2) + '/' + v.slice(2);
+   249→    return v;
+   250→  };
+   251→
+   252→  const handleContactNext = () => {
+   253→    const valid = contactForm.formState.isValid;
+   254→    contactForm.trigger();
+   255→    if (!contactForm.formState.isValid) return;
+   256→    setStep(2);
+   257→  };
+   258→
+   259→  const handleAddressNext = () => {
+   260→    addressForm.trigger();
+   261→    if (!addressForm.formState.isValid) return;
+   262→    setStep(3);
+   263→  };
+   264→
+   265→  const handleBack = () => {
+   266→    if (step > 1) setStep(step - 1);
+   267→    else navigate('home');
+   268→  };
+   269→
+   270→  const handleSubmitOrder = async () => {
+   271→    if (cart.items.length === 0) {
+   272→      toast.error('Tu carrito está vacío');
+   273→      return;
+   274→    }
+   275→
+   276→    setSubmitting(true);
+   277→
+   278→    try {
+   279→      const contact = contactForm.getValues();
+   280→      const address = addressForm.getValues();
+   281→      const card = cardForm.getValues();
+   282→
+   283→      const shippingAddress = `${address.address}, ${address.neighborhood}, ${address.city} - ${address.department}, CP: ${address.postalCode}`;
+   284→
+   285→      const orderData = {
+   286→        userId: 'guest-checkout',
+   287→        totalAmount: cart.getTotal(),
+   288→        shippingAddress,
+   289→        notes: '',
+   290→        paymentMethod,
+   291→        contact,
+   292→        card: paymentMethod === 'card' ? card : null,
+   293→        pseBank: paymentMethod === 'pse' ? pseBank : null,
+   294→        nequiPhone: paymentMethod === 'nequi' ? nequiPhone : null,
+   295→        items: cart.items.map((item) => ({
+   296→          variantId: item.variant.id,
+   297→          quantity: item.quantity,
+   298→          price: item.product.price,
+   299→        })),
+   300→      };
+   301→
+   302→      const res = await fetch('/api/orders', {
+   303→        method: 'POST',
+   304→        headers: { 'Content-Type': 'application/json' },
+   305→        body: JSON.stringify(orderData),
+   306→      });
+   307→
+   308→      if (!res.ok) {
+   309→        throw new Error('Error al procesar el pedido');
+   310→      }
+   311→
+   312→      setOrderPlaced(true);
+   313→      toast.success('¡Pedido confirmado exitosamente!');
+   314→
+   315→      setTimeout(() => {
+   316→        cart.clearCart();
+   317→        navigate('order-confirmation');
+   318→      }, 1500);
+   319→    } catch {
+   320→      toast.error('Hubo un error al procesar tu pedido. Intenta de nuevo.');
+   321→    } finally {
+   322→      setSubmitting(false);
+   323→    }
+   324→  };
+   325→
+   326→  if (cart.items.length === 0 && !orderPlaced) {
+   327→    return (
+   328→      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+   329→        <p className="text-neutral-500 text-sm uppercase tracking-wider mb-6">
+   330→          Tu carrito está vacío
+   331→        </p>
+   332→        <Button
+   333→          onClick={() => navigate('home')}
+   334→          className="bg-white text-black hover:bg-neutral-200 uppercase text-xs tracking-wider font-bold rounded-none px-6 h-10"
+   335→        >
+   336→          EXPLORAR TIENDA
+   337→        </Button>
+   338→      </div>
+   339→    );
+   340→  }
+   341→
+   342→  if (orderPlaced) {
+   343→    return (
+   344→      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+   345→        <motion.div
+   346→          initial={{ scale: 0, opacity: 0 }}
+   347→          animate={{ scale: 1, opacity: 1 }}
+   348→          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+   349→          className="flex flex-col items-center"
+   350→        >
+   351→          <div className="w-20 h-20 rounded-full bg-green-600/20 flex items-center justify-center mb-6">
+   352→            <CheckCircle2 className="w-10 h-10 text-green-500" />
+   353→          </div>
+   354→          <h2 className="text-white text-2xl font-bold uppercase tracking-wider mb-2">
+   355→            ¡Pedido Confirmado!
+   356→          </h2>
+   357→          <p className="text-neutral-400 text-sm text-center max-w-sm">
+   358→            Gracias por tu compra. Recibirás un email de confirmación con los
+   359→            detalles de tu pedido.
+   360→          </p>
+   361→          <motion.div
+   362→            initial={{ opacity: 0, y: 10 }}
+   363→            animate={{ opacity: 1, y: 0 }}
+   364→            transition={{ delay: 0.8 }}
+   365→            className="mt-6"
+   366→          >
+   367→            <p className="text-neutral-600 text-xs uppercase tracking-wider">
+   368→              Redirigiendo a la tienda...
+   369→            </p>
+   370→          </motion.div>
+   371→        </motion.div>
+   372→      </div>
+   373→    );
+   374→  }
+   375→
+   376→  const darkInput =
+   377→    'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600 focus-visible:ring-red-600/20';
+   378→  const darkSelect =
+   379→    'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600 data-[placeholder]:text-neutral-600';
+   380→
+   381→  return (
+   382→    <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
+   383→      <div className="max-w-5xl mx-auto">
+   384→        {/* Header */}
+   385→        <div className="flex items-center justify-between mb-6">
+   386→          <button
+   387→            onClick={handleBack}
+   388→            className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors text-xs uppercase tracking-wider"
+   389→          >
+   390→            <ArrowLeft className="w-4 h-4" />
+   391→            <span>Volver</span>
+   392→          </button>
+   393→          <h1 className="text-white text-lg md:text-xl font-bold uppercase tracking-wider">
+   394→            Checkout
+   395→          </h1>
+   396→          <div className="w-20" />
+   397→        </div>
+   398→
+   399→        {/* Step Indicator */}
+   400→        <StepIndicator currentStep={step} totalSteps={3} />
+   401→
+   402→        <AnimatePresence mode="wait">
+   403→          {step === 1 && (
+   404→            <motion.div
+   405→              key="step1"
+   406→              initial={{ opacity: 0, x: 30 }}
+   407→              animate={{ opacity: 1, x: 0 }}
+   408→              exit={{ opacity: 0, x: -30 }}
+   409→              transition={{ duration: 0.25 }}
+   410→            >
+   411→              <div className="lg:hidden mb-6">
+   412→                <OrderSummary isMobile />
+   413→              </div>
+   414→              <div className="max-w-lg mx-auto">
+   415→                <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-6">
+   416→                  Información de Contacto
+   417→                </h2>
+   418→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   419→                  <div className="space-y-1.5">
+   420→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   421→                      Nombre *
+   422→                    </Label>
+   423→                    <Input
+   424→                      {...contactForm.register('firstName')}
+   425→                      className={darkInput}
+   426→                      placeholder="Juan"
+   427→                    />
+   428→                    {contactForm.formState.errors.firstName && (
+   429→                      <p className="text-red-500 text-xs">
+   430→                        {contactForm.formState.errors.firstName.message}
+   431→                      </p>
+   432→                    )}
+   433→                  </div>
+   434→                  <div className="space-y-1.5">
+   435→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   436→                      Apellido *
+   437→                    </Label>
+   438→                    <Input
+   439→                      {...contactForm.register('lastName')}
+   440→                      className={darkInput}
+   441→                      placeholder="Pérez"
+   442→                    />
+   443→                    {contactForm.formState.errors.lastName && (
+   444→                      <p className="text-red-500 text-xs">
+   445→                        {contactForm.formState.errors.lastName.message}
+   446→                      </p>
+   447→                    )}
+   448→                  </div>
+   449→                  <div className="space-y-1.5">
+   450→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   451→                      Email *
+   452→                    </Label>
+   453→                    <Input
+   454→                      {...contactForm.register('email')}
+   455→                      type="email"
+   456→                      className={darkInput}
+   457→                      placeholder="juan@email.com"
+   458→                    />
+   459→                    {contactForm.formState.errors.email && (
+   460→                      <p className="text-red-500 text-xs">
+   461→                        {contactForm.formState.errors.email.message}
+   462→                      </p>
+   463→                    )}
+   464→                  </div>
+   465→                  <div className="space-y-1.5">
+   466→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   467→                      Teléfono *
+   468→                    </Label>
+   469→                    <Input
+   470→                      {...contactForm.register('phone')}
+   471→                      className={darkInput}
+   472→                      placeholder="+57 300 123 4567"
+   473→                    />
+   474→                    {contactForm.formState.errors.phone && (
+   475→                      <p className="text-red-500 text-xs">
+   476→                        {contactForm.formState.errors.phone.message}
+   477→                      </p>
+   478→                    )}
+   479→                  </div>
+   480→                </div>
+   481→                <Button
+   482→                  onClick={handleContactNext}
+   483→                  className="w-full mt-6 bg-white text-black hover:bg-neutral-200 uppercase text-xs tracking-wider font-bold rounded-none h-11"
+   484→                >
+   485→                  CONTINUAR
+   486→                  <ArrowRight className="w-4 h-4 ml-2" />
+   487→                </Button>
+   488→              </div>
+   489→            </motion.div>
+   490→          )}
+   491→
+   492→          {step === 2 && (
+   493→            <motion.div
+   494→              key="step2"
+   495→              initial={{ opacity: 0, x: 30 }}
+   496→              animate={{ opacity: 1, x: 0 }}
+   497→              exit={{ opacity: 0, x: -30 }}
+   498→              transition={{ duration: 0.25 }}
+   499→            >
+   500→              <div className="lg:hidden mb-6">
+   501→                <OrderSummary isMobile />
+   502→              </div>
+   503→              <div className="max-w-lg mx-auto">
+   504→                <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-6">
+   505→                  Dirección de Envío
+   506→                </h2>
+   507→                <div className="space-y-4">
+   508→                  <div className="space-y-1.5">
+   509→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   510→                      Dirección *
+   511→                    </Label>
+   512→                    <Input
+   513→                      {...addressForm.register('address')}
+   514→                      className={darkInput}
+   515→                      placeholder="Calle 100 #15-20, Apto 302"
+   516→                    />
+   517→                    {addressForm.formState.errors.address && (
+   518→                      <p className="text-red-500 text-xs">
+   519→                        {addressForm.formState.errors.address.message}
+   520→                      </p>
+   521→                    )}
+   522→                  </div>
+   523→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   524→                    <div className="space-y-1.5">
+   525→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   526→                        Ciudad *
+   527→                      </Label>
+   528→                      <Input
+   529→                        {...addressForm.register('city')}
+   530→                        className={darkInput}
+   531→                        placeholder="Bogotá"
+   532→                      />
+   533→                      {addressForm.formState.errors.city && (
+   534→                        <p className="text-red-500 text-xs">
+   535→                          {addressForm.formState.errors.city.message}
+   536→                        </p>
+   537→                      )}
+   538→                    </div>
+   539→                    <div className="space-y-1.5">
+   540→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   541→                        Departamento *
+   542→                      </Label>
+   543→                      <Select
+   544→                        value={addressForm.watch('department')}
+   545→                        onValueChange={(val) =>
+   546→                          addressForm.setValue('department', val, {
+   547→                            shouldValidate: true,
+   548→                          })
+   549→                        }
+   550→                      >
+   551→                        <SelectTrigger className={darkSelect}>
+   552→                          <SelectValue placeholder="Seleccionar" />
+   553→                        </SelectTrigger>
+   554→                        <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
+   555→                          {DEPARTMENTS.map((dept) => (
+   556→                            <SelectItem key={dept} value={dept} className="text-white focus:bg-[#262626] focus:text-white">
+   557→                              {dept}
+   558→                            </SelectItem>
+   559→                          ))}
+   560→                        </SelectContent>
+   561→                      </Select>
+   562→                      {addressForm.formState.errors.department && (
+   563→                        <p className="text-red-500 text-xs">
+   564→                          {addressForm.formState.errors.department.message}
+   565→                        </p>
+   566→                      )}
+   567→                    </div>
+   568→                  </div>
+   569→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   570→                    <div className="space-y-1.5">
+   571→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   572→                        Barrio *
+   573→                      </Label>
+   574→                      <Input
+   575→                        {...addressForm.register('neighborhood')}
+   576→                        className={darkInput}
+   577→                        placeholder="Chapinero"
+   578→                      />
+   579→                      {addressForm.formState.errors.neighborhood && (
+   580→                        <p className="text-red-500 text-xs">
+   581→                          {addressForm.formState.errors.neighborhood.message}
+   582→                        </p>
+   583→                      )}
+   584→                    </div>
+   585→                    <div className="space-y-1.5">
+   586→                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   587→                        Código Postal *
+   588→                      </Label>
+   589→                      <Input
+   590→                        {...addressForm.register('postalCode')}
+   591→                        className={darkInput}
+   592→                        placeholder="110231"
+   593→                      />
+   594→                      {addressForm.formState.errors.postalCode && (
+   595→                        <p className="text-red-500 text-xs">
+   596→                          {addressForm.formState.errors.postalCode.message}
+   597→                        </p>
+   598→                      )}
+   599→                    </div>
+   600→                  </div>
+   601→                </div>
+   602→                <div className="flex gap-3 mt-6">
+   603→                  <Button
+   604→                    variant="outline"
+   605→                    onClick={handleBack}
+   606→                    className="flex-1 border-neutral-700 text-white hover:bg-neutral-800 uppercase text-xs tracking-wider font-bold rounded-none h-11"
+   607→                  >
+   608→                    <ArrowLeft className="w-4 h-4 mr-2" />
+   609→                    VOLVER
+   610→                  </Button>
+   611→                  <Button
+   612→                    onClick={handleAddressNext}
+   613→                    className="flex-1 bg-white text-black hover:bg-neutral-200 uppercase text-xs tracking-wider font-bold rounded-none h-11"
+   614→                  >
+   615→                    CONTINUAR
+   616→                    <ArrowRight className="w-4 h-4 ml-2" />
+   617→                  </Button>
+   618→                </div>
+   619→              </div>
+   620→            </motion.div>
+   621→          )}
+   622→
+   623→          {step === 3 && (
+   624→            <motion.div
+   625→              key="step3"
+   626→              initial={{ opacity: 0, x: 30 }}
+   627→              animate={{ opacity: 1, x: 0 }}
+   628→              exit={{ opacity: 0, x: -30 }}
+   629→              transition={{ duration: 0.25 }}
+   630→              className="flex flex-col lg:flex-row gap-6"
+   631→            >
+   632→              {/* Payment Methods */}
+   633→              <div className="flex-1">
+   634→                <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-6">
+   635→                  Método de Pago
+   636→                </h2>
+   637→
+   638→                {/* Payment Cards */}
+   639→                <div className="space-y-3 mb-6">
+   640→                  {/* Card */}
+   641→                  <motion.button
+   642→                    type="button"
+   643→                    whileTap={{ scale: 0.98 }}
+   644→                    onClick={() => setPaymentMethod('card')}
+   645→                    className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+   646→                      paymentMethod === 'card'
+   647→                        ? 'border-red-600 bg-red-600/10'
+   648→                        : 'border-[#262626] bg-[#0a0a0a] hover:border-neutral-600'
+   649→                    }`}
+   650→                  >
+   651→                    <div
+   652→                      className={`w-10 h-10 flex items-center justify-center rounded-full ${
+   653→                        paymentMethod === 'card'
+   654→                          ? 'bg-red-600 text-white'
+   655→                          : 'bg-[#1a1a1a] text-neutral-500'
+   656→                      }`}
+   657→                    >
+   658→                      <CreditCard className="w-5 h-5" />
+   659→                    </div>
+   660→                    <div className="text-left flex-1">
+   661→                      <p className="text-white text-sm font-medium">
+   662→                        Tarjeta de crédito/débito
+   663→                      </p>
+   664→                      <p className="text-neutral-500 text-xs">Visa, Mastercard, American Express</p>
+   665→                    </div>
+   666→                    <div
+   667→                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+   668→                        paymentMethod === 'card'
+   669→                          ? 'border-red-600'
+   670→                          : 'border-neutral-600'
+   671→                      }`}
+   672→                    >
+   673→                      {paymentMethod === 'card' && (
+   674→                        <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+   675→                      )}
+   676→                    </div>
+   677→                  </motion.button>
+   678→
+   679→                  {/* PSE */}
+   680→                  <motion.button
+   681→                    type="button"
+   682→                    whileTap={{ scale: 0.98 }}
+   683→                    onClick={() => setPaymentMethod('pse')}
+   684→                    className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+   685→                      paymentMethod === 'pse'
+   686→                        ? 'border-red-600 bg-red-600/10'
+   687→                        : 'border-[#262626] bg-[#0a0a0a] hover:border-neutral-600'
+   688→                    }`}
+   689→                  >
+   690→                    <div
+   691→                      className={`w-10 h-10 flex items-center justify-center rounded-full ${
+   692→                        paymentMethod === 'pse'
+   693→                          ? 'bg-red-600 text-white'
+   694→                          : 'bg-[#1a1a1a] text-neutral-500'
+   695→                      }`}
+   696→                    >
+   697→                      <Building2 className="w-5 h-5" />
+   698→                    </div>
+   699→                    <div className="text-left flex-1">
+   700→                      <p className="text-white text-sm font-medium">PSE</p>
+   701→                      <p className="text-neutral-500 text-xs">
+   702→                        Pago por banco en línea
+   703→                      </p>
+   704→                    </div>
+   705→                    <div
+   706→                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+   707→                        paymentMethod === 'pse'
+   708→                          ? 'border-red-600'
+   709→                          : 'border-neutral-600'
+   710→                      }`}
+   711→                    >
+   712→                      {paymentMethod === 'pse' && (
+   713→                        <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+   714→                      )}
+   715→                    </div>
+   716→                  </motion.button>
+   717→
+   718→                  {/* Nequi */}
+   719→                  <motion.button
+   720→                    type="button"
+   721→                    whileTap={{ scale: 0.98 }}
+   722→                    onClick={() => setPaymentMethod('nequi')}
+   723→                    className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+   724→                      paymentMethod === 'nequi'
+   725→                          ? 'border-red-600 bg-red-600/10'
+   726→                          : 'border-[#262626] bg-[#0a0a0a] hover:border-neutral-600'
+   727→                    }`}
+   728→                  >
+   729→                    <div
+   730→                      className={`w-10 h-10 flex items-center justify-center rounded-full ${
+   731→                        paymentMethod === 'nequi'
+   732→                          ? 'bg-red-600 text-white'
+   733→                          : 'bg-[#1a1a1a] text-neutral-500'
+   734→                      }`}
+   735→                    >
+   736→                      <Smartphone className="w-5 h-5" />
+   737→                    </div>
+   738→                    <div className="text-left flex-1">
+   739→                      <p className="text-white text-sm font-medium">Nequi</p>
+   740→                      <p className="text-neutral-500 text-xs">
+   741→                        Paga con tu Nequi
+   742→                      </p>
+   743→                    </div>
+   744→                    <div
+   745→                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+   746→                        paymentMethod === 'nequi'
+   747→                          ? 'border-red-600'
+   748→                          : 'border-neutral-600'
+   749→                      }`}
+   750→                    >
+   751→                      {paymentMethod === 'nequi' && (
+   752→                        <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+   753→                      )}
+   754→                    </div>
+   755→                  </motion.button>
+   756→                </div>
+   757→
+   758→                {/* Payment Details */}
+   759→                <AnimatePresence mode="wait">
+   760→                  {paymentMethod === 'card' && (
+   761→                    <motion.div
+   762→                      key="card-fields"
+   763→                      initial={{ opacity: 0, height: 0 }}
+   764→                      animate={{ opacity: 1, height: 'auto' }}
+   765→                      exit={{ opacity: 0, height: 0 }}
+   766→                      className="overflow-hidden"
+   767→                    >
+   768→                      <div className="space-y-4">
+   769→                        <div className="space-y-1.5">
+   770→                          <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   771→                            Número de tarjeta
+   772→                          </Label>
+   773→                          <Input
+   774→                            {...cardForm.register('cardNumber')}
+   775→                            className={darkInput}
+   776→                            placeholder="1234 5678 9012 3456"
+   777→                            maxLength={19}
+   778→                            onChange={(e) => {
+   779→                              e.target.value = formatCardNumber(e.target.value);
+   780→                            }}
+   781→                          />
+   782→                        </div>
+   783→                        <div className="space-y-1.5">
+   784→                          <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   785→                            Nombre en la tarjeta
+   786→                          </Label>
+   787→                          <Input
+   788→                            {...cardForm.register('cardName')}
+   789→                            className={darkInput}
+   790→                            placeholder="JUAN PÉREZ"
+   791→                          />
+   792→                        </div>
+   793→                        <div className="grid grid-cols-2 gap-4">
+   794→                          <div className="space-y-1.5">
+   795→                            <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   796→                              Vencimiento (MM/YY)
+   797→                            </Label>
+   798→                            <Input
+   799→                              {...cardForm.register('cardExpiry')}
+   800→                              className={darkInput}
+   801→                              placeholder="12/26"
+   802→                              maxLength={5}
+   803→                              onChange={(e) => {
+   804→                                e.target.value = formatExpiry(e.target.value);
+   805→                              }}
+   806→                            />
+   807→                          </div>
+   808→                          <div className="space-y-1.5">
+   809→                            <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   810→                              CVC
+   811→                            </Label>
+   812→                            <Input
+   813→                              {...cardForm.register('cardCvc')}
+   814→                              className={darkInput}
+   815→                              placeholder="123"
+   816→                              maxLength={4}
+   817→                            />
+   818→                          </div>
+   819→                        </div>
+   820→                      </div>
+   821→                    </motion.div>
+   822→                  )}
+   823→
+   824→                  {paymentMethod === 'pse' && (
+   825→                    <motion.div
+   826→                      key="pse-fields"
+   827→                      initial={{ opacity: 0, height: 0 }}
+   828→                      animate={{ opacity: 1, height: 'auto' }}
+   829→                      exit={{ opacity: 0, height: 0 }}
+   830→                      className="overflow-hidden"
+   831→                    >
+   832→                      <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 mb-4">
+   833→                        <p className="text-neutral-400 text-xs leading-relaxed">
+   834→                          Serás redirigido a <span className="text-white font-medium">PSE</span> para
+   835→                          completar el pago de forma segura a través de tu banco.
+   836→                        </p>
+   837→                      </div>
+   838→                      <div className="space-y-1.5">
+   839→                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   840→                          Banco
+   841→                        </Label>
+   842→                        <Select value={pseBank} onValueChange={setPseBank}>
+   843→                          <SelectTrigger className={darkSelect}>
+   844→                            <SelectValue placeholder="Selecciona tu banco" />
+   845→                          </SelectTrigger>
+   846→                          <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
+   847→                            {PSE_BANKS.map((bank) => (
+   848→                              <SelectItem key={bank} value={bank} className="text-white focus:bg-[#262626] focus:text-white">
+   849→                                {bank}
+   850→                              </SelectItem>
+   851→                            ))}
+   852→                          </SelectContent>
+   853→                        </Select>
+   854→                      </div>
+   855→                    </motion.div>
+   856→                  )}
+   857→
+   858→                  {paymentMethod === 'nequi' && (
+   859→                    <motion.div
+   860→                      key="nequi-fields"
+   861→                      initial={{ opacity: 0, height: 0 }}
+   862→                      animate={{ opacity: 1, height: 'auto' }}
+   863→                      exit={{ opacity: 0, height: 0 }}
+   864→                      className="overflow-hidden"
+   865→                    >
+   866→                      <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 mb-4">
+   867→                        <p className="text-neutral-400 text-xs leading-relaxed">
+   868→                          Paga con <span className="text-white font-medium">Nequi</span>. Recibirás
+   869→                          una notificación en tu app para confirmar el pago.
+   870→                        </p>
+   871→                      </div>
+   872→                      <div className="space-y-1.5">
+   873→                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   874→                          Número de celular Nequi
+   875→                        </Label>
+   876→                        <Input
+   877→                          value={nequiPhone}
+   878→                          onChange={(e) => setNequiPhone(e.target.value)}
+   879→                          className={darkInput}
+   880→                          placeholder="+57 300 123 4567"
+   881→                        />
+   882→                      </div>
+   883→                    </motion.div>
+   884→                  )}
+   885→                </AnimatePresence>
+   886→
+   887→                {/* Actions */}
+   888→                <div className="flex gap-3 mt-6">
+   889→                  <Button
+   890→                    variant="outline"
+   891→                    onClick={handleBack}
+   892→                    className="flex-1 border-neutral-700 text-white hover:bg-neutral-800 uppercase text-xs tracking-wider font-bold rounded-none h-11"
+   893→                  >
+   894→                    <ArrowLeft className="w-4 h-4 mr-2" />
+   895→                    VOLVER
+   896→                  </Button>
+   897→                  <Button
+   898→                    onClick={handleSubmitOrder}
+   899→                    disabled={submitting}
+   900→                    className="flex-[2] bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold rounded-none h-11 disabled:opacity-50"
+   901→                  >
+   902→                    {submitting ? (
+   903→                      <>
+   904→                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+   905→                        PROCESANDO...
+   906→                      </>
+   907→                    ) : (
+   908→                      'CONFIRMAR PEDIDO'
+   909→                    )}
+   910→                  </Button>
+   911→                </div>
+   912→              </div>
+   913→
+   914→              {/* Order Summary Sidebar (desktop) */}
+   915→              <div className="hidden lg:block w-80 flex-shrink-0">
+   916→                <div className="sticky top-24">
+   917→                  <OrderSummary isMobile={false} />
+   918→                </div>
+   919→              </div>
+   920→            </motion.div>
+   921→          )}
+   922→        </AnimatePresence>
+   923→      </div>
+   924→    </section>
+   925→  );
+   926→}
+   927→
