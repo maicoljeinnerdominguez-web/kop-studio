@@ -1,0 +1,295 @@
+'use client';
+
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Minus, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  useCartStore,
+  FREE_SHIPPING_THRESHOLD,
+  UPSELL_PRICE,
+} from '@/stores/useCartStore';
+import { useNavigationStore } from '@/stores/useNavigationStore';
+
+export default function CartDrawer() {
+  const items = useCartStore((s) => s.items);
+  const isCartOpen = useCartStore((s) => s.isCartOpen);
+  const closeCart = useCartStore((s) => s.closeCart);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const isUpsellActive = useCartStore((s) => s.isUpsellActive);
+  const toggleUpsell = useCartStore((s) => s.toggleUpsell);
+  const getSubtotal = useCartStore((s) => s.getSubtotal);
+  const getTotal = useCartStore((s) => s.getTotal);
+  const getItemCount = useCartStore((s) => s.getItemCount);
+  const getShippingProgress = useCartStore((s) => s.getShippingProgress);
+  const getRemainingForFreeShipping = useCartStore((s) => s.getRemainingForFreeShipping);
+  const hasFreeShipping = useCartStore((s) => s.hasFreeShipping);
+  const navigate = useNavigationStore((s) => s.navigate);
+
+  const itemCount = getItemCount();
+  const subtotal = getSubtotal();
+  const total = getTotal();
+  const shippingProgress = getShippingProgress();
+  const remaining = getRemainingForFreeShipping();
+  const freeShipping = hasFreeShipping();
+  const shippingCost = freeShipping ? 0 : 15000;
+
+  const handleCheckout = () => {
+    closeCart();
+    navigate('checkout');
+  };
+
+  const handleExploreStore = () => {
+    closeCart();
+    navigate('home');
+  };
+
+  const formatPrice = (price: number) =>
+    price.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+
+  return (
+    <Sheet open={isCartOpen} onOpenChange={(open) => !open && closeCart()}>
+      <SheetContent
+        side="right"
+        className="bg-[#0a0a0a] border-[#262626] w-full sm:max-w-md flex flex-col p-0"
+      >
+        {/* Header */}
+        <SheetHeader className="px-5 pt-5 pb-3 border-b border-[#262626] flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="text-white text-base uppercase tracking-wider font-bold">
+              TU CARRITO{' '}
+              {itemCount > 0 && (
+                <span className="text-neutral-400 font-normal text-sm">
+                  ({itemCount} {itemCount === 1 ? 'item' : 'items'})
+                </span>
+              )}
+            </SheetTitle>
+          </div>
+        </SheetHeader>
+
+        {items.length === 0 ? (
+          /* Empty Cart */
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
+            <div className="w-20 h-20 rounded-full bg-[#1a1a1a] flex items-center justify-center">
+              <Trash2 className="size-8 text-neutral-600" />
+            </div>
+            <div className="text-center">
+              <p className="text-white text-lg font-semibold mb-1">
+                Tu carrito está vacío
+              </p>
+              <p className="text-neutral-500 text-sm">
+                Agrega productos para comenzar
+              </p>
+            </div>
+            <Button
+              onClick={handleExploreStore}
+              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold px-6 h-10 rounded-none"
+            >
+              EXPLORAR TIENDA
+            </Button>
+          </div>
+        ) : (
+          <>
+            {/* Shipping Progress */}
+            <div className="px-5 py-3 border-b border-[#262626] flex-shrink-0">
+              <Progress
+                value={shippingProgress}
+                className="h-1.5 bg-[#1a1a1a] [&>[data-slot=progress-indicator]]:bg-red-600"
+              />
+              <div className="mt-2">
+                {freeShipping ? (
+                  <p className="text-green-500 text-xs font-medium">
+                    🎉 ¡ENVÍO GRATIS ACTIVADO!
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-red-500 text-xs font-medium">
+                      Faltan {formatPrice(remaining)} para obtener ENVÍO GRATIS
+                    </p>
+                    <p className="text-neutral-500 text-[11px] mt-0.5">
+                      Agrega {formatPrice(remaining)} más y recibe envío gratis
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Cart Items */}
+            <ScrollArea className="flex-1">
+              <div className="px-5 py-3 flex flex-col gap-3">
+                <AnimatePresence mode="popLayout">
+                  {items.map((item) => {
+                    const primaryImage = item.product.images?.find(
+                      (img) => img.isPrimary
+                    );
+                    const imageUrl = primaryImage?.url || item.product.images?.[0]?.url;
+                    const lineTotal = item.product.price * item.quantity;
+
+                    return (
+                      <motion.div
+                        key={item.variant.id}
+                        layout
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -30, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        className="flex gap-3 bg-[#111] rounded-lg p-3"
+                      >
+                        {/* Thumbnail */}
+                        <div className="w-16 h-20 rounded bg-[#1a1a1a] overflow-hidden flex-shrink-0">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={item.product.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-neutral-600 text-[10px]">
+                              IMG
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Details */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <p className="text-white text-sm font-medium truncate leading-tight">
+                              {item.product.title}
+                            </p>
+                            <p className="text-neutral-500 text-xs mt-0.5">
+                              {item.variant.size} / {item.variant.color}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-2">
+                            {/* Quantity Controls */}
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item.variant.id, item.quantity - 1)
+                                }
+                                className="w-6 h-6 rounded bg-[#1a1a1a] hover:bg-[#262626] flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+                                aria-label="Disminuir cantidad"
+                              >
+                                <Minus className="size-3" />
+                              </button>
+                              <span className="w-7 text-center text-sm text-white font-medium">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item.variant.id, item.quantity + 1)
+                                }
+                                className="w-6 h-6 rounded bg-[#1a1a1a] hover:bg-[#262626] flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+                                aria-label="Aumentar cantidad"
+                              >
+                                <Plus className="size-3" />
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm font-semibold">
+                                {formatPrice(lineTotal)}
+                              </span>
+                              <button
+                                onClick={() => removeItem(item.variant.id)}
+                                className="text-neutral-500 hover:text-red-500 transition-colors p-0.5"
+                                aria-label="Eliminar producto"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+
+              {/* Upsell Banner */}
+              <AnimatePresence>
+                {!isUpsellActive && subtotal >= FREE_SHIPPING_THRESHOLD && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mx-5 mb-3 overflow-hidden"
+                  >
+                    <div className="border border-red-600/30 bg-red-600/5 rounded-lg p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-white text-xs font-semibold leading-tight">
+                          Lleva un Puffer Bag Urban por solo{' '}
+                          <span className="text-red-500">{formatPrice(UPSELL_PRICE)}</span>{' '}
+                          adicionales
+                        </p>
+                        <p className="text-neutral-500 text-[11px] mt-0.5">
+                          Oferta exclusiva con tu compra
+                        </p>
+                      </div>
+                      <Button
+                        onClick={toggleUpsell}
+                        className="bg-red-600 hover:bg-red-700 text-white uppercase text-[10px] tracking-wider font-bold px-3 h-7 rounded-none flex-shrink-0"
+                      >
+                        AGREGAR
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </ScrollArea>
+
+            {/* Summary */}
+            <div className="border-t border-[#262626] px-5 py-4 flex-shrink-0 bg-[#0a0a0a]">
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-400">Subtotal</span>
+                  <span className="text-white font-medium">
+                    {formatPrice(subtotal)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-400">Envío</span>
+                  <span className={`font-medium ${freeShipping ? 'text-green-500' : 'text-white'}`}>
+                    {freeShipping ? 'GRATIS' : formatPrice(shippingCost)}
+                  </span>
+                </div>
+                {isUpsellActive && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-400">Puffer Bag Urban</span>
+                    <span className="text-red-400 font-medium">
+                      +{formatPrice(UPSELL_PRICE)}
+                    </span>
+                  </div>
+                )}
+                <div className="border-t border-[#262626] pt-2 flex items-center justify-between">
+                  <span className="text-white text-base font-bold uppercase tracking-wider">
+                    Total
+                  </span>
+                  <span className="text-white text-lg font-bold">
+                    {formatPrice(total)}
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleCheckout}
+                className="w-full bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold h-11 rounded-none"
+              >
+                IR A PAGAR
+              </Button>
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
