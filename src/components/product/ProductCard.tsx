@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Heart, ShoppingBag } from 'lucide-react'
+import { Heart, ShoppingBag, Eye } from 'lucide-react'
 import { useCartStore } from '@/stores/useCartStore'
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
+import ProductQuickView from '@/components/product/ProductQuickView'
 import type { Product } from '@/types'
 
 interface ProductCardProps {
@@ -22,6 +23,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const wishlisted = isInWishlist(product.id)
   const [imageError, setImageError] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
+  const [quickViewOpen, setQuickViewOpen] = useState(false)
 
   // Auto-reset "added" state after 1.5 seconds
   useEffect(() => {
@@ -68,9 +70,9 @@ export default function ProductCard({ product }: ProductCardProps) {
       transition={{ duration: 0.2 }}
       onClick={handleClick}
     >
-      <div className="relative overflow-hidden rounded-md bg-[#0a0a0a] border border-[#1a1a1a] transition-all duration-300 hover:shadow-lg hover:shadow-red-600/5 hover:border-red-600/30">
+      <div className={`relative overflow-hidden rounded-md bg-[#0a0a0a] border transition-all duration-300 hover:shadow-lg hover:shadow-red-600/5 ${wishlisted ? 'border-red-600/40' : 'border-[#1a1a1a] hover:border-red-600/30'}`}>
         {/* Image container */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-[#111]">
+        <div className="relative aspect-[3/4] overflow-hidden bg-[#111] shine-effect">
           {!imageError && primaryImage ? (
             <img
               src={primaryImage.url}
@@ -111,29 +113,41 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* Wishlist heart icon — offset right when NUEVO badge is at top-right */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleWishlist(product.id);
-            }}
-            className={`absolute z-20 w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-              product.isNew && !hasDiscount ? 'top-10 right-2' : 'top-2 right-2'
-            }`}
-            aria-label="Agregar a favoritos"
-          >
-            <Heart
-              size={16}
-              className={wishlisted ? 'text-red-500 transition-colors' : 'text-white/60 hover:text-red-500 transition-colors'}
-              fill={wishlisted ? 'currentColor' : 'none'}
-            />
-          </button>
+          {/* Action icons — heart + quick view */}
+          <div className={`absolute z-20 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+            product.isNew && !hasDiscount ? 'top-10 right-2' : 'top-2 right-2'
+          }`}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setQuickViewOpen(true)
+              }}
+              className="w-8 h-8 flex items-center justify-center bg-black/40 rounded-sm hover:bg-black/60 transition-colors"
+              aria-label="Vista rápida"
+            >
+              <Eye size={14} className="text-white/70" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleWishlist(product.id)
+              }}
+              className="w-8 h-8 flex items-center justify-center bg-black/40 rounded-sm hover:bg-black/60 transition-colors"
+              aria-label="Agregar a favoritos"
+            >
+              <Heart
+                size={14}
+                className={wishlisted ? 'text-red-500' : 'text-white/70'}
+                fill={wishlisted ? 'currentColor' : 'none'}
+              />
+            </button>
+          </div>
 
           {/* Quick add button with slide-up effect */}
           <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
             <button
               onClick={handleQuickAdd}
-              className={`w-full text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm transition-colors duration-200 ${
+              className={`w-full text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm transition-all duration-200 scale-105 hover:scale-100 ${
                 addedToCart
                   ? 'bg-green-600 text-white'
                   : 'bg-white text-black hover:bg-red-600 hover:text-white'
@@ -149,7 +163,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <h3 className="text-sm font-medium text-white truncate leading-tight">
             {product.title}
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-neutral-500 mt-0.5">
             {product.category?.name || ''}
           </p>
           <div className="flex items-center gap-2 mt-1.5">
@@ -157,7 +171,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               {formatPrice(product.price)}
             </span>
             {hasDiscount && (
-              <span className="text-xs text-gray-500 line-through">
+              <span className="text-xs text-neutral-500 line-through">
                 {formatPrice(product.compareAtPrice!)}
               </span>
             )}
@@ -169,6 +183,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
       </div>
+      <ProductQuickView product={product} open={quickViewOpen} onOpenChange={setQuickViewOpen} />
     </motion.div>
   )
 }

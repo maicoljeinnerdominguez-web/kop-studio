@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, Trash2, ShoppingBag, Truck, ArrowRight, Package } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingBag, Truck, ArrowRight, Package, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -61,6 +61,9 @@ export default function CartDrawer() {
         side="right"
         className="bg-[#0a0a0a] border-[#262626] w-full sm:max-w-md flex flex-col p-0"
       >
+        {/* Red gradient line at top */}
+        <div className="h-1 bg-gradient-to-r from-red-600 to-red-800 flex-shrink-0" />
+
         {/* Header */}
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-[#262626] flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -81,7 +84,19 @@ export default function CartDrawer() {
         {items.length === 0 ? (
           /* Empty Cart */
           <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
-            <ShoppingBag className="size-16 text-neutral-700" />
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+              className="relative"
+            >
+              <Heart className="size-20 text-neutral-700" />
+              <motion.div
+                className="absolute -inset-2 rounded-full bg-red-600/5"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+              />
+            </motion.div>
             <div className="text-center">
               <p className="text-white text-lg uppercase tracking-wider font-bold mb-2">
                 TU CARRITO ESTÁ VACÍO

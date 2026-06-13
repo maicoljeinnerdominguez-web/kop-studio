@@ -89,7 +89,9 @@ export type AppView =
   | "admin-dashboard"
   | "admin-products"
   | "admin-products-new"
-  | "admin-products-edit";
+  | "admin-products-edit"
+  | "wishlist"
+  | "order-tracking";
 
 export interface ProductFilters {
   sizes: string[];

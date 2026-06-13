@@ -1,0 +1,705 @@
+     1→     1→     1→'use client'
+     2→     2→     2→
+     3→     3→     3→import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
+     4→     4→     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→     5→     5→import {
+     6→     6→     6→  ChevronLeft,
+     7→     7→     7→  Check,
+     8→     8→     8→  ShoppingBag,
+     9→     9→     9→  Heart,
+    10→    10→    10→  Share2,
+    11→    11→    11→  Truck,
+    12→    12→    12→  RotateCcw,
+    13→    13→    13→  Shield,
+    14→    14→    14→  Ruler,
+    15→    15→    15→  X,
+    16→    16→    16→} from 'lucide-react'
+    17→    17→    17→import { toast } from 'sonner'
+    18→    18→    18→import { Button } from '@/components/ui/button'
+    19→    19→    19→import { Badge } from '@/components/ui/badge'
+    20→    20→    20→import { Skeleton } from '@/components/ui/skeleton'
+    21→    21→    21→import {
+    22→    22→    22→  Dialog,
+    23→    23→    23→  DialogContent,
+    24→    24→    24→  DialogHeader,
+    25→    25→    25→  DialogTitle,
+    26→    26→    26→  DialogTrigger,
+    27→    27→    27→  DialogDescription,
+    28→    28→    28→} from '@/components/ui/dialog'
+    29→    29→    29→import {
+    30→    30→    30→  Table,
+    31→    31→    31→  TableBody,
+    32→    32→    32→  TableCell,
+    33→    33→    33→  TableHead,
+    34→    34→    34→  TableHeader,
+    35→    35→    35→  TableRow,
+    36→    36→    36→} from '@/components/ui/table'
+    37→    37→    37→import {
+    38→    38→    38→  Accordion,
+    39→    39→    39→  AccordionContent,
+    40→    40→    40→  AccordionItem,
+    41→    41→    41→  AccordionTrigger,
+    42→    42→    42→} from '@/components/ui/accordion'
+    43→    43→    43→import {
+    44→    44→    44→  Breadcrumb,
+    45→    45→    45→  BreadcrumbItem,
+    46→    46→    46→  BreadcrumbLink,
+    47→    47→    47→  BreadcrumbList,
+    48→    48→    48→  BreadcrumbPage,
+    49→    49→    49→  BreadcrumbSeparator,
+    50→    50→    50→} from '@/components/ui/breadcrumb'
+    51→    51→    51→import { useNavigationStore } from '@/stores/useNavigationStore'
+    52→    52→    52→import { useCartStore } from '@/stores/useCartStore'
+    53→    53→    53→import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
+    54→    54→    54→import ProductCard from '@/components/product/ProductCard'
+    55→    55→    55→import ProductReviews from '@/components/product/ProductReviews'
+    56→    56→    56→import type { Product, ProductVariant } from '@/types'
+    57→    57→    57→
+    58→    58→    58→const SIZE_CHART = [
+    59→    59→    59→  { size: 'S', pecho: 48, largo: 68, hombro: 43 },
+    60→    60→    60→  { size: 'M', pecho: 52, largo: 71, hombro: 45 },
+    61→    61→    61→  { size: 'L', pecho: 56, largo: 74, hombro: 48 },
+    62→    62→    62→  { size: 'XL', pecho: 60, largo: 77, hombro: 50 },
+    63→    63→    63→  { size: 'OS', pecho: 64, largo: 80, hombro: 52 },
+    64→    64→    64→]
+    65→    65→    65→
+    66→    66→    66→function SizeGuideDialog() {
+    67→    67→    67→  return (
+    68→    68→    68→    <Dialog>
+    69→    69→    69→      <DialogTrigger asChild>
+    70→    70→    70→        <button className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors ml-3">
+    71→    71→    71→          <Ruler className="size-3.5" />
+    72→    72→    72→          <span className="text-[11px] uppercase tracking-wider font-medium">Guía de tallas</span>
+    73→    73→    73→        </button>
+    74→    74→    74→      </DialogTrigger>
+    75→    75→    75→      <DialogContent className="bg-[#0a0a0a] border-[#1a1a1a] text-white sm:max-w-md rounded-none p-0 overflow-hidden">
+    76→    76→    76→        <DialogHeader className="p-6 pb-0">
+    77→    77→    77→          <DialogTitle className="text-sm font-bold uppercase tracking-widest text-white">
+    78→    78→    78→            Guía de Tallas
+    79→    79→    79→          </DialogTitle>
+    80→    80→    80→          <DialogDescription className="text-neutral-500 text-xs">
+    81→    81→    81→            Medidas en centímetros (cm)
+    82→    82→    82→          </DialogDescription>
+    83→    83→    83→        </DialogHeader>
+    84→    84→    84→        <div className="px-6 pb-6 pt-4">
+    85→    85→    85→          <Table>
+    86→    86→    86→            <TableHeader>
+    87→    87→    87→              <TableRow className="border-[#1a1a1a] hover:bg-transparent">
+    88→    88→    88→                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3">Talla</TableHead>
+    89→    89→    89→                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Pecho</TableHead>
+    90→    90→    90→                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Largo</TableHead>
+    91→    91→    91→                <TableHead className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold h-10 px-3 text-center">Hombro</TableHead>
+    92→    92→    92→              </TableRow>
+    93→    93→    93→            </TableHeader>
+    94→    94→    94→            <TableBody>
+    95→    95→    95→              {SIZE_CHART.map((row) => (
+    96→    96→    96→                <TableRow key={row.size} className="border-[#1a1a1a] hover:bg-white/5">
+    97→    97→    97→                  <TableCell className="px-3 py-3 text-sm font-bold text-white">{row.size}</TableCell>
+    98→    98→    98→                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.pecho} cm</TableCell>
+    99→    99→    99→                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.largo} cm</TableCell>
+   100→   100→   100→                  <TableCell className="px-3 py-3 text-sm text-neutral-300 text-center">{row.hombro} cm</TableCell>
+   101→   101→   101→                </TableRow>
+   102→   102→   102→              ))}
+   103→   103→   103→            </TableBody>
+   104→   104→   104→          </Table>
+   105→   105→   105→          <p className="text-[11px] text-neutral-500 mt-4 leading-relaxed">
+   106→   106→   106→            Las medidas pueden variar ±2cm. Para un fit oversizado, recomendamos subir una talla.
+   107→   107→   107→          </p>
+   108→   108→   108→        </div>
+   109→   109→   109→      </DialogContent>
+   110→   110→   110→    </Dialog>
+   111→   111→   111→  )
+   112→   112→   112→}
+   113→   113→   113→
+   114→   114→   114→function ImageZoom({
+   115→   115→   115→  src,
+   116→   116→   116→  alt,
+   117→   117→   117→  isSelected,
+   118→   118→   118→}: {
+   119→   119→   119→  src: string
+   120→   120→   120→  alt: string
+   121→   121→   121→  isSelected: boolean
+   122→   122→   122→}) {
+   123→   123→   123→  const containerRef = useRef<HTMLDivElement>(null)
+   124→   124→   124→  const [isZoomed, setIsZoomed] = useState(false)
+   125→   125→   125→  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
+   126→   126→   126→
+   127→   127→   127→  const handleMouseMove = useCallback(
+   128→   128→   128→    (e: React.MouseEvent<HTMLDivElement>) => {
+   129→   129→   129→      if (!containerRef.current) return
+   130→   130→   130→      const rect = containerRef.current.getBoundingClientRect()
+   131→   131→   131→      const x = ((e.clientX - rect.left) / rect.width) * 100
+   132→   132→   132→      const y = ((e.clientY - rect.top) / rect.height) * 100
+   133→   133→   133→      setZoomPosition({ x, y })
+   134→   134→   134→    },
+   135→   135→   135→    []
+   136→   136→   136→  )
+   137→   137→   137→
+   138→   138→   138→  const handleMouseEnter = useCallback(() => setIsZoomed(true), [])
+   139→   139→   139→  const handleMouseLeave = useCallback(() => setIsZoomed(false), [])
+   140→   140→   140→
+   141→   141→   141→  if (!isSelected) return null
+   142→   142→   142→
+   143→   143→   143→  return (
+   144→   144→   144→    <div
+   145→   145→   145→      ref={containerRef}
+   146→   146→   146→      className="w-full h-full overflow-hidden cursor-zoom-in"
+   147→   147→   147→      onMouseMove={handleMouseMove}
+   148→   148→   148→      onMouseEnter={handleMouseEnter}
+   149→   149→   149→      onMouseLeave={handleMouseLeave}
+   150→   150→   150→    >
+   151→   151→   151→      <motion.img
+   152→   152→   152→        src={src}
+   153→   153→   153→        alt={alt}
+   154→   154→   154→        initial={{ opacity: 0 }}
+   155→   155→   155→        animate={{ opacity: 1 }}
+   156→   156→   156→        transition={{ duration: 0.3 }}
+   157→   157→   157→        className="w-full h-full object-cover transition-transform duration-200 ease-out"
+   158→   158→   158→        style={
+   159→   159→   159→          isZoomed
+   160→   160→   160→            ? {
+   161→   161→   161→                transform: 'scale(1.5)',
+   162→   162→   162→                transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+   163→   163→   163→              }
+   164→   164→   164→            : {
+   165→   165→   165→                transform: 'scale(1)',
+   166→   166→   166→              }
+   167→   167→   167→        }
+   168→   168→   168→      />
+   169→   169→   169→    </div>
+   170→   170→   170→  )
+   171→   171→   171→}
+   172→   172→   172→
+   173→   173→   173→function ProductDetailInner({ slug }: { slug: string }) {
+   174→   174→   174→  const navigate = useNavigationStore((s) => s.navigate)
+   175→   175→   175→  const goBack = useNavigationStore((s) => s.goBack)
+   176→   176→   176→  const addItem = useCartStore((s) => s.addItem)
+   177→   177→   177→  const openCart = useCartStore((s) => s.openCart)
+   178→   178→   178→  const addViewedProduct = useRecentlyViewedStore((s) => s.addViewedProduct)
+   179→   179→   179→
+   180→   180→   180→  const [product, setProduct] = useState<Product | null>(null)
+   181→   181→   181→  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
+   182→   182→   182→  const [loading, setLoading] = useState(true)
+   183→   183→   183→  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+   184→   184→   184→  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+   185→   185→   185→
+   186→   186→   186→  useEffect(() => {
+   187→   187→   187→    fetch('/api/products')
+   188→   188→   188→      .then((r) => r.json())
+   189→   189→   189→      .then((data: Product[]) => {
+   190→   190→   190→        const found = data.find((p) => p.slug === slug) || null
+   191→   191→   191→        setProduct(found)
+   192→   192→   192→        if (found) {
+   193→   193→   193→          addViewedProduct({
+   194→   194→   194→            id: found.id,
+   195→   195→   195→            title: found.title,
+   196→   196→   196→            slug: found.slug,
+   197→   197→   197→            price: found.price,
+   198→   198→   198→            images: found.images.map((img) => ({ url: img.url, altText: img.altText })),
+   199→   199→   199→          })
+   200→   200→   200→          const related = data
+   201→   201→   201→            .filter((p) => p.categoryId === found.categoryId && p.id !== found.id)
+   202→   202→   202→            .slice(0, 4)
+   203→   203→   203→          setRelatedProducts(related)
+   204→   204→   204→        } else {
+   205→   205→   205→          setRelatedProducts([])
+   206→   206→   206→        }
+   207→   207→   207→      })
+   208→   208→   208→      .catch(() => {
+   209→   209→   209→        setProduct(null)
+   210→   210→   210→        setRelatedProducts([])
+   211→   211→   211→      })
+   212→   212→   212→      .finally(() => setLoading(false))
+   213→   213→   213→  }, [slug])
+   214→   214→   214→
+   215→   215→   215→  const formatPrice = (price: number) =>
+   216→   216→   216→    `$${price.toLocaleString('es-CO')}`
+   217→   217→   217→
+   218→   218→   218→  const hasDiscount = product?.compareAtPrice && product.compareAtPrice > product.price
+   219→   219→   219→  const discountPercent = hasDiscount
+   220→   220→   220→    ? Math.round(((product!.compareAtPrice! - product!.price) / product!.compareAtPrice!) * 100)
+   221→   221→   221→    : 0
+   222→   222→   222→
+   223→   223→   223→  const availableSizes = useMemo(() => {
+   224→   224→   224→    if (!product) return []
+   225→   225→   225→    const seen = new Set<string>()
+   226→   226→   226→    return product.variants.filter((v) => {
+   227→   227→   227→      if (seen.has(v.size)) return false
+   228→   228→   228→      seen.add(v.size)
+   229→   229→   229→      return true
+   230→   230→   230→    })
+   231→   231→   231→  }, [product])
+   232→   232→   232→
+   233→   233→   233→  const availableColors = useMemo(() => {
+   234→   234→   234→    if (!product) return []
+   235→   235→   235→    const seen = new Set<string>()
+   236→   236→   236→    return product.variants.filter((v) => {
+   237→   237→   237→      if (seen.has(v.color)) return false
+   238→   238→   238→      seen.add(v.color)
+   239→   239→   239→      return true
+   240→   240→   240→    })
+   241→   241→   241→  }, [product])
+   242→   242→   242→
+   243→   243→   243→  const isOutOfStock = product
+   244→   244→   244→    ? product.variants.every((v) => v.stockQuantity === 0)
+   245→   245→   245→    : false
+   246→   246→   246→
+   247→   247→   247→  const selectedVariantStock = selectedVariant?.stockQuantity ?? 0
+   248→   248→   248→  const isLowStock = selectedVariantStock > 0 && selectedVariantStock < 5
+   249→   249→   249→
+   250→   250→   250→  const handleAddToCart = () => {
+   251→   251→   251→    if (!product || !selectedVariant) return
+   252→   252→   252→    addItem(product, selectedVariant)
+   253→   253→   253→    toast.success('Producto añadido al carrito')
+   254→   254→   254→    openCart()
+   255→   255→   255→  }
+   256→   256→   256→
+   257→   257→   257→  const handleShare = async () => {
+   258→   258→   258→    const url = window.location.href
+   259→   259→   259→    try {
+   260→   260→   260→      await navigator.clipboard.writeText(url)
+   261→   261→   261→      toast.success('Enlace copiado al portapapeles')
+   262→   262→   262→    } catch {
+   263→   263→   263→      toast.error('No se pudo copiar el enlace')
+   264→   264→   264→    }
+   265→   265→   265→  }
+   266→   266→   266→
+   267→   267→   267→  const generateSku = (title: string) => {
+   268→   268→   268→    const words = title.split(' ').slice(0, 2)
+   269→   269→   269→    const prefix = words.map((w) => w.substring(0, 3).toUpperCase()).join('-')
+   270→   270→   270→    const hash = title.length.toString().padStart(3, '0')
+   271→   271→   271→    const suffix = slug.slice(-3).toUpperCase()
+   272→   272→   272→    return `KOP-${prefix}-${hash}-${suffix}`
+   273→   273→   273→  }
+   274→   274→   274→
+   275→   275→   275→  if (loading) {
+   276→   276→   276→    return (
+   277→   277→   277→      <main className="min-h-screen max-w-7xl mx-auto px-4 py-8">
+   278→   278→   278→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+   279→   279→   279→          <Skeleton className="aspect-square w-full bg-[#111] rounded-md" />
+   280→   280→   280→          <div className="space-y-4">
+   281→   281→   281→            <Skeleton className="h-8 w-3/4 bg-[#111]" />
+   282→   282→   282→            <Skeleton className="h-6 w-1/4 bg-[#111]" />
+   283→   283→   283→            <Skeleton className="h-24 w-full bg-[#111] rounded-md" />
+   284→   284→   284→            <Skeleton className="h-12 w-full bg-[#111] rounded-md" />
+   285→   285→   285→            <Skeleton className="h-12 w-full bg-[#111] rounded-md" />
+   286→   286→   286→          </div>
+   287→   287→   287→        </div>
+   288→   288→   288→      </main>
+   289→   289→   289→    )
+   290→   290→   290→  }
+   291→   291→   291→
+   292→   292→   292→  if (!product) {
+   293→   293→   293→    return (
+   294→   294→   294→      <main className="min-h-screen flex flex-col items-center justify-center px-4">
+   295→   295→   295→        <p className="text-gray-400 text-lg mb-4">Producto no encontrado</p>
+   296→   296→   296→        <Button
+   297→   297→   297→          variant="outline"
+   298→   298→   298→          onClick={goBack}
+   299→   299→   299→          className="border-[#404040] text-white hover:border-white rounded-none bg-transparent"
+   300→   300→   300→        >
+   301→   301→   301→          Volver
+   302→   302→   302→        </Button>
+   303→   303→   303→      </main>
+   304→   304→   304→    )
+   305→   305→   305→  }
+   306→   306→   306→
+   307→   307→   307→  return (
+   308→   308→   308→    <main className="min-h-screen">
+   309→   309→   309→      {/* Breadcrumb */}
+   310→   310→   310→      <div className="border-b border-[#1a1a1a]">
+   311→   311→   311→        <div className="max-w-7xl mx-auto px-4 py-4">
+   312→   312→   312→          <Breadcrumb>
+   313→   313→   313→            <BreadcrumbList>
+   314→   314→   314→              <BreadcrumbItem>
+   315→   315→   315→                <BreadcrumbLink
+   316→   316→   316→                  className="cursor-pointer text-gray-500 hover:text-white"
+   317→   317→   317→                  onClick={() => navigate('home')}
+   318→   318→   318→                >
+   319→   319→   319→                  Inicio
+   320→   320→   320→                </BreadcrumbLink>
+   321→   321→   321→              </BreadcrumbItem>
+   322→   322→   322→              <BreadcrumbSeparator className="text-gray-600" />
+   323→   323→   323→              {product.category && (
+   324→   324→   324→                <>
+   325→   325→   325→                  <BreadcrumbItem>
+   326→   326→   326→                    <BreadcrumbLink
+   327→   327→   327→                      className="cursor-pointer text-gray-500 hover:text-white"
+   328→   328→   328→                      onClick={() =>
+   329→   329→   329→                        navigate('collection', { category: product.category!.slug })
+   330→   330→   330→                      }
+   331→   331→   331→                    >
+   332→   332→   332→                      {product.category.name}
+   333→   333→   333→                    </BreadcrumbLink>
+   334→   334→   334→                  </BreadcrumbItem>
+   335→   335→   335→                  <BreadcrumbSeparator className="text-gray-600" />
+   336→   336→   336→                </>
+   337→   337→   337→              )}
+   338→   338→   338→              <BreadcrumbItem>
+   339→   339→   339→                <BreadcrumbPage className="text-white font-medium truncate max-w-[200px] sm:max-w-none">
+   340→   340→   340→                  {product.title}
+   341→   341→   341→                </BreadcrumbPage>
+   342→   342→   342→              </BreadcrumbItem>
+   343→   343→   343→            </BreadcrumbList>
+   344→   344→   344→          </Breadcrumb>
+   345→   345→   345→        </div>
+   346→   346→   346→      </div>
+   347→   347→   347→
+   348→   348→   348→      <div className="max-w-7xl mx-auto px-4 py-8">
+   349→   349→   349→        {/* Back button */}
+   350→   350→   350→        <button
+   351→   351→   351→          onClick={goBack}
+   352→   352→   352→          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 text-sm"
+   353→   353→   353→        >
+   354→   354→   354→          <ChevronLeft className="size-4" />
+   355→   355→   355→          Volver
+   356→   356→   356→        </button>
+   357→   357→   357→
+   358→   358→   358→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+   359→   359→   359→          {/* Image Gallery */}
+   360→   360→   360→          <div>
+   361→   361→   361→            <div className="relative aspect-square overflow-hidden rounded-md bg-[#111] mb-3">
+   362→   362→   362→              <AnimatePresence mode="wait">
+   363→   363→   363→                {product.images.map((image, i) => (
+   364→   364→   364→                  <ImageZoom
+   365→   365→   365→                    key={image.id}
+   366→   366→   366→                    src={image.url}
+   367→   367→   367→                    alt={image.altText}
+   368→   368→   368→                    isSelected={i === selectedImageIndex}
+   369→   369→   369→                  />
+   370→   370→   370→                ))}
+   371→   371→   371→              </AnimatePresence>
+   372→   372→   372→
+   373→   373→   373→              {/* Badges */}
+   374→   374→   374→              <div className="absolute top-3 left-3 flex flex-col gap-2">
+   375→   375→   375→                {product.isNew && (
+   376→   376→   376→                  <Badge className="bg-white text-black text-[10px] font-bold uppercase tracking-wider rounded-none px-2.5 py-1 hover:bg-gray-200">
+   377→   377→   377→                    Nuevo
+   378→   378→   378→                  </Badge>
+   379→   379→   379→                )}
+   380→   380→   380→                {product.isBestseller && (
+   381→   381→   381→                  <Badge className="bg-[#dc2626] text-white text-[10px] font-bold uppercase tracking-wider rounded-none px-2.5 py-1">
+   382→   382→   382→                    Best Seller
+   383→   383→   383→                  </Badge>
+   384→   384→   384→                )}
+   385→   385→   385→              </div>
+   386→   386→   386→            </div>
+   387→   387→   387→
+   388→   388→   388→            {/* Image counter */}
+   389→   389→   389→            <div className="flex items-center justify-between mb-3">
+   390→   390→   390→              <p className="text-xs text-neutral-500">
+   391→   391→   391→                <span className="text-white font-medium">{selectedImageIndex + 1}</span>
+   392→   392→   392→                {' / '}
+   393→   393→   393→                {product.images.length}
+   394→   394→   394→              </p>
+   395→   395→   395→            </div>
+   396→   396→   396→
+   397→   397→   397→            {/* Thumbnails */}
+   398→   398→   398→            {product.images.length > 1 && (
+   399→   399→   399→              <div className="flex gap-2 overflow-x-auto pb-1">
+   400→   400→   400→                {product.images.map((image, i) => (
+   401→   401→   401→                  <button
+   402→   402→   402→                    key={image.id}
+   403→   403→   403→                    onClick={() => setSelectedImageIndex(i)}
+   404→   404→   404→                    className={`shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden border-2 transition-colors ${
+   405→   405→   405→                      selectedImageIndex === i
+   406→   406→   406→                        ? 'border-white'
+   407→   407→   407→                        : 'border-[#333] hover:border-gray-500'
+   408→   408→   408→                    }`}
+   409→   409→   409→                  >
+   410→   410→   410→                    <img
+   411→   411→   411→                      src={image.url}
+   412→   412→   412→                      alt={image.altText}
+   413→   413→   413→                      className="w-full h-full object-cover"
+   414→   414→   414→                    />
+   415→   415→   415→                  </button>
+   416→   416→   416→                ))}
+   417→   417→   417→              </div>
+   418→   418→   418→            )}
+   419→   419→   419→          </div>
+   420→   420→   420→
+   421→   421→   421→          {/* Product Info */}
+   422→   422→   422→          <div>
+   423→   423→   423→            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+   424→   424→   424→              {product.title}
+   425→   425→   425→            </h1>
+   426→   426→   426→
+   427→   427→   427→            {/* SKU */}
+   428→   428→   428→            <p className="text-neutral-500 text-xs font-mono mt-2">
+   429→   429→   429→              SKU: {product.sku || generateSku(product.title)}
+   430→   430→   430→            </p>
+   431→   431→   431→
+   432→   432→   432→            {/* Price */}
+   433→   433→   433→            <div className="flex items-baseline gap-3 mt-4">
+   434→   434→   434→              <span className="text-2xl font-bold text-white">
+   435→   435→   435→                {formatPrice(product.price)}
+   436→   436→   436→              </span>
+   437→   437→   437→              {hasDiscount && (
+   438→   438→   438→                <>
+   439→   439→   439→                  <span className="text-base text-neutral-500 line-through">
+   440→   440→   440→                    {formatPrice(product.compareAtPrice!)}
+   441→   441→   441→                  </span>
+   442→   442→   442→                  <span className="text-sm font-bold text-red-600">
+   443→   443→   443→                    -{discountPercent}%
+   444→   444→   444→                  </span>
+   445→   445→   445→                </>
+   446→   446→   446→              )}
+   447→   447→   447→            </div>
+   448→   448→   448→
+   449→   449→   449→            {/* Icons row */}
+   450→   450→   450→            <div className="flex items-center gap-4 mt-6">
+   451→   451→   451→              <button className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors">
+   452→   452→   452→                <Heart className="size-5" />
+   453→   453→   453→                <span className="text-xs">Favorito</span>
+   454→   454→   454→              </button>
+   455→   455→   455→              <button
+   456→   456→   456→                onClick={handleShare}
+   457→   457→   457→                className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors"
+   458→   458→   458→              >
+   459→   459→   459→                <Share2 className="size-5" />
+   460→   460→   460→                <span className="text-xs">Compartir</span>
+   461→   461→   461→              </button>
+   462→   462→   462→            </div>
+   463→   463→   463→
+   464→   464→   464→            {/* Size selector */}
+   465→   465→   465→            <div className="mt-8">
+   466→   466→   466→              <div className="flex items-center">
+   467→   467→   467→                <h3 className="text-xs font-bold uppercase tracking-widest text-white">
+   468→   468→   468→                  Talla
+   469→   469→   469→                  {selectedVariant && (
+   470→   470→   470→                    <span className="text-neutral-500 font-normal normal-case tracking-normal ml-2">
+   471→   471→   471→                      — {selectedVariant.size}
+   472→   472→   472→                    </span>
+   473→   473→   473→                  )}
+   474→   474→   474→                </h3>
+   475→   475→   475→                <SizeGuideDialog />
+   476→   476→   476→              </div>
+   477→   477→   477→              <div className="flex flex-wrap gap-3 mt-4">
+   478→   478→   478→                {availableSizes.map((variant) => {
+   479→   479→   479→                  const inStock = variant.stockQuantity > 0
+   480→   480→   480→                  const isSelected = selectedVariant?.id === variant.id
+   481→   481→   481→                  return (
+   482→   482→   482→                    <button
+   483→   483→   483→                      key={variant.id}
+   484→   484→   484→                      onClick={() => inStock && setSelectedVariant(variant)}
+   485→   485→   485→                      disabled={!inStock}
+   486→   486→   486→                      className={`min-w-[3.5rem] h-11 px-4 text-sm font-medium uppercase tracking-wider border-2 transition-all ${
+   487→   487→   487→                        isSelected
+   488→   488→   488→                          ? 'bg-white text-black border-white'
+   489→   489→   489→                          : inStock
+   490→   490→   490→                            ? 'bg-transparent text-white border-[#404040] hover:border-white'
+   491→   491→   491→                            : 'bg-transparent text-[#333] border-[#1a1a1a] cursor-not-allowed'
+   492→   492→   492→                      }`}
+   493→   493→   493→                    >
+   494→   494→   494→                      {variant.size}
+   495→   495→   495→                    </button>
+   496→   496→   496→                  )
+   497→   497→   497→                })}
+   498→   498→   498→              </div>
+   499→   499→   499→              {isOutOfStock && (
+   500→   500→   500→                <p className="text-sm text-red-600 mt-3">Agotado</p>
+   501→   501→   501→              )}
+   502→   502→   502→            </div>
+   503→   503→   503→
+   504→   504→   504→            {/* Colors */}
+   505→   505→   505→            {availableColors.length > 0 && (
+   506→   506→   506→              <div className="mt-6">
+   507→   507→   507→                <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-3">
+   508→   508→   508→                  Color
+   509→   509→   509→                </h3>
+   510→   510→   510→                <div className="flex items-center gap-3">
+   511→   511→   511→                  {availableColors.map((variant) => (
+   512→   512→   512→                    <span
+   513→   513→   513→                      key={variant.color}
+   514→   514→   514→                      className="text-sm text-neutral-300"
+   515→   515→   515→                    >
+   516→   516→   516→                      {variant.color}
+   517→   517→   517→                    </span>
+   518→   518→   518→                  ))}
+   519→   519→   519→                </div>
+   520→   520→   520→              </div>
+   521→   521→   521→            )}
+   522→   522→   522→
+   523→   523→   523→            {/* Add to Cart */}
+   524→   524→   524→            <div className="mt-8">
+   525→   525→   525→              {/* Stock indicator */}
+   526→   526→   526→              {selectedVariant && !isOutOfStock && (
+   527→   527→   527→                <div className="flex items-center gap-2 mb-3">
+   528→   528→   528→                  {isLowStock ? (
+   529→   529→   529→                    <>
+   530→   530→   530→                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
+   531→   531→   531→                      <span className="text-xs text-yellow-500 font-medium">Últimas unidades</span>
+   532→   532→   532→                    </>
+   533→   533→   533→                  ) : (
+   534→   534→   534→                    <>
+   535→   535→   535→                      <span className="w-2 h-2 rounded-full bg-green-500" />
+   536→   536→   536→                      <span className="text-xs text-green-500 font-medium">En stock</span>
+   537→   537→   537→                    </>
+   538→   538→   538→                  )}
+   539→   539→   539→                </div>
+   540→   540→   540→              )}
+   541→   541→   541→
+   542→   542→   542→              <motion.div
+   543→   543→   543→                animate={
+   544→   544→   544→                  selectedVariant && !isOutOfStock
+   545→   545→   545→                    ? { scale: [1, 1.015, 1] }
+   546→   546→   546→                    : { scale: 1 }
+   547→   547→   547→                }
+   548→   548→   548→                transition={
+   549→   549→   549→                  selectedVariant && !isOutOfStock
+   550→   550→   550→                    ? { repeat: Infinity, duration: 2, ease: 'easeInOut' }
+   551→   551→   551→                    : {}
+   552→   552→   552→                }
+   553→   553→   553→              >
+   554→   554→   554→                <Button
+   555→   555→   555→                  onClick={handleAddToCart}
+   556→   556→   556→                  disabled={!selectedVariant || isOutOfStock}
+   557→   557→   557→                  className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed"
+   558→   558→   558→                >
+   559→   559→   559→                  <ShoppingBag className="size-5 mr-2" />
+   560→   560→   560→                  Añadir al Carrito
+   561→   561→   561→                </Button>
+   562→   562→   562→              </motion.div>
+   563→   563→   563→
+   564→   564→   564→              {!selectedVariant && !isOutOfStock && (
+   565→   565→   565→                <p className="text-xs text-neutral-500 mt-2 text-center">
+   566→   566→   566→                  Selecciona una talla
+   567→   567→   567→                </p>
+   568→   568→   568→              )}
+   569→   569→   569→            </div>
+   570→   570→   570→
+   571→   571→   571→            {/* Benefits */}
+   572→   572→   572→            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+   573→   573→   573→              <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
+   574→   574→   574→                <Truck className="size-5 text-neutral-400 shrink-0" />
+   575→   575→   575→                <div>
+   576→   576→   576→                  <p className="text-xs font-medium text-white">Envío Express</p>
+   577→   577→   577→                  <p className="text-[10px] text-neutral-500">2-4 días hábiles</p>
+   578→   578→   578→                </div>
+   579→   579→   579→              </div>
+   580→   580→   580→              <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
+   581→   581→   581→                <RotateCcw className="size-5 text-neutral-400 shrink-0" />
+   582→   582→   582→                <div>
+   583→   583→   583→                  <p className="text-xs font-medium text-white">Devoluciones</p>
+   584→   584→   584→                  <p className="text-[10px] text-neutral-500">30 días para cambios</p>
+   585→   585→   585→                </div>
+   586→   586→   586→              </div>
+   587→   587→   587→              <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
+   588→   588→   588→                <Shield className="size-5 text-neutral-400 shrink-0" />
+   589→   589→   589→                <div>
+   590→   590→   590→                  <p className="text-xs font-medium text-white">Compra Segura</p>
+   591→   591→   591→                  <p className="text-[10px] text-neutral-500">Pago protegido</p>
+   592→   592→   592→                </div>
+   593→   593→   593→              </div>
+   594→   594→   594→            </div>
+   595→   595→   595→
+   596→   596→   596→            {/* Accordion */}
+   597→   597→   597→            <div className="mt-8 border-t border-[#1a1a1a]">
+   598→   598→   598→              <Accordion type="single" collapsible className="w-full">
+   599→   599→   599→                <AccordionItem value="description" className="border-[#1a1a1a]">
+   600→   600→   600→                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+   601→   601→   601→                    Descripción
+   602→   602→   602→                  </AccordionTrigger>
+   603→   603→   603→                  <AccordionContent className="text-sm text-neutral-400 leading-relaxed">
+   604→   604→   604→                    {product.description}
+   605→   605→   605→                  </AccordionContent>
+   606→   606→   606→                </AccordionItem>
+   607→   607→   607→
+   608→   608→   608→                <AccordionItem value="material" className="border-[#1a1a1a]">
+   609→   609→   609→                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+   610→   610→   610→                    Material y Cuidado
+   611→   611→   611→                  </AccordionTrigger>
+   612→   612→   612→                  <AccordionContent className="text-sm text-neutral-400 leading-relaxed">
+   613→   613→   613→                    100% Algodón Premium de 240gsm. Lavar a máquina en ciclo frío. No usar blanqueador. Secar a temperatura baja. Planchar del revés.
+   614→   614→   614→                  </AccordionContent>
+   615→   615→   615→                </AccordionItem>
+   616→   616→   616→
+   617→   617→   617→                <AccordionItem value="details" className="border-[#1a1a1a]">
+   618→   618→   618→                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+   619→   619→   619→                    Detalles de la prenda
+   620→   620→   620→                  </AccordionTrigger>
+   621→   621→   621→                  <AccordionContent>
+   622→   622→   622→                    <ul className="text-sm text-neutral-400 space-y-1.5">
+   623→   623→   623→                      <li className="flex items-center gap-2">
+   624→   624→   624→                        <Check className="size-3.5 text-red-600" />
+   625→   625→   625→                        Algodón premium 240gsm
+   626→   626→   626→                      </li>
+   627→   627→   627→                      <li className="flex items-center gap-2">
+   628→   628→   628→                        <Check className="size-3.5 text-red-600" />
+   629→   629→   629→                        Corte oversize
+   630→   630→   630→                      </li>
+   631→   631→   631→                      <li className="flex items-center gap-2">
+   632→   632→   632→                        <Check className="size-3.5 text-red-600" />
+   633→   633→   633→                        Impresión serigrafía
+   634→   634→   634→                      </li>
+   635→   635→   635→                      <li className="flex items-center gap-2">
+   636→   636→   636→                        <Check className="size-3.5 text-red-600" />
+   637→   637→   637→                        Hecho en Colombia
+   638→   638→   638→                      </li>
+   639→   639→   639→                    </ul>
+   640→   640→   640→                  </AccordionContent>
+   641→   641→   641→                </AccordionItem>
+   642→   642→   642→
+   643→   643→   643→                <AccordionItem value="care" className="border-[#1a1a1a]">
+   644→   644→   644→                  <AccordionTrigger className="text-xs font-bold uppercase tracking-widest text-white hover:no-underline hover:text-white data-[state=open]:border-l-2 data-[state=open]:border-red-600 data-[state=open]:pl-2 transition-all">
+   645→   645→   645→                    Guía de lavado
+   646→   646→   646→                  </AccordionTrigger>
+   647→   647→   647→                  <AccordionContent>
+   648→   648→   648→                    <ul className="text-sm text-neutral-400 space-y-1.5">
+   649→   649→   649→                      <li className="flex items-center gap-2">
+   650→   650→   650→                        <Check className="size-3.5 text-red-600" />
+   651→   651→   651→                        Lavar a mano con agua fría
+   652→   652→   652→                      </li>
+   653→   653→   653→                      <li className="flex items-center gap-2">
+   654→   654→   654→                        <Check className="size-3.5 text-red-600" />
+   655→   655→   655→                        No usar blanqueador
+   656→   656→   656→                      </li>
+   657→   657→   657→                      <li className="flex items-center gap-2">
+   658→   658→   658→                        <Check className="size-3.5 text-red-600" />
+   659→   659→   659→                        Secar a la sombra
+   660→   660→   660→                      </li>
+   661→   661→   661→                      <li className="flex items-center gap-2">
+   662→   662→   662→                        <Check className="size-3.5 text-red-600" />
+   663→   663→   663→                        Planchar a baja temperatura
+   664→   664→   664→                      </li>
+   665→   665→   665→                    </ul>
+   666→   666→   666→                  </AccordionContent>
+   667→   667→   667→                </AccordionItem>
+   668→   668→   668→              </Accordion>
+   669→   669→   669→            </div>
+   670→   670→   670→          </div>
+   671→   671→   671→        </div>
+   672→   672→   672→
+   673→   673→   673→        {/* Related Products */}
+   674→   674→   674→        {relatedProducts.length > 0 && (
+   675→   675→   675→          <section className="mt-20 pb-12">
+   676→   676→   676→            <div className="flex items-center mb-8">
+   677→   677→   677→              <div>
+   678→   678→   678→                <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+   679→   679→   679→                  También te puede interesar
+   680→   680→   680→                </h2>
+   681→   681→   681→                <div className="h-0.5 w-12 bg-red-600 mt-2" />
+   682→   682→   682→              </div>
+   683→   683→   683→            </div>
+   684→   684→   684→            {/* Horizontal scrollable on mobile, grid on desktop */}
+   685→   685→   685→            <div className="flex lg:grid lg:grid-cols-4 gap-4 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 snap-x snap-mandatory -mx-4 px-4 lg:mx-0 lg:px-0">
+   686→   686→   686→              {relatedProducts.map((p) => (
+   687→   687→   687→                <div key={p.id} className="min-w-[260px] sm:min-w-[280px] lg:min-w-0 snap-start">
+   688→   688→   688→                  <ProductCard product={p} />
+   689→   689→   689→                </div>
+   690→   690→   690→              ))}
+   691→   691→   691→            </div>
+   692→   692→   692→          </section>
+   693→   693→   693→        )}
+   694→   694→   694→
+   695→   695→   695→        {/* Reviews */}
+   696→   696→   696→        <ProductReviews productId={product.id} />
+   697→   697→   697→      </div>
+   698→   698→   698→    </main>
+   699→   699→   699→  )
+   700→   700→   700→}
+   701→   701→   701→
+   702→   702→   702→export default function ProductDetailView() {
+   703→   703→   703→  const slug = useNavigationStore((s) => s.viewParams.slug || '')
+   704→   704→   704→  return <ProductDetailInner key={slug} slug={slug} />
+   705→   705→   705→}

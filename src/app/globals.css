@@ -199,3 +199,103 @@ input[type="number"] {
 .search-palette-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #525252;
 }
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Shimmer text effect for announcement bar */
+@keyframes shimmer-text {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.8) 0%,
+    rgba(255,255,255,1) 25%,
+    rgba(255,255,255,0.6) 50%,
+    rgba(255,255,255,1) 75%,
+    rgba(255,255,255,0.8) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 3s linear infinite;
+}
+
+/* Gradient line for header bottom */
+@keyframes gradient-line-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.gradient-line {
+  background: linear-gradient(90deg, transparent, #dc2626, #991b1b, #dc2626, transparent);
+  animation: gradient-line-pulse 3s ease-in-out infinite;
+}
+
+/* Shine effect for product card image */
+.shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+.shine-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.08) 55%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+.shine-effect:hover::after {
+  transform: translateX(200%);
+}
+
+/* Subtle red text glow for headings */
+.text-glow {
+  text-shadow: 0 0 20px rgba(220, 38, 38, 0.3), 0 0 40px rgba(220, 38, 38, 0.1);
+}
+
+/* Footer link hover underline animation */
+.footer-link-hover {
+  position: relative;
+}
+.footer-link-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #dc2626;
+  transition: width 0.3s ease;
+}
+.footer-link-hover:hover::after {
+  width: 100%;
+}
+
+/* Mobile menu slide-in backdrop */
+.mobile-menu-backdrop {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Mobile menu slide-in animation */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}

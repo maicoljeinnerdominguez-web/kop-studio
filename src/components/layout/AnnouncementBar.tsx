@@ -31,7 +31,7 @@ export default function AnnouncementBar() {
     <span key={key} className="inline-flex items-center">
       {ANNOUNCEMENT_ITEMS.map((item, i) => (
         <span key={`${key}-${i}`} className="inline-flex items-center">
-          <span className="text-white/80 hover:text-white transition-colors cursor-pointer uppercase font-bold text-xs tracking-wider px-4">
+          <span className="shimmer-text hover:text-white transition-colors cursor-pointer uppercase font-bold text-xs tracking-wider px-4">
             {item}
           </span>
           <span className="text-white/30 text-xs">•</span>

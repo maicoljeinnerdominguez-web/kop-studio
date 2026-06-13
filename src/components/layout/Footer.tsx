@@ -22,6 +22,7 @@ const INFO_LINKS = [
   { label: 'Términos', slug: 'terminos' },
   { label: 'Privacidad', slug: 'privacidad' },
   { label: 'Contacto', slug: 'contacto' },
+  { label: 'Rastrear pedido', view: 'order-tracking' as const },
 ];
 
 const PAYMENT_METHODS = ['Visa', 'Mastercard', 'PSE', 'Nequi', 'Addi'];
@@ -101,7 +102,12 @@ export default function Footer() {
   const isDisabled = status === 'loading' || status === 'success';
 
   return (
-    <footer className="bg-[#0a0a0a] border-t border-[#262626]">
+    <footer className="bg-[#0a0a0a] border-t border-[#262626] relative overflow-hidden">
+      {/* Large KOP watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+        <span className="text-[8rem] font-black text-white/[0.02] tracking-tighter leading-none">KOP</span>
+      </div>
+
       {/* Main Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
@@ -147,7 +153,7 @@ export default function Footer() {
                 <li key={link.slug}>
                   <button
                     onClick={() => navigate('collection', { category: link.slug })}
-                    className="text-neutral-400 hover:text-white text-sm transition-colors"
+                    className="text-neutral-400 hover:text-white text-sm transition-colors footer-link-hover"
                   >
                     {link.label}
                   </button>
@@ -163,10 +169,16 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5">
               {INFO_LINKS.map((link) => (
-                <li key={link.slug}>
+                <li key={link.view ?? link.slug}>
                   <button
-                    onClick={() => navigate('home')}
-                    className="text-neutral-400 hover:text-white text-sm transition-colors"
+                    onClick={() => {
+                      if (link.view) {
+                        navigate(link.view);
+                      } else {
+                        navigate('home');
+                      }
+                    }}
+                    className="text-neutral-400 hover:text-white text-sm transition-colors footer-link-hover"
                   >
                     {link.label}
                   </button>
@@ -225,7 +237,7 @@ export default function Footer() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   onSubmit={handleNewsletterSubmit}
-                  className="space-y-2"
+                  className="space-y-2 focus-within:ring-1 focus-within:ring-red-600/50 rounded-sm transition-all duration-300"
                 >
                   <div className="flex gap-2">
                     <Input

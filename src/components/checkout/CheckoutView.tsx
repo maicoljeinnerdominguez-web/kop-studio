@@ -640,6 +640,15 @@ export default function CheckoutView() {
       setOrderPlaced(true);
       toast.success('¡Pedido confirmado exitosamente!');
 
+      // Fire-and-forget: increment promo code usage
+      if (promoApplied) {
+        fetch('/api/promo/use', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: promoApplied.code }),
+        });
+      }
+
       setTimeout(() => {
         cart.clearCart();
         navigate('order-confirmation');

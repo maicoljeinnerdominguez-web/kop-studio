@@ -13,6 +13,8 @@ import {
   Shield,
   Ruler,
   X,
+  Copy,
+  MessageCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -48,6 +50,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useCartStore } from '@/stores/useCartStore'
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
@@ -170,6 +177,57 @@ function ImageZoom({
   )
 }
 
+function RecentlyViewedSection({ currentProductId }: { currentProductId: string }) {
+  const recentlyViewed = useRecentlyViewedStore((s) => s.recentlyViewed)
+  const navigate = useNavigationStore((s) => s.navigate)
+
+  const filtered = recentlyViewed.filter((p) => p.id !== currentProductId)
+
+  if (filtered.length < 2) return null
+
+  return (
+    <section className="mt-16 pb-8">
+      <div className="flex items-center mb-6">
+        <div>
+          <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+            Vistos Recientemente
+          </h2>
+          <div className="h-0.5 w-12 bg-red-600 mt-2" />
+        </div>
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
+        {filtered.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => navigate('product', { slug: item.slug })}
+            className="shrink-0 w-24 snap-start group"
+          >
+            <div className="w-24 h-32 overflow-hidden rounded-sm border border-[#1a1a1a] bg-[#111] group-hover:border-[#333] transition-colors">
+              {item.images[0] ? (
+                <img
+                  src={item.images[0].url}
+                  alt={item.images[0].altText}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ShoppingBag className="size-5 text-[#333]" />
+                </div>
+              )}
+            </div>
+            <p className="text-[11px] text-neutral-400 mt-2 leading-tight line-clamp-2 text-left">
+              {item.title}
+            </p>
+            <p className="text-[11px] font-medium text-white mt-0.5 text-left">
+              ${item.price.toLocaleString('es-CO')}
+            </p>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function ProductDetailInner({ slug }: { slug: string }) {
   const navigate = useNavigationStore((s) => s.navigate)
   const goBack = useNavigationStore((s) => s.goBack)
@@ -254,7 +312,44 @@ function ProductDetailInner({ slug }: { slug: string }) {
     openCart()
   }
 
-  const handleShare = async () => {
+  const [selectedColor, setSelectedColor] = useState<string | null>(null)
+
+  // Derived effective color: auto-select if only one, or validate current selection
+  const effectiveColor = useMemo(() => {
+    if (availableColors.length === 1) return availableColors[0].color
+    if (selectedColor && availableColors.find(c => c.color === selectedColor)) return selectedColor
+    return null
+  }, [availableColors, selectedColor])
+
+  const handleColorSelect = (color: string) => {
+    setSelectedColor(color)
+    // Re-evaluate variant when color changes
+    if (selectedVariant) {
+      const size = selectedVariant.size
+      const newVariant = product?.variants.find(
+        (v) => v.size === size && v.color === color && v.stockQuantity > 0
+      )
+      setSelectedVariant(newVariant || null)
+    }
+  }
+
+  // Update size selection to consider color
+  const handleSizeSelect = (variant: ProductVariant) => {
+    if (variant.stockQuantity <= 0) return
+    if (effectiveColor && variant.color !== effectiveColor) {
+      // Find same size in selected color
+      const colorVariant = product?.variants.find(
+        (v) => v.size === variant.size && v.color === effectiveColor && v.stockQuantity > 0
+      )
+      setSelectedVariant(colorVariant || null)
+    } else {
+      setSelectedVariant(variant)
+    }
+  }
+
+  const canAddToCart = selectedVariant && (!effectiveColor || (effectiveColor && selectedVariant.color === effectiveColor))
+
+  const handleCopyLink = async () => {
     const url = window.location.href
     try {
       await navigator.clipboard.writeText(url)
@@ -262,6 +357,18 @@ function ProductDetailInner({ slug }: { slug: string }) {
     } catch {
       toast.error('No se pudo copiar el enlace')
     }
+  }
+
+  const handleShareWhatsApp = () => {
+    const text = encodeURIComponent(`Mira este producto de KOP STUDIO: ${product?.title} - ${formatPrice(product?.price || 0)}`)
+    const url = encodeURIComponent(window.location.href)
+    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank')
+  }
+
+  const handleShareTwitter = () => {
+    const text = encodeURIComponent(`Mira este producto de KOP STUDIO: ${product?.title} - ${formatPrice(product?.price || 0)}`)
+    const url = encodeURIComponent(window.location.href)
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank')
   }
 
   const generateSku = (title: string) => {
@@ -452,13 +559,37 @@ function ProductDetailInner({ slug }: { slug: string }) {
                 <Heart className="size-5" />
                 <span className="text-xs">Favorito</span>
               </button>
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors"
-              >
-                <Share2 className="size-5" />
-                <span className="text-xs">Compartir</span>
-              </button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors">
+                    <Share2 className="size-5" />
+                    <span className="text-xs">Compartir</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="bottom" align="start" className="bg-[#111] border-[#333] text-white p-2 rounded-none w-52">
+                  <button
+                    onClick={handleCopyLink}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors rounded-sm"
+                  >
+                    <Copy className="size-4" />
+                    Copiar enlace
+                  </button>
+                  <button
+                    onClick={handleShareWhatsApp}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors rounded-sm"
+                  >
+                    <MessageCircle className="size-4" />
+                    WhatsApp
+                  </button>
+                  <button
+                    onClick={handleShareTwitter}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors rounded-sm"
+                  >
+                    <Share2 className="size-4" />
+                    Twitter/X
+                  </button>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Size selector */}
@@ -472,7 +603,10 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     </span>
                   )}
                 </h3>
-                <SizeGuideDialog />
+                <div className="flex items-center ml-auto">
+                  <span className="text-[11px] text-neutral-500 mr-1">¿No sabes tu talla?</span>
+                  <SizeGuideDialog />
+                </div>
               </div>
               <div className="flex flex-wrap gap-3 mt-4">
                 {availableSizes.map((variant) => {
@@ -481,7 +615,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   return (
                     <button
                       key={variant.id}
-                      onClick={() => inStock && setSelectedVariant(variant)}
+                      onClick={() => inStock && handleSizeSelect(variant)}
                       disabled={!inStock}
                       className={`min-w-[3.5rem] h-11 px-4 text-sm font-medium uppercase tracking-wider border-2 transition-all ${
                         isSelected
@@ -502,20 +636,33 @@ function ProductDetailInner({ slug }: { slug: string }) {
             </div>
 
             {/* Colors */}
-            {availableColors.length > 0 && (
+            {availableColors.length > 1 && (
               <div className="mt-6">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-3">
                   Color
-                </h3>
-                <div className="flex items-center gap-3">
-                  {availableColors.map((variant) => (
-                    <span
-                      key={variant.color}
-                      className="text-sm text-neutral-300"
-                    >
-                      {variant.color}
+                  {effectiveColor && (
+                    <span className="text-neutral-500 font-normal normal-case tracking-normal ml-2">
+                      — {effectiveColor}
                     </span>
-                  ))}
+                  )}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {availableColors.map((variant) => {
+                    const isSelected = effectiveColor === variant.color
+                    return (
+                      <button
+                        key={variant.color}
+                        onClick={() => handleColorSelect(variant.color)}
+                        className={`h-9 px-4 text-xs font-medium uppercase tracking-wider border-2 transition-all ${
+                          isSelected
+                            ? 'bg-white text-black border-white'
+                            : 'bg-transparent text-neutral-300 border-[#404040] hover:border-white'
+                        }`}
+                      >
+                        {variant.color}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -553,7 +700,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
               >
                 <Button
                   onClick={handleAddToCart}
-                  disabled={!selectedVariant || isOutOfStock}
+                  disabled={!canAddToCart || isOutOfStock}
                   className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold uppercase tracking-widest h-14 rounded-none disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ShoppingBag className="size-5 mr-2" />
@@ -561,9 +708,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
                 </Button>
               </motion.div>
 
-              {!selectedVariant && !isOutOfStock && (
+              {!canAddToCart && !isOutOfStock && (
                 <p className="text-xs text-neutral-500 mt-2 text-center">
-                  Selecciona una talla
+                  {availableColors.length > 1 && !effectiveColor
+                    ? 'Selecciona un color y una talla'
+                    : 'Selecciona una talla'
+                  }
                 </p>
               )}
             </div>
@@ -669,6 +819,9 @@ function ProductDetailInner({ slug }: { slug: string }) {
             </div>
           </div>
         </div>
+
+        {/* Recently Viewed Products */}
+        <RecentlyViewedSection currentProductId={product.id} />
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

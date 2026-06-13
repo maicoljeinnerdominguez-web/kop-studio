@@ -20,6 +20,7 @@ import {
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useCartStore } from '@/stores/useCartStore';
 import { useSearchOpenStore } from '@/stores/useSearchOpenStore';
+import { useWishlistStore } from '@/stores/useWishlistStore';
 
 const NAV_LINKS = [
   { label: 'New Merch', slug: 'new-merch' },
@@ -29,7 +30,7 @@ const NAV_LINKS = [
   { label: 'Inferiores', slug: 'inferiores' },
   { label: 'Básicos', slug: 'basicos' },
   { label: 'Descuentos', slug: 'descuentos' },
-  { label: 'Favoritos', slug: 'favoritos', icon: Heart },
+  { label: 'Favoritos', slug: 'favoritos' },
 ] as const;
 
 export default function Header() {
@@ -37,6 +38,7 @@ export default function Header() {
   const itemCount = useCartStore((s) => s.getItemCount());
   const toggleCart = useCartStore((s) => s.toggleCart);
   const toggleSearch = useSearchOpenStore((s) => s.toggle);
+  const wishlistCount = useWishlistStore((s) => s.wishlist.length);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -68,7 +70,7 @@ export default function Header() {
                   <Menu className="size-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="bg-black border-[#262626] w-72 sm:max-w-xs">
+              <SheetContent side="left" className="bg-black/80 mobile-menu-backdrop border-[#262626] w-72 sm:max-w-xs" style={{ animation: 'slideInLeft 0.3s ease-out' }}>
                 <SheetHeader>
                   <SheetTitle className="text-white text-lg tracking-wider font-bold">
                     KOP STUDIO
@@ -79,7 +81,11 @@ export default function Header() {
                     <button
                       key={link.slug}
                       onClick={() => {
-                        navigate('collection', { category: link.slug });
+                        if (link.slug === 'favoritos') {
+                          navigate('wishlist');
+                        } else {
+                          navigate('collection', { category: link.slug });
+                        }
                         setMobileMenuOpen(false);
                       }}
                       className="text-left text-sm text-neutral-300 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md transition-colors tracking-wide uppercase font-medium flex items-center gap-2"
@@ -111,6 +117,9 @@ export default function Header() {
                 className="text-white font-bold text-xl tracking-wider"
                 whileHover={{ scale: 1.03 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                style={{ '--hover-shadow': '0 0 20px rgba(220, 38, 38, 0.3)' } as React.CSSProperties}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.textShadow = '0 0 20px rgba(220, 38, 38, 0.3)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.textShadow = 'none'; }}
               >
                 KOP STUDIO
               </motion.span>
@@ -122,19 +131,29 @@ export default function Header() {
             {NAV_LINKS.map((link) => (
               <motion.button
                 key={link.slug}
-                onClick={() => navigate('collection', { category: link.slug })}
+                onClick={() =>
+                  link.slug === 'favoritos'
+                    ? navigate('wishlist')
+                    : navigate('collection', { category: link.slug })
+                }
                 className="px-3 py-2 text-xs uppercase tracking-wider text-neutral-400 hover:text-white transition-colors font-medium relative group flex items-center gap-1.5"
                 whileHover={{ y: -1 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               >
                 {'icon' in link && link.icon && <link.icon className="size-3.5" />}
                 {link.label}
+                {link.slug === 'new-merch' && (
+                  <span className="relative flex h-1.5 w-1.5 ml-0.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600" />
+                  </span>
+                )}
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-red-600 group-hover:w-full transition-all duration-300" />
               </motion.button>
             ))}
           </nav>
 
-          {/* Right: Search, Cart, User */}
+          {/* Right: Search, Wishlist, Cart, User */}
           <div className="flex items-center gap-1">
             {/* Search */}
             <Button
@@ -145,6 +164,22 @@ export default function Header() {
               aria-label="Buscar"
             >
               <Search className="size-5" />
+            </Button>
+
+            {/* Wishlist */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('wishlist')}
+              className="relative text-white hover:bg-white/10"
+              aria-label="Favoritos"
+            >
+              <motion.div whileTap={{ scale: 0.9 }}>
+                <Heart className="size-5" />
+              </motion.div>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-600 rounded-full" />
+              )}
             </Button>
 
             {/* Cart */}
@@ -184,6 +219,8 @@ export default function Header() {
           </div>
         </div>
       </div>
+      {/* Animated gradient line at bottom */}
+      <div className="gradient-line h-[1px] w-full" />
     </header>
   );
 }

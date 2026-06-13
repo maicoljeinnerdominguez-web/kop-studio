@@ -42,7 +42,7 @@ export const useNavigationStore = create<NavigationStore>()(
     }),
     {
       name: "kop-navigation",
-      partialize: (state) => ({ currentView: state.currentView, viewParams: state.viewParams }),
+      partialize: () => ({}),
     }
   )
 );
