@@ -79,10 +79,11 @@ export async function POST(
     })
 
     return NextResponse.json(review, { status: 201 })
-  } catch {
+  } catch (err) {
+    console.error('Review creation error:', err)
     return NextResponse.json(
       { errors: ['Error al crear la reseña'] },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }

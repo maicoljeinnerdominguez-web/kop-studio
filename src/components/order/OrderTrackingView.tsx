@@ -54,12 +54,12 @@ const STATUS_STEPS = [
   { label: 'Entregado', icon: PackageCheck },
 ] as const;
 
-const STATUS_MAP: Record<string, { label: string; color: string; step: number }> = {
-  PENDING: { label: 'Pendiente', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', step: 0 },
-  PAID: { label: 'Pagado', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', step: 1 },
-  SHIPPED: { label: 'Enviado', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', step: 3 },
-  DELIVERED: { label: 'Entregado', color: 'bg-green-500/20 text-green-400 border-green-500/30', step: 4 },
-  CANCELLED: { label: 'Cancelado', color: 'bg-red-500/20 text-red-400 border-red-500/30', step: -1 },
+const STATUS_MAP: Record<string, { label: string; color: string; step: number; dotColor: string }> = {
+  PENDING: { label: 'Pendiente', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', step: 0, dotColor: '#eab308' },
+  PAID: { label: 'Pagado', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', step: 1, dotColor: '#f97316' },
+  SHIPPED: { label: 'Enviado', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', step: 3, dotColor: '#f97316' },
+  DELIVERED: { label: 'Entregado', color: 'bg-green-500/20 text-green-400 border-green-500/30', step: 4, dotColor: '#22c55e' },
+  CANCELLED: { label: 'Cancelado', color: 'bg-red-500/20 text-red-400 border-red-500/30', step: -1, dotColor: '#ef4444' },
 };
 
 function formatCOP(amount: number) {
@@ -85,6 +85,7 @@ function StatusTimeline({ status }: { status: string }) {
   const statusInfo = STATUS_MAP[status] ?? STATUS_MAP.PENDING;
   const currentStep = statusInfo.step;
   const isCancelled = status === 'CANCELLED';
+  const dotColor = statusInfo.dotColor;
 
   if (isCancelled) {
     return (
@@ -95,11 +96,21 @@ function StatusTimeline({ status }: { status: string }) {
     );
   }
 
+  const fillPercent = currentStep >= 0 ? (currentStep / (STATUS_STEPS.length - 1)) * 100 : 0;
+
   return (
     <div className="py-4">
       <div className="flex items-center justify-between relative">
         {/* Background line */}
         <div className="absolute top-3 left-4 right-4 h-0.5 bg-[#1a1a1a]" />
+        {/* Animated filled line */}
+        <motion.div
+          className="absolute top-3 left-4 h-0.5 bg-gradient-to-r from-red-600 to-red-700"
+          initial={{ width: '0%' }}
+          animate={{ width: `${fillPercent}%` }}
+          transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
+          style={{ maxWidth: 'calc(100% - 32px)' }}
+        />
 
         {/* Steps */}
         {STATUS_STEPS.map((step, idx) => {
@@ -109,21 +120,26 @@ function StatusTimeline({ status }: { status: string }) {
 
           return (
             <div key={step.label} className="relative flex flex-col items-center z-10 flex-1">
-              <div
+              <motion.div
+                initial={{ scale: 0.7, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1 + idx * 0.1, duration: 0.3 }}
                 className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                   isCompleted
                     ? 'bg-red-600 border-red-600'
                     : 'bg-black border-[#333]'
                 }`}
               >
-                {isCompleted ? (
+                {isCurrent ? (
+                  <span className="block w-2 h-2 rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotColor}80` }} />
+                ) : isCompleted ? (
                   <CheckCircle2 className="size-3.5 text-white" />
                 ) : (
                   <Icon className="size-3 text-neutral-600" />
                 )}
-              </div>
+              </motion.div>
               <span
-                className={`text-[10px] mt-2 text-center leading-tight ${
+                className={`text-[10px] mt-2 text-center leading-tight transition-colors duration-300 ${
                   isCurrent
                     ? 'text-red-500 font-bold'
                     : isCompleted
@@ -168,11 +184,14 @@ function OrderCard({ order }: { order: TrackedOrder }) {
               <Clock className="size-3" />
               {formatDate(order.createdAt)}
             </div>
-            <span
-              className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 border rounded-sm ${statusInfo.color}`}
-            >
-              {statusInfo.label}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 border ${statusInfo.color}`}
+              >
+                {statusInfo.label}
+              </span>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: statusInfo.dotColor, boxShadow: `0 0 6px ${statusInfo.dotColor}60` }} />
+            </div>
           </div>
         </div>
       </div>
@@ -193,7 +212,7 @@ function OrderCard({ order }: { order: TrackedOrder }) {
             return (
               <div
                 key={item.id}
-                className="flex items-center gap-4 bg-[#0a0a0a] border border-[#1a1a1a] p-3"
+                className="flex items-center gap-4 bg-[#0a0a0a] border border-[#1a1a1a] p-3 hover:border-[#262626] transition-colors duration-200"
               >
                 {/* Thumbnail */}
                 <div className="w-14 h-14 bg-[#1a1a1a] rounded-sm flex-shrink-0 overflow-hidden">
@@ -364,7 +383,8 @@ export default function OrderTrackingView() {
             >
               {/* Search Form Card */}
               <div className="max-w-lg mx-auto">
-                <div className="bg-[#111] border border-[#1a1a1a] p-6 sm:p-8">
+                <div className="bg-[#111] border border-[#1a1a1a] p-6 sm:p-8 noise-overlay relative">
+                  <div className="relative z-[2]">
                   <h1 className="text-white font-bold text-2xl sm:text-3xl uppercase tracking-wider text-center mb-1">
                     Rastrear pedido
                   </h1>
@@ -420,6 +440,7 @@ export default function OrderTrackingView() {
                       Buscar pedido
                     </Button>
                   </form>
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -435,6 +435,7 @@ export default function AdminDashboard() {
             <h1 className="text-white text-xl md:text-2xl font-bold uppercase tracking-wider">
               PANEL DE ADMINISTRACIÓN
             </h1>
+            <div className="h-[2px] w-16 bg-red-600 mt-2" />
             <p className="text-neutral-500 text-xs mt-1 uppercase tracking-wider">
               Gestiona tu tienda
             </p>
@@ -468,7 +469,7 @@ export default function AdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(220, 38, 38, 0.08)' }}
-                className="bg-[#0a0a0a] border border-[#1a1a1a] p-5 hover:border-red-600/30 transition-all duration-300 cursor-default"
+                className={`bg-[#0a0a0a] border border-[#1a1a1a] p-5 hover:border-red-600/30 transition-all duration-300 cursor-default ${idx === 0 ? 'animated-gradient-border pulse-glow-red' : ''}`}
               >
                 {loading ? (
                   <div className="space-y-3">
@@ -608,12 +609,12 @@ export default function AdminDashboard() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        recentOrders.slice(0, 5).map((order) => {
+                        recentOrders.slice(0, 5).map((order, idx) => {
                           const isExpanded = expandedOrders.has(order.id);
                           return (
                             <Fragment key={order.id}>
                               <TableRow
-                                className={`border-b-[#1a1a1a] hover:bg-[#111] transition-colors cursor-pointer ${isExpanded ? 'bg-[#111]' : ''}`}
+                                className={`border-b-[#1a1a1a] hover:bg-[#111] transition-colors cursor-pointer ${isExpanded ? 'bg-[#111]' : idx % 2 === 0 ? 'bg-[#0a0a0a]' : 'bg-transparent'}`}
                                 onClick={() => toggleExpand(order.id)}
                               >
                                 <TableCell className="w-8">

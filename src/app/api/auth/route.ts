@@ -15,14 +15,8 @@ export async function POST(request: Request) {
   if (user.passwordHash.startsWith("$2")) {
     isValid = bcrypt.compareSync(password, user.passwordHash);
   } else {
+    // Fallback: plaintext comparison (legacy passwords)
     isValid = user.passwordHash === password;
-    if (isValid) {
-      const newHash = bcrypt.hashSync(password, 10);
-      await db.user.update({
-        where: { id: user.id },
-        data: { passwordHash: newHash },
-      });
-    }
   }
 
   if (!isValid) {

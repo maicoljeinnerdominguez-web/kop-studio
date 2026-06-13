@@ -12,6 +12,7 @@ export interface SimplifiedProduct {
 interface RecentlyViewedStore {
   recentlyViewed: SimplifiedProduct[];
   addViewedProduct: (product: SimplifiedProduct) => void;
+  clearRecent: () => void;
 }
 
 export const useRecentlyViewedStore = create<RecentlyViewedStore>()(
@@ -24,10 +25,11 @@ export const useRecentlyViewedStore = create<RecentlyViewedStore>()(
             (p) => p.id !== product.id
           );
           return {
-            recentlyViewed: [product, ...filtered].slice(0, 10),
+            recentlyViewed: [product, ...filtered].slice(0, 12),
           };
         });
       },
+      clearRecent: () => set({ recentlyViewed: [] }),
     }),
     {
       name: "kop-recently-viewed",

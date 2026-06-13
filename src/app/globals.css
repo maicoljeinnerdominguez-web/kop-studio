@@ -733,3 +733,134 @@ body::before {
 .price-flash {
   animation: priceFlash 2s ease-in-out 1;
 }
+
+/* ===== ROUND 4 ENHANCEMENTS ===== */
+
+/* Animated gradient border */
+.animated-gradient-border {
+  position: relative;
+}
+.animated-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #dc2626, #991b1b, #dc2626, #7f1d1d);
+  background-size: 300% 300%;
+  animation: gradientBorderMove 4s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+@keyframes gradientBorderMove {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Noise texture overlay */
+.noise-overlay {
+  position: relative;
+}
+.noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Red dot indicator */
+.red-dot-indicator {
+  width: 8px;
+  height: 8px;
+  background: #dc2626;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Stagger animation utility */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* Glass morphism card */
+.glass-card {
+  background: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Floating particles animation */
+@keyframes float-particle {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Checkout progress line animation */
+@keyframes checkoutProgressPulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+.checkout-progress-line {
+  background: linear-gradient(90deg, transparent 0%, #dc2626 20%, #991b1b 50%, #dc2626 80%, transparent 100%);
+  background-size: 200% 100%;
+  animation: checkoutProgressSlide 2.5s linear infinite, checkoutProgressPulse 3s ease-in-out infinite;
+}
+@keyframes checkoutProgressSlide {
+  0% { background-position: 100% 50%; }
+  100% { background-position: -100% 50%; }
+}
+
+/* Input red glow on focus */
+.input-glow-red:focus {
+  border-color: rgba(220, 38, 38, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1), 0 0 16px rgba(220, 38, 38, 0.06);
+}
+
+/* Subtle pulse glow for special cards */
+@keyframes subtlePulseGlow {
+  0%, 100% { box-shadow: 0 0 0px rgba(220, 38, 38, 0), 0 0 0px rgba(220, 38, 38, 0); }
+  50% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.15), 0 0 40px rgba(220, 38, 38, 0.05); }
+}
+.pulse-glow-red {
+  animation: subtlePulseGlow 3s ease-in-out infinite;
+}
+
+/* Timeline fill animation */
+@keyframes timelineFill {
+  from { width: 0%; }
+  to { width: var(--fill-width); }
+}
+.timeline-fill-animated {
+  animation: timelineFill 1s ease-out 0.3s both;
+}
+
+/* Stagger fade in for card lists */
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.stagger-fade-in {
+  opacity: 0;
+  animation: staggerFadeIn 0.5s ease-out both;
+}

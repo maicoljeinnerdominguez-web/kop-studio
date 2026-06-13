@@ -12,6 +12,7 @@ import Footer from '@/components/layout/Footer';
 import SearchCommandPalette from '@/components/search/SearchCommandPalette';
 import SocialProofNotification from '@/components/social/SocialProofNotification';
 import CompareFloatingBar from '@/components/product/CompareFloatingBar';
+import AbandonedCartNotification from '@/components/cart/AbandonedCartNotification';
 
 const HomeView = lazy(() => import('@/components/home/HomeView'));
 const CollectionView = lazy(() => import('@/components/product/CollectionView'));
@@ -107,6 +108,9 @@ export default function Page() {
 
       {/* Compare Floating Bar */}
       {!isAdmin && <CompareFloatingBar />}
+
+      {/* Abandoned Cart Notification */}
+      {!isAdmin && <AbandonedCartNotification />}
 
       {/* Floating WhatsApp - only on non-admin views */}
       {!isAdmin && (

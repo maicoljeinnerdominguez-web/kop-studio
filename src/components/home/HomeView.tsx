@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ChevronLeft, ChevronRight, ChevronDown, Truck, RotateCcw, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, Truck, RotateCcw, ShieldCheck, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigationStore } from '@/stores/useNavigationStore'
@@ -40,6 +40,36 @@ const trustFeatures = [
   { icon: Truck, title: 'ENVÍO EXPRESS', desc: '2-4 días hábiles' },
   { icon: RotateCcw, title: 'DEVOLUCIONES', desc: '30 días para cambios' },
   { icon: ShieldCheck, title: 'COMPRA SEGURA', desc: 'Pago protegido' },
+]
+
+const TOTAL_LOOKS = [
+  {
+    name: 'LOOK URBANO',
+    description: 'Hoodie + Cargo + Accesorio',
+    images: [
+      '/images/products/hoodie-cristo.png',
+      '/images/products/cargo-black-3.png',
+      '/images/products/puffer-bag-chain.png',
+    ],
+  },
+  {
+    name: 'LOOK DARK NIGHT',
+    description: 'T-shirt Gótica + Jogger + Beanie',
+    images: [
+      '/images/products/tshirt-gothic-1.png',
+      '/images/products/jogger-6.png',
+      '/images/products/beanie-9.png',
+    ],
+  },
+  {
+    name: 'LOOK STREET ESSENTIAL',
+    description: 'Track Jacket + T-shirt + Jogger',
+    images: [
+      '/images/products/track-jacket-10.png',
+      '/images/products/tshirt-72mas1.png',
+      '/images/products/jogger-basic.png',
+    ],
+  },
 ]
 
 export default function HomeView() {
@@ -235,6 +265,112 @@ export default function HomeView() {
               </span>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* ===== TOTAL LOOKS SECTION ===== */}
+      <section className="py-20 px-4 bg-black">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeInUp}
+            custom={0}
+            className="text-center mb-12"
+          >
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-widest">
+              <span className="gradient-text-red">Total Looks</span>
+            </h2>
+            <div className="mt-3 mx-auto h-0.5 w-16 bg-[#dc2626]" />
+            <p className="mt-4 text-sm text-neutral-500 tracking-wider">
+              Outfits completos curados por KOP STUDIO
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {TOTAL_LOOKS.map((look, i) => (
+              <motion.div
+                key={look.name}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={fadeInUp}
+                custom={i}
+                className="group relative overflow-hidden cursor-pointer border border-[#1a1a1a] hover:border-[#333] transition-colors duration-300"
+                onClick={() => navigate('collection', { category: 'total-looks' })}
+              >
+                {/* Collage grid of product thumbnails */}
+                <div className="relative aspect-[4/5] bg-[#0a0a0a] grid grid-cols-2 grid-rows-2 gap-0.5 p-0.5">
+                  {/* Main image - spans 2 rows on left */}
+                  <div className="relative row-span-2 overflow-hidden">
+                    <img
+                      src={look.images[0]}
+                      alt={`${look.name} - Principal`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  </div>
+                  {/* Top right */}
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={look.images[1]}
+                      alt={`${look.name} - Secundario`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 delay-100"
+                    />
+                  </div>
+                  {/* Bottom right */}
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={look.images[2]}
+                      alt={`${look.name} - Accesorio`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 delay-200"
+                    />
+                  </div>
+
+                  {/* Dark overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
+                  {/* Content overlay at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-medium mb-1">
+                      KOP STUDIO
+                    </p>
+                    <h3 className="text-base sm:text-lg font-bold uppercase tracking-wider text-white">
+                      {look.name}
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1 tracking-wide">
+                      {look.description}
+                    </p>
+                    <div className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white group-hover:text-red-500 transition-colors duration-300">
+                      <Eye className="size-4" />
+                      <span>Ver Look</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Red bottom border on hover */}
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeInUp}
+            custom={4}
+            className="text-center mt-10"
+          >
+            <Button
+              onClick={() => navigate('collection', { category: 'total-looks' })}
+              className="bg-white text-black hover:bg-gray-200 text-xs font-bold uppercase tracking-wider px-8 py-4 h-auto rounded-none"
+            >
+              Ver Todos los Looks
+            </Button>
+          </motion.div>
+
+          <div className="mt-12 separator-dot"><span className="w-1.5 h-1.5 rounded-full bg-red-600" /></div>
         </div>
       </section>
 

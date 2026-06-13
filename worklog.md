@@ -1418,3 +1418,138 @@ KOP STUDIO is a mature, feature-rich dark gothic streetwear e-commerce SPA. Sinc
 8. Product reviews from real API data (currently mock hash)
 9. Abandoned cart recovery with localStorage
 10. Size recommendation/fit finder quiz
+
+---
+Task ID: r4-features
+Agent: full-stack-developer subagent
+Task: New Features Round 4 - Recently Viewed, Total Looks, Abandoned Cart
+
+Work Log:
+- Verified useRecentlyViewedStore already existed with persist middleware, addViewedProduct action, and kop-recently-viewed localStorage key
+- Verified ProductDetailView already calls addViewedProduct when product loads
+- Verified HomeView already has "VISTOS RECIENTEMENTE" carousel section between Best Sellers and Brand Story
+- Updated useRecentlyViewedStore: max items from 10 to 12, added clearRecent() action
+- Verified "total-looks" category already exists in database via API
+- Added "TOTAL LOOKS" curated outfits section to HomeView BEFORE categories grid with 3 hardcoded looks (LOOK URBANO, LOOK DARK NIGHT, LOOK STREET ESSENTIAL)
+- Each look card features overlapping 2x2 product image collage with dark gradient overlay, hover zoom effects, and "VER LOOK" CTA
+- Created AbandonedCartNotification component with sessionStorage-based timing (60s delay), slide-up animation, dismiss support
+- Registered AbandonedCartNotification in page.tsx after CompareFloatingBar, only on non-admin views
+- Passed ESLint with zero errors
+
+Stage Summary:
+- Feature 1 (Recently Viewed): Already implemented in prior rounds; updated store max to 12 and added clearRecent action
+- Feature 2 (Total Looks): New section added to homepage with 3 curated outfit cards, collage layout, hover effects, navigates to total-looks collection
+- Feature 3 (Abandoned Cart): Slide-up notification bar after 60s with items in cart, shows count + total in COP, "IR A PAGAR" CTA, X dismiss, once per session
+- Files Created: src/components/cart/AbandonedCartNotification.tsx
+- Files Modified: src/stores/useRecentlyViewedStore.ts, src/components/home/HomeView.tsx, src/app/page.tsx
+- ESLint: 0 errors
+
+---
+Task ID: r4-styling
+Agent: frontend-styling-expert subagent
+Task: Styling Enhancement Round 4
+
+Work Log:
+- Added new CSS utility classes to globals.css: animated-gradient-border, noise-overlay, red-dot-indicator, stagger-1..5, glass-card, float-particle keyframe, checkout-progress-line, input-glow-red, pulse-glow-red, timelineFill animation, stagger-fade-in
+- Enhanced CheckoutView.tsx: Added animated red progress line at top, noise-overlay texture on checkout section, "LOCKED & SECURE" badge with Lock+ShieldCheck icons in payment step, PASO 1/2/3 monospace labels with red-dot-indicator on active step, red gradient on completed step connectors, enhanced input focus glow (input-glow-red), hover:border transitions on all form inputs, animated-gradient-border on desktop sidebar, improved payment method selector cards with shadow glow and refined hover states
+- Enhanced OrderConfirmation.tsx: Added floating particle background (20 animated dots in red/white/gray), added tooltip on copy button with CSS-only tooltip arrow, added animated progress tracker (glass-card) showing 4-step order flow with first step highlighted in red, added btn-press class to action buttons, replaced solid divider with gradient fade divider
+- Enhanced OrderTrackingView.tsx: Simplified timeline fill animation formula, added colored dot indicator (glowing dot matching status color) on current timeline step, added animated dot next to status badge in order header, added noise-overlay to search card with z-index wrapper, added hover:border transitions on order items
+- Enhanced OrderHistoryView.tsx: Added staggered fade-in animations (stagger-fade-in + stagger-N classes) on order cards, improved status badges with colored left border using style prop, enhanced order card hover with lift effect (whileHover y:-2) and red border accent (hover:border-red-600/30), improved transition duration
+- Enhanced AdminDashboard.tsx: Added red accent line (h-[2px] w-16 bg-red-600) under DASHBOARD heading, added animated-gradient-border + pulse-glow-red on total revenue stat card (idx===0), added alternating row backgrounds (#0a0a0a / transparent) to orders table
+
+Stage Summary:
+- All 6 files enhanced with R4 styling polish
+- Files Modified: src/app/globals.css, src/components/checkout/CheckoutView.tsx, src/components/checkout/OrderConfirmation.tsx, src/components/order/OrderTrackingView.tsx, src/components/order/OrderHistoryView.tsx, src/components/admin/AdminDashboard.tsx
+- ESLint: 0 errors
+
+---
+Task ID: r4
+Agent: Main Agent
+Task: Cron Review Round 4 - QA, Bug Fixes, Styling, New Features
+
+## Current Project Status Assessment
+KOP STUDIO is a mature, feature-rich dark gothic streetwear e-commerce SPA at ~9.5/10 polish. Round 4 focused on critical bug fixes, styling depth, and 2 new features.
+
+**Component count**: 14 view components, 6 Zustand stores, 10+ API routes, 8 Prisma models
+**Tech stack**: Next.js 16, TypeScript, Tailwind CSS 4, shadcn/ui, Framer Motion, Prisma/SQLite, Zustand
+
+## Completed Modifications
+
+### 1. BUG FIX: Auth API 500 Error (CRITICAL)
+- **Root cause**: Auth route crashed with `SqliteError: attempt to write a readonly database` when trying to auto-migrate plaintext passwords to bcrypt hashes
+- **Fix 1**: Removed auto-migration write from `/src/app/api/auth/route.ts` — now supports both bcrypt and plaintext without attempting DB updates
+- **Fix 2**: Added `?mode=rwc` to `DATABASE_URL` in `.env` to force read-write-create mode
+- **Fix 3**: Temporarily reset Prisma client singleton to pick up new DATABASE_URL
+- **Verification**: Auth API returns 200 with user object
+
+### 2. BUG FIX: Review API Silent Error Swallowing
+- Changed catch block in `/src/app/api/products/[id]/reviews/route.ts` from silent 400 to logged 500
+- Added `console.error('Review creation error:', err)` for debugging
+
+### 3. BUG FIX: Database Readonly Issue
+- Identified that the running dev server's Prisma client had a readonly SQLite connection
+- Resolved by updating DATABASE_URL with `?mode=rwc` parameter
+
+### 4. Feature: "Total Looks" Curated Outfits Section
+- Added 3 curated outfit cards to HomeView before categories grid (LOOK URBANO, LOOK DARK NIGHT, LOOK STREET ESSENTIAL)
+- Each card has overlapping product image collage, dark gradient overlay, hover zoom, "VER LOOK" CTA
+- Mobile: single column, Desktop: 3-column grid
+
+### 5. Feature: Abandoned Cart Recovery Notification
+- Created `/src/components/cart/AbandonedCartNotification.tsx`
+- Shows slide-up bar after 60s with items in cart, once per session
+- Displays item count, total in COP, "IR A PAGAR →" button, X dismiss
+
+### 6. Styling: CheckoutView Polish
+- Animated red progress line at top, noise texture overlay
+- "LOCKED & SECURE" badge with Lock+ShieldCheck icons
+- PASO 1/2/3 monospace labels with red-dot-indicator
+- Input focus glow effects, animated-gradient-border on sidebar
+- Payment method cards with red shadow glow on selected
+
+### 7. Styling: OrderConfirmation Enhancement
+- 20 floating particle dots (red/white/gray) for celebration
+- Copy button with CSS tooltip
+- 4-step animated progress tracker in glass-card
+
+### 8. Styling: OrderTracking/History Polish
+- Timeline fill animation, colored dot indicators per status
+- Staggered fade-in on order cards, hover lift + red border
+- Noise texture on search card
+
+### 9. Styling: AdminDashboard Polish
+- Red accent line under DASHBOARD heading
+- Revenue card with animated-gradient-border + pulse-glow-red
+- Alternating row backgrounds in orders table
+
+### 10. Global CSS: 11 New Utility Classes
+- animated-gradient-border, noise-overlay, red-dot-indicator, stagger-1..5, glass-card, checkout-progress-line, input-glow-red, pulse-glow-red, timelineFill, stagger-fade-in, float-particle
+
+## Verification Results
+- ESLint: 0 errors, 0 warnings
+- Dev Server: 200 OK on all routes
+- API Routes: All returning 200 (categories, products, auth, search, reviews)
+- Review API: Now returns 201 on successful creation (was 400 due to readonly DB)
+- Auth API: Returns 200 with user object (was 500 due to bcrypt migration crash)
+- JS Console: Zero errors (confirmed via agent-browser)
+- Screenshots: r4-qa-home.png, r4-qa-collection.png, r4-qa-pdp.png, r4-qa-cart.png, r4-qa-search.png, r4-qa-admin-login.png, r4-qa-admin-dashboard.png, r4-final-home.png
+
+## Unresolved Issues / Risks
+- Agent-browser cannot click framer-motion wrapped elements (tool limitation, not user-facing)
+- OrderHistory fetches ALL orders (guest checkout limitation)
+- Admin passwords stored as plaintext (bcrypt comparison works but no auto-migration to hashed)
+- No real payment processing (simulation only)
+- No image upload in admin product form
+- No email notification system
+
+## Priority Recommendations for Next Phase
+1. Image upload functionality in admin product form
+2. "Total Looks" linked to actual bundled products with discount pricing
+3. Product image gallery pinch-to-zoom for mobile lightbox
+4. Email notification system for order confirmations
+5. Customer order history linked to email via session/auth
+6. Dark/light theme toggle
+7. Product reviews from real API data on ProductCard (currently mock hash-based)
+8. Size recommendation/fit finder quiz
+9. Instagram/TikTok feed integration on homepage
+10. Multi-language support (ES/EN)

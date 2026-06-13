@@ -61,37 +61,46 @@ function getShortOrderId(id: string) {
   return id.slice(0, 8).toUpperCase();
 }
 
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; className: string; borderColor: string }> = {
   PENDING: {
     label: 'Pendiente',
     className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    borderColor: '#eab308',
   },
   PAID: {
     label: 'Pagado',
     className: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    borderColor: '#f97316',
   },
   PREPARING: {
     label: 'En preparación',
     className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    borderColor: '#eab308',
   },
   SHIPPED: {
     label: 'Enviado',
     className: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    borderColor: '#f97316',
   },
   DELIVERED: {
     label: 'Entregado',
     className: 'bg-green-500/20 text-green-400 border-green-500/30',
+    borderColor: '#22c55e',
   },
   CANCELLED: {
     label: 'Cancelado',
     className: 'bg-red-500/20 text-red-400 border-red-500/30',
+    borderColor: '#ef4444',
   },
 };
 
 function getStatusBadge(status: string) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
   return (
-    <span className={`inline-flex items-center text-[10px] uppercase tracking-widest font-bold px-2.5 py-1 border ${config.className}`}>
+    <span
+      className={`inline-flex items-center text-[10px] uppercase tracking-widest font-bold px-2.5 py-1 border-l-2 border-l-[${config.borderColor}] ${config.className}`}
+      style={{ borderLeftColor: config.borderColor }}
+    >
       {config.label}
     </span>
   );
@@ -137,7 +146,9 @@ function OrderCard({ order }: { order: Order }) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#0a0a0a] border border-[#1a1a1a] hover:border-[#333] transition-colors p-4 sm:p-6"
+      whileHover={{ y: -2, boxShadow: '0 8px 24px -8px rgba(0, 0, 0, 0.5)' }}
+      transition={{ duration: 0.25 }}
+      className="bg-[#0a0a0a] border border-[#1a1a1a] hover:border-red-600/30 transition-all duration-300 p-4 sm:p-6 cursor-default"
     >
       {/* Order Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
@@ -294,8 +305,10 @@ export default function OrderHistoryView() {
           <EmptyState />
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
-              <OrderCard key={order.id} order={order} />
+            {orders.map((order, idx) => (
+              <div key={order.id} className={`stagger-fade-in stagger-${Math.min(idx + 1, 5)}`}>
+              <OrderCard order={order} />
+              </div>
             ))}
           </div>
         )}

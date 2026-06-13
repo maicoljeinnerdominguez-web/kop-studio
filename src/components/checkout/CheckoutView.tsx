@@ -113,32 +113,47 @@ function StepIndicator({
         return (
           <div key={s.num} className="flex items-center">
             <div className="flex flex-col items-center gap-1.5">
-              <motion.div
-                className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-colors duration-300 ${
-                  isCompleted
-                    ? 'bg-green-600 text-white'
-                    : isActive
-                      ? 'bg-red-600 text-white'
-                      : 'bg-[#1a1a1a] text-neutral-500 border border-[#333]'
-                }`}
-                animate={{
-                  scale: isActive ? 1.1 : 1,
-                }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-              >
-                {isCompleted ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <span className="text-[10px] sm:text-xs font-bold">{s.num}</span>
-                )}
-              </motion.div>
-              <span
-                className={`text-[10px] uppercase tracking-widest font-bold ${
+              <div className="relative">
+                {isActive && <span className="absolute -top-1 -right-1 red-dot-indicator" />}
+                <motion.div
+                  className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-colors duration-300 ${
+                    isCompleted
+                      ? 'bg-green-600 text-white'
+                      : isActive
+                        ? 'bg-red-600 text-white'
+                        : 'bg-[#1a1a1a] text-neutral-500 border border-[#333]'
+                  }`}
+                  animate={{
+                    scale: isActive ? 1.1 : 1,
+                  }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                >
+                  {isCompleted ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <span className="text-[10px] sm:text-xs font-bold">{s.num}</span>
+                  )}
+                </motion.div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[10px] font-mono tracking-widest font-bold ${
                   isCompleted
                     ? 'text-green-500'
                     : isActive
                       ? 'text-white'
                       : 'text-neutral-600'
+                }`}>
+                  PASO {s.num}
+                </span>
+                {isActive && <span className="red-dot-indicator" style={{ width: '6px', height: '6px' }} />}
+              </div>
+              <span
+                className={`text-[9px] uppercase tracking-widest ${
+                  isCompleted
+                    ? 'text-green-500/60'
+                    : isActive
+                      ? 'text-neutral-400'
+                      : 'text-neutral-700'
                 }`}
               >
                 {s.label}
@@ -147,7 +162,7 @@ function StepIndicator({
             {index < steps.length - 1 && (
               <div className="w-16 sm:w-24 h-px mx-2 mt-[-16px] relative overflow-hidden bg-[#1a1a1a]">
                 <motion.div
-                  className="absolute inset-y-0 left-0 bg-red-600"
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 to-red-700"
                   initial={{ width: '0%' }}
                   animate={{ width: isCompleted ? '100%' : '0%' }}
                   transition={{ duration: 0.5, ease: 'easeInOut' }}
@@ -752,16 +767,19 @@ export default function CheckoutView() {
   }
 
   const darkInput =
-    'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600 focus-visible:ring-red-600/20 h-12 transition-colors duration-200';
+    'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600/50 focus-visible:ring-red-600/10 h-12 transition-all duration-300 input-glow-red hover:border-[#404040]';
   const darkSelect =
-    'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600 data-[placeholder]:text-neutral-600 h-12 transition-colors duration-200';
+    'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600/50 data-[placeholder]:text-neutral-600 h-12 transition-all duration-300 input-glow-red hover:border-[#404040]';
 
   const fieldWrapper =
     'space-y-1.5 pl-0 border-l-2 border-transparent focus-within:border-red-600 focus-within:pl-3 transition-all duration-200';
 
   return (
-    <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
+    <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12 noise-overlay">
       <div className="max-w-6xl mx-auto">
+        {/* Animated Red Progress Line */}
+        <div className="checkout-progress-line h-[2px] w-full mb-6" />
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
@@ -790,7 +808,7 @@ export default function CheckoutView() {
         </div>
 
         {/* 2-Column Layout: Form (left) + Sidebar (right) */}
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 relative z-[2]">
           {/* Left: Form Steps (2/3 width on desktop) */}
           <div className="w-full lg:w-2/3">
             <AnimatePresence mode="wait">
@@ -1098,6 +1116,15 @@ export default function CheckoutView() {
                 >
                   <StepHeading>Método de Pago</StepHeading>
 
+                  {/* Locked & Secure Badge */}
+                  <div className="inline-flex items-center gap-2 bg-red-600/10 border border-red-600/20 px-3 py-1.5 mb-6">
+                    <Lock className="w-3.5 h-3.5 text-red-500" />
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-red-400">
+                      Locked &amp; Secure
+                    </span>
+                    <ShieldCheck className="w-3.5 h-3.5 text-red-500/60" />
+                  </div>
+
                   {/* Payment Method Cards */}
                   <div className="space-y-3 mb-6">
                     {/* Card */}
@@ -1105,10 +1132,10 @@ export default function CheckoutView() {
                       type="button"
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setPaymentMethod('card')}
-                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-300 ${
                         paymentMethod === 'card'
-                          ? 'border-red-600 bg-red-600/10'
-                          : 'border-[#262626] bg-[#111] hover:border-neutral-600'
+                          ? 'border-red-600 bg-red-600/10 shadow-[0_0_20px_rgba(220,38,38,0.08)]'
+                          : 'border-[#262626] bg-[#111] hover:border-[#404040] hover:bg-[#161616]'
                       }`}
                     >
                       <div
@@ -1144,10 +1171,10 @@ export default function CheckoutView() {
                       type="button"
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setPaymentMethod('pse')}
-                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-300 ${
                         paymentMethod === 'pse'
-                          ? 'border-red-600 bg-red-600/10'
-                          : 'border-[#262626] bg-[#111] hover:border-neutral-600'
+                          ? 'border-red-600 bg-red-600/10 shadow-[0_0_20px_rgba(220,38,38,0.08)]'
+                          : 'border-[#262626] bg-[#111] hover:border-[#404040] hover:bg-[#161616]'
                       }`}
                     >
                       <div
@@ -1183,10 +1210,10 @@ export default function CheckoutView() {
                       type="button"
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setPaymentMethod('nequi')}
-                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-200 ${
+                      className={`w-full flex items-center gap-4 p-4 border transition-all duration-300 ${
                         paymentMethod === 'nequi'
-                          ? 'border-red-600 bg-red-600/10'
-                          : 'border-[#262626] bg-[#111] hover:border-neutral-600'
+                          ? 'border-red-600 bg-red-600/10 shadow-[0_0_20px_rgba(220,38,38,0.08)]'
+                          : 'border-[#262626] bg-[#111] hover:border-[#404040] hover:bg-[#161616]'
                       }`}
                     >
                       <div
@@ -1383,7 +1410,7 @@ export default function CheckoutView() {
 
           {/* Right: Order Summary Sidebar (desktop only, sticky) */}
           <div className="hidden lg:block w-1/3 flex-shrink-0">
-            <div className="sticky top-24">
+            <div className="sticky top-24 animated-gradient-border">
               <OrderSummarySidebar
                 promoApplied={promoApplied}
                 onApplyPromo={setPromoApplied}
