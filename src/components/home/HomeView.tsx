@@ -136,7 +136,7 @@ const TOTAL_LOOKS = [
 ]
 
 export default function HomeView() {
-  const navigate = useNavigationStore()
+  const navigate = useNavigationStore((s) => s.navigate)
   const recentlyViewed = useRecentlyViewedStore((s) => s.recentlyViewed)
   const [categories, setCategories] = useState<Category[]>([])
   const [newProducts, setNewProducts] = useState<Product[]>([])
@@ -222,7 +222,7 @@ export default function HomeView() {
         {/* Bottom gradient fade to black */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black to-transparent z-[6]" />
 
-        <motion.div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16 text-shadow-red" style={{ opacity: heroOpacity }}>
+        <motion.div className="relative z-10 text-center px-4 max-w-3xl mx-auto pb-16" style={{ opacity: heroOpacity }}>
           <h1 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-widest uppercase">
             {HERO_WORDS.map((word, i) => (
               <span key={word}>
@@ -230,8 +230,7 @@ export default function HomeView() {
                   initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
                   animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                   transition={{ duration: 0.8, delay: 0.1 + i * 0.15, ease: 'easeOut' }}
-                  className="inline-block text-glitch"
-                  data-text={word}
+                  className="inline-block"
                 >
                   {word}
                 </motion.span>{' '}

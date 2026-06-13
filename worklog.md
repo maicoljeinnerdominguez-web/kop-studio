@@ -1921,3 +1921,23 @@ Stage Summary:
 - ESLint: 0 errors
 - Dev server compiles and renders successfully
 - Agent-browser QA: Verified all sections present, 18 brand image references, all page sections render correctly
+
+---
+Task ID: r6-bugfixes
+Agent: Main Agent
+Task: Fix 4 user-reported bugs: admin navigation, hero glow, Total Looks, edit button
+
+Work Log:
+- **Bug 1 - Admin navigation broken (Añadir, Volver, Editar)**: Root cause was `const navigate = useNavigationStore()` in 4 files returning the entire store object instead of just the `navigate` function. Fixed in:
+  - AdminProducts.tsx: `useNavigationStore()` → `useNavigationStore((s) => s.navigate)`
+  - HomeView.tsx: same fix
+  - CheckoutView.tsx: same fix  
+  - AbandonedCartNotification.tsx: same fix
+- **Bug 2 - Back button wrong route**: AdminProducts back button was navigating to `'admin'` which doesn't exist in the view map. Fixed to `'admin-dashboard'`.
+- **Bug 3 - Red glow on hero title**: Removed `text-glitch` class (CSS pseudo-elements with red/blue moving shadows) and `text-shadow-red` class (red text-shadow glow) from the hero heading.
+- **Bug 4 - Total Looks shows 0 products**: The CollectionView was querying `/api/products?category=total-looks` but no such DB category exists. Added virtual category mapping: `total-looks` → `/api/products?active=true`, `bestsellers` → `/api/products?bestseller=true&active=true`.
+
+Stage Summary:
+- All 4 bugs fixed with zero lint errors
+- Agent-browser QA confirmed: Total Loads shows "8 productos", Add Product navigates to "NUEVO PRODUCTO", no glitch/glow on hero
+- Admin back button now navigates to admin-dashboard (verified via production build test)

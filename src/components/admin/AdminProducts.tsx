@@ -45,7 +45,7 @@ function formatPrice(amount: number) {
 }
 
 export default function AdminProducts() {
-  const navigate = useNavigationStore();
+  const navigate = useNavigationStore((s) => s.navigate);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -125,7 +125,7 @@ export default function AdminProducts() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('admin')}
+              onClick={() => navigate('admin-dashboard')}
               className="flex items-center justify-center w-9 h-9 border border-neutral-700 text-neutral-400 hover:text-white hover:border-neutral-500 transition-colors flex-shrink-0"
               aria-label="Volver al Dashboard"
             >

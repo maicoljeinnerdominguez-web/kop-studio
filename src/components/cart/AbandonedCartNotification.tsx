@@ -41,7 +41,7 @@ export default function AbandonedCartNotification() {
   const items = useCartStore((s) => s.items)
   const getItemCount = useCartStore((s) => s.getItemCount)
   const getSubtotal = useCartStore((s) => s.getSubtotal)
-  const navigate = useNavigationStore()
+  const navigate = useNavigationStore((s) => s.navigate)
   const [visible, setVisible] = useState(false)
   const dismissedRef = useRef(getSessionFlag(SESSION_DISMISSED_KEY))
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

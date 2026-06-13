@@ -244,9 +244,15 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const url = categorySlug
-      ? `/api/products?category=${categorySlug}`
-      : '/api/products'
+    // Virtual categories: map to actual API query params
+    let url = '/api/products'
+    if (categorySlug === 'total-looks') {
+      url = '/api/products?active=true'
+    } else if (categorySlug === 'bestsellers') {
+      url = '/api/products?bestseller=true&active=true'
+    } else if (categorySlug) {
+      url = `/api/products?category=${categorySlug}`
+    }
     fetch(url)
       .then((r) => r.json())
       .then((data: Product[]) => setAllProducts(data))
@@ -333,7 +339,12 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
       accesorios: 'ACCESORIOS',
       descuentos: 'DESCUENTOS',
     }
-    return map[categorySlug] || categorySlug.toUpperCase()
+    const name = map[categorySlug] || categorySlug.toUpperCase()
+    // Add subtitle for virtual categories
+    if (categorySlug === 'total-looks') {
+      return name + ' — Todos los productos'
+    }
+    return name
   }, [categorySlug])
 
   const filterContent = (

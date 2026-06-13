@@ -560,7 +560,7 @@ export default function CheckoutView() {
   const [submitting, setSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [promoApplied, setPromoApplied] = useState<PromoData | null>(null);
-  const navigate = useNavigationStore();
+  const navigate = useNavigationStore((s) => s.navigate);
   const cart = useCartStore();
 
   const contactForm = useForm<ContactData>({
