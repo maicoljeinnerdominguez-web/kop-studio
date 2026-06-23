@@ -2053,3 +2053,249 @@ Stage Summary:
 - All admin navigation bugs traced to stale build — code was always correct
 - Geographic correction was already done (only bank name "Banco de Bogotá" remains intentionally)
 - Note: Server process stability issues in sandbox environment (processes get killed). Use `HOSTNAME=0.0.0.0` when starting server for Caddy proxy accessibility.
+
+---
+Task ID: user-registration
+Agent: Main Agent
+Task: Implement user registration system + write 100% completion plan
+
+Work Log:
+- Created `/src/app/api/auth/register/route.ts`:
+  - POST endpoint with full validation (name min 2 chars, email regex, password min 6 chars)
+  - Checks for duplicate email (409 conflict)
+  - Hashes password with bcrypt (10 salt rounds)
+  - Creates user with role "USER" in SQLite via Prisma
+  - Returns 201 with user object + success message
+- Updated `/src/stores/useAuthStore.ts`:
+  - Changed `login` return type from `boolean` to `{ success: boolean; error?: string }` for proper error messages
+  - Added `register` action: calls `/api/auth/register`, auto-logs in on success
+- Created `/src/stores/useAuthDialogStore.ts`:
+  - Simple zustand store with `isOpen`, `initialTab` (login/register), `open()`, `close()`
+- Created `/src/components/layout/UserAuthDialog.tsx` (~280 lines):
+  - Dual-tab dialog (Iniciar Sesión / Registrarse) with animated tab switcher
+  - Login form: email + password with show/hide toggle
+  - Register form: name + email + phone (optional) + password + confirm password
+  - Client-side validation (empty fields, min length, password match)
+  - Error display with AnimatePresence animations
+  - "Rastrear un pedido sin cuenta" link at bottom
+  - When logged in: shows user profile menu (avatar, name, email, admin badge)
+    - Menu options: Mis Pedidos, Mis Favoritos, Panel de Admin (if admin), Cerrar Sesión
+- Updated `/src/components/layout/Header.tsx`:
+  - User icon now opens auth dialog instead of navigating to admin
+  - Green dot indicator when user is logged in
+  - Mobile menu: "Admin" → "Mi Cuenta" (shows user name when logged in)
+- Updated `/src/app/page.tsx`:
+  - Added UserAuthDialog import and render (alongside CartDrawer, SearchCommandPalette)
+- API Testing (all passed):
+  - Duplicate registration → 409 "Ya existe una cuenta con este correo electrónico"
+  - Short password → 400 "La contraseña debe tener al menos 6 caracteres"
+  - Login with registered user → 200 (bcrypt hash verified)
+  - Wrong password → 401 "Invalid credentials"
+- Database verification: 4 users stored (2 seed + 2 registered), new users have bcrypt hashes ($2b$10$...)
+- Lint: 0 errors
+
+Stage Summary:
+- Complete user registration flow: UI dialog → API → bcrypt hash → SQLite storage
+- Auth store now returns error messages for both login and register
+- Header User button repurposed: opens auth dialog (login/register/profile menu)
+- Files created: 3 (register API, auth dialog store, UserAuthDialog component)
+- Files modified: 3 (auth store, Header, page.tsx)
+
+---
+## PLAN COMPLETO: KOP STUDIO al 100%
+
+### Estado Actual (~85% completado)
+
+Lo que YA funciona:
+✅ Base de datos completa (SQLite + Prisma) — 8 modelos: User, Category, Product, ProductVariant, ProductImage, Order, OrderItem, Review, PromoCode
+✅ 11+ productos con imágenes generadas por IA (estilo gótico/calligráfico)
+✅ 14+ vistas del SPA (Home, Collection, PDP, Checkout, Order Confirmation, Admin Dashboard, Admin Products, Admin Product Form, Admin Promos, Admin Orders, Admin Categories, Wishlist, Order Tracking, Order History, Product Comparison)
+✅ 8+ Zustand stores (navigation, cart, auth, wishlist, recently viewed, search, compare, auth dialog, newsletter)
+✅ 10+ API routes funcionando
+✅ Sistema de cupones/promociones (3 códigos seeded, validación completa en checkout)
+✅ Reseñas de productos (8 seeded, escritura de reseñas por usuarios)
+✅ Búsqueda Cmd+K con paleta de comandos
+✅ Comparación de productos (2-3 productos lado a lado)
+✅ Lista de deseos con persistencia
+✅ Rastreo de pedidos por email
+✅ Historial de pedidos
+✅ Notificaciones sociales (proof)
+✅ Carrito abandonado (notificación)
+✅ Vista rápida de productos (Quick View modal)
+✅ Compartir en redes (WhatsApp, Twitter/X, copiar enlace)
+✅ Barra de anuncios dismissable
+✅ Banner de cupón promocional
+✅ Admin: CRUD completo de productos, categorías, promociones, órdenes
+✅ Autenticación con bcrypt
+✅ **REGISTRO DE USUARIOS** (nuevo — esta sesión)
+✅ Estética oscura gótica con acentos rojos, animaciones Framer Motion
+✅ Total Looks con productos reales de la base de datos
+✅ Ubicación: La Unión, Nariño, Colombia
+
+---
+
+### FASE 1: Estabilidad y Despliegue (Prioridad CRÍTICA)
+
+1. **Servidor de producción estable**
+   - El servidor de desarrollo muere intermitentemente en el sandbox
+   - Solución: Build de producción (`next build`) + servidor standalone
+   - Configurar Caddy para servir el build estático con proxy al API server
+   - Implementar keepalive/healthcheck
+
+2. **Integración de pagos real**
+   - Actualmente es simulado (solo guarda la orden)
+   - Opciones para Colombia:
+     - **Wompi** (pasarela de pagos colombiana, fácil integración)
+     - **Mercado Pago** (muy popular en LatAm)
+     - **PayU Latam**
+   - Implementar webhook para confirmación de pagos
+   - Actualizar estado de orden automáticamente (PENDING → PAID)
+
+3. **Notificaciones por email**
+   - Confirmación de pedido al cliente
+   - Notificación de envío
+   - Recuperación de contraseña
+   - Herramientas: Resend, SendGrid, o Nodemailer con SMTP
+
+---
+
+### FASE 2: Funcionalidades Faltantes (Prioridad ALTA)
+
+4. **Perfil de usuario completo**
+   - Página de perfil con datos personales
+   - Editar nombre, teléfono, contraseña
+   - Direcciones de envío guardadas
+   - Conectar con el flujo de checkout (auto-completar datos)
+
+5. **Historial de pedidos conectado al usuario autenticado**
+   - Actualmente busca por email (cualquiera puede ver)
+   - Conectar con el usuario logueado para mostrar solo sus pedidos
+   - Detalle completo de cada pedido con tracking
+
+6. **Sistema de notificaciones dentro de la app**
+   - Badge de notificaciones en el icono de usuario
+   - Notificaciones de: pedido confirmado, enviado, entregado, promo nueva
+   - Panel de notificaciones (dropdown)
+
+7. **Subir imágenes de productos en admin**
+   - Actualmente usa URLs de imágenes generadas por IA
+   - Implementar upload a almacenamiento local o cloud (Cloudinary, S3)
+   - Cropper de imágenes
+   - Galería de medios reutilizable
+
+8. **Gestión de variantes de stock en admin**
+   - Editar stock por talla/color individualmente
+   - Alertas de stock bajo (ya existe visualmente, necesita acción)
+   - Importar/exportar stock por CSV
+
+---
+
+### FASE 3: Mejoras de UX y Funcionalidades Extra (Prioridad MEDIA)
+
+9. **Tema claro/oscuro**
+   - Actualmente solo modo oscuro
+   - Toggle en el header
+   - Persistir preferencia en localStorage
+   - Mantener estética de marca en ambos temas
+
+10. **Multi-idioma (ES/EN)**
+    - Toggle de idioma en header o footer
+    - Internacionalización con next-intl o diccionario JSON
+    - Traducir: menús, textos de productos, checkout, errores, emails
+
+11. **Quiz de tallas / Fit Finder**
+    - Preguntas interactivas (altura, peso, preferencia de ajuste)
+    - Recomendación de talla por producto
+    - Integrar en la PDP
+
+12. **Lightbox de galería de productos**
+    - Zoom pinch-to-zoom en móvil
+    - Navegación con swipe entre fotos
+    - Pantalla completa
+
+13. **Búsqueda avanzada con filtros**
+    - Autocompletar con navegación por teclado (↑↓ Enter) en la paleta
+    - Filtros por precio, categoría, talla en resultados
+    - Búsqueda por voz (Web Speech API)
+
+14. **Sistema de recuperación de contraseña**
+    - "¿Olvidaste tu contraseña?" en el login
+    - Enviar email con link de reset (token temporal en DB)
+    - Página de nueva contraseña
+
+---
+
+### FASE 4: Marketing y Crecimiento (Prioridad BAJA-MEDIA)
+
+15. **Integración Instagram/TikTok**
+    - Feed de Instagram en el footer o home
+    - Botones de compartir productos en redes
+    - Tags de productos en posts (shoppable posts)
+
+16. **Programa de referidos**
+    - "Invita a un amigo" con código único
+    - Descuento para ambos (invitador e invitado)
+    - Tracking de referidos en la DB
+
+17. **Sistema de puntos/lealtad**
+    - Acumular puntos por compra
+    - Canjear por descuentos
+    - Niveles de cliente (Bronce, Plata, Oro)
+
+18. **Abandoned cart recovery completo**
+    - Actualmente solo notificación in-app
+    - Guardar carrito en DB (no solo localStorage)
+    - Email de recuperación automático
+    - Descuento especial para recuperar
+
+19. **SEO y Metadatos**
+    - Open Graph tags por producto
+    - Sitemap.xml dinámico
+    - Structured data (JSON-LD) para productos
+    - Meta descriptions personalizadas
+
+20. **Analytics básico**
+    - Eventos: page views, add to cart, checkout, purchase
+    - Integrar con Google Analytics o Plausible (privacy-first)
+
+---
+
+### FASE 5: Escalabilidad y Producción (Prioridad BAJA a largo plazo)
+
+21. **Migrar de SQLite a PostgreSQL**
+    - Para soportar múltiples conexiones concurrentes
+    - Mejor performance en producción
+
+22. **CDN para imágenes**
+    - Cloudinary o similar
+    - Optimización automática (WebP, AVIF, resize)
+
+23. **Cache de productos**
+    - Redis o en-memoria
+    - Invalidar cache cuando admin edita productos
+
+24. **Rate limiting en APIs**
+    - Protección contra abuso en registro/login
+    - Throttle en búsqueda
+
+25. **Tests automatizados**
+    - Unit tests para utilidades y stores
+    - Integration tests para APIs
+    - E2E tests con Playwright
+
+---
+
+### Resumen de Prioridades Inmediatas (Próximos pasos):
+
+| # | Tarea | Esfuerzo | Impacto |
+|---|-------|----------|---------|
+| 1 | Despliegue estable (build producción) | Medio | Crítico |
+| 2 | Perfil de usuario + editar datos | Medio | Alto |
+| 3 | Conectar historial de pedidos al usuario logueado | Bajo | Alto |
+| 4 | Subir imágenes en admin | Medio | Alto |
+| 5 | Recuperación de contraseña | Medio | Medio |
+| 6 | Notificaciones por email (confirmación pedido) | Medio | Alto |
+| 7 | Stock management en admin | Bajo | Medio |
+| 8 | Tema claro/oscuro | Medio | Medio |
+| 9 | Integración pagos real (Wompi/MercadoPago) | Alto | Crítico |
+| 10 | SEO y metadatos | Medio | Medio |

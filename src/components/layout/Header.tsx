@@ -21,6 +21,8 @@ import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useCartStore } from '@/stores/useCartStore';
 import { useSearchOpenStore } from '@/stores/useSearchOpenStore';
 import { useWishlistStore } from '@/stores/useWishlistStore';
+import { useAuthDialogStore } from '@/stores/useAuthDialogStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const NAV_LINKS = [
   { label: 'New Merch', slug: 'new-merch' },
@@ -39,6 +41,9 @@ export default function Header() {
   const toggleCart = useCartStore((s) => s.toggleCart);
   const toggleSearch = useSearchOpenStore((s) => s.toggle);
   const wishlistCount = useWishlistStore((s) => s.wishlist.length);
+  const openAuthDialog = useAuthDialogStore((s) => s.open);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const userName = useAuthStore((s) => s.user?.name);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -100,13 +105,13 @@ export default function Header() {
                   <div className="border-t border-[#262626] my-3" />
                   <button
                     onClick={() => {
-                      navigate('admin-dashboard');
+                      openAuthDialog('login');
                       setMobileMenuOpen(false);
                     }}
                     className="text-left text-sm text-neutral-400 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md tracking-wide uppercase font-medium mobile-menu-item mobile-menu-stagger"
                     style={{ animationDelay: `${0.05 + NAV_LINKS.length * 0.05}s` }}
                   >
-                    Admin
+                    {isAuthenticated ? `Mi Cuenta (${userName})` : 'Mi Cuenta'}
                   </button>
                 </nav>
               </SheetContent>
@@ -212,13 +217,16 @@ export default function Header() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('admin-dashboard')}
-              className="text-white hover:bg-white/10"
-              aria-label="Admin"
+              onClick={() => openAuthDialog('login')}
+              className="relative text-white hover:bg-white/10"
+              aria-label={isAuthenticated ? 'Mi cuenta' : 'Iniciar sesión'}
             >
               <motion.div whileTap={{ scale: 0.9 }}>
                 <User className="size-5" />
               </motion.div>
+              {isAuthenticated && (
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-green-500 rounded-full" />
+              )}
             </Button>
           </div>
         </div>

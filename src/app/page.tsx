@@ -14,6 +14,7 @@ import SearchCommandPalette from '@/components/search/SearchCommandPalette';
 import SocialProofNotification from '@/components/social/SocialProofNotification';
 import CompareFloatingBar from '@/components/product/CompareFloatingBar';
 import AbandonedCartNotification from '@/components/cart/AbandonedCartNotification';
+import UserAuthDialog from '@/components/layout/UserAuthDialog';
 
 const HomeView = lazy(() => import('@/components/home/HomeView'));
 const CollectionView = lazy(() => import('@/components/product/CollectionView'));
@@ -110,6 +111,7 @@ export default function Page() {
       {!isAdmin && <NewsletterSuccess />}
       <CartDrawer />
       <SearchCommandPalette />
+      <UserAuthDialog />
 
       {/* Social Proof Notification */}
       {!isAdmin && <SocialProofNotification />}
