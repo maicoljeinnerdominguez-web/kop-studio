@@ -13,6 +13,8 @@ import {
   ClipboardList,
   AlertTriangle,
   Pencil,
+  Tag,
+  FolderTree,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -773,7 +775,7 @@ export default function AdminDashboard() {
           <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
             Acciones Rápidas
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
             <Button
               onClick={() => navigate('admin-products')}
               className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
@@ -788,7 +790,21 @@ export default function AdminDashboard() {
               CREAR NUEVO PRODUCTO
             </Button>
             <Button
-              onClick={() => toast.info('Vista de órdenes completas próximamente')}
+              onClick={() => navigate('admin-promos')}
+              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+            >
+              <Tag className="w-4 h-4 mr-2" />
+              PROMOCIONES Y CUPONES
+            </Button>
+            <Button
+              onClick={() => navigate('admin-categories')}
+              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+            >
+              <FolderTree className="w-4 h-4 mr-2" />
+              GESTIONAR CATEGORÍAS
+            </Button>
+            <Button
+              onClick={() => navigate('admin-orders')}
               className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
             >
               <ClipboardList className="w-4 h-4 mr-2" />

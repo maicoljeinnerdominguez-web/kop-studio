@@ -1,0 +1,838 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useMemo, useCallback } from 'react';
+     4→import { motion } from 'framer-motion';
+     5→import { toast } from 'sonner';
+     6→import {
+     7→  Plus,
+     8→  Pencil,
+     9→  Trash2,
+    10→  Search,
+    11→  ArrowLeft,
+    12→  Loader2,
+    13→  Tag,
+    14→  Power,
+    15→  PowerOff,
+    16→} from 'lucide-react';
+    17→
+    18→import { Button } from '@/components/ui/button';
+    19→import { Input } from '@/components/ui/input';
+    20→import { Label } from '@/components/ui/label';
+    21→import { Badge } from '@/components/ui/badge';
+    22→import { Switch } from '@/components/ui/switch';
+    23→import {
+    24→  Select,
+    25→  SelectContent,
+    26→  SelectItem,
+    27→  SelectTrigger,
+    28→  SelectValue,
+    29→} from '@/components/ui/select';
+    30→import {
+    31→  Table,
+    32→  TableBody,
+    33→  TableCell,
+    34→  TableHead,
+    35→  TableHeader,
+    36→  TableRow,
+    37→} from '@/components/ui/table';
+    38→import { Skeleton } from '@/components/ui/skeleton';
+    39→import {
+    40→  AlertDialog,
+    41→  AlertDialogAction,
+    42→  AlertDialogCancel,
+    43→  AlertDialogContent,
+    44→  AlertDialogDescription,
+    45→  AlertDialogFooter,
+    46→  AlertDialogHeader,
+    47→  AlertDialogTitle,
+    48→  AlertDialogTrigger,
+    49→} from '@/components/ui/alert-dialog';
+    50→import { useNavigationStore } from '@/stores/useNavigationStore';
+    51→import type { PromoCode } from '@/types';
+    52→
+    53→/* ─── Helpers ─── */
+    54→
+    55→const darkInput =
+    56→  'bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600 focus-visible:ring-red-600/20';
+    57→const darkSelect =
+    58→  'bg-[#1a1a1a] border-[#262626] text-white rounded-none focus-visible:border-red-600 data-[placeholder]:text-neutral-600';
+    59→
+    60→function formatPromoValue(type: string, value: number): string {
+    61→  if (type === 'PERCENTAGE') return `${value}%`;
+    62→  return `$${Math.round(value).toLocaleString('es-CO')} COP`;
+    63→}
+    64→
+    65→function formatCOP(amount: number | null | undefined): string {
+    66→  if (amount == null) return '—';
+    67→  return `$${Math.round(amount).toLocaleString('es-CO')} COP`;
+    68→}
+    69→
+    70→function formatUses(used: number, max: number | null | undefined): string {
+    71→  if (max == null) return `${used} / ∞`;
+    72→  return `${used} / ${max}`;
+    73→}
+    74→
+    75→function formatDate(dateStr: string | null | undefined): string {
+    76→  if (!dateStr) return '—';
+    77→  const date = new Date(dateStr);
+    78→  return date.toLocaleDateString('es-CO', {
+    79→    day: '2-digit',
+    80→    month: 'short',
+    81→    year: 'numeric',
+    82→  });
+    83→}
+    84→
+    85→function getPromoStatus(promo: PromoCode): 'active' | 'inactive' | 'expired' {
+    86→  if (promo.expiresAt && new Date(promo.expiresAt) < new Date()) return 'expired';
+    87→  if (promo.isActive) return 'active';
+    88→  return 'inactive';
+    89→}
+    90→
+    91→/* ─── Form data types ─── */
+    92→
+    93→interface PromoFormData {
+    94→  code: string;
+    95→  type: 'PERCENTAGE' | 'FIXED';
+    96→  value: string;
+    97→  minPurchase: string;
+    98→  maxUses: string;
+    99→  isActive: boolean;
+   100→  expiresAt: string;
+   101→}
+   102→
+   103→const emptyForm: PromoFormData = {
+   104→  code: '',
+   105→  type: 'PERCENTAGE',
+   106→  value: '',
+   107→  minPurchase: '',
+   108→  maxUses: '',
+   109→  isActive: true,
+   110→  expiresAt: '',
+   111→};
+   112→
+   113→/* ─── Validation ─── */
+   114→
+   115→function validateForm(data: PromoFormData): string | null {
+   116→  const code = data.code.trim();
+   117→  if (!code) return 'El código es requerido';
+   118→  if (code.length < 3) return 'El código debe tener al menos 3 caracteres';
+   119→  if (!/^[A-Z0-9_-]+$/.test(code))
+   120→    return 'El código solo puede contener letras, números, guiones y guiones bajos';
+   121→
+   122→  const value = parseFloat(data.value);
+   123→  if (isNaN(value) || value <= 0) return 'El valor debe ser mayor a 0';
+   124→  if (data.type === 'PERCENTAGE' && value > 100)
+   125→    return 'El porcentaje no puede ser mayor a 100';
+   126→
+   127→  if (data.minPurchase) {
+   128→    const min = parseFloat(data.minPurchase);
+   129→    if (isNaN(min) || min < 0) return 'La compra mínima debe ser un valor válido';
+   130→  }
+   131→
+   132→  if (data.maxUses) {
+   133→    const max = parseInt(data.maxUses, 10);
+   134→    if (isNaN(max) || max < 1) return 'Los usos máximos deben ser al menos 1';
+   135→  }
+   136→
+   137→  return null;
+   138→}
+   139→
+   140→/* ═══════════════════════════════════════════
+   141→   Component
+   142→   ═══════════════════════════════════════════ */
+   143→
+   144→export default function AdminPromos() {
+   145→  const navigate = useNavigationStore((s) => s.navigate);
+   146→
+   147→  /* ─── Internal view state ─── */
+   148→  const [view, setView] = useState<'list' | 'form'>('list');
+   149→  const [editingId, setEditingId] = useState<string | null>(null);
+   150→
+   151→  /* ─── List state ─── */
+   152→  const [promos, setPromos] = useState<PromoCode[]>([]);
+   153→  const [loading, setLoading] = useState(true);
+   154→  const [search, setSearch] = useState('');
+   155→  const [togglingId, setTogglingId] = useState<string | null>(null);
+   156→  const [deletingId, setDeletingId] = useState<string | null>(null);
+   157→
+   158→  /* ─── Form state ─── */
+   159→  const [form, setForm] = useState<PromoFormData>(emptyForm);
+   160→  const [formError, setFormError] = useState<string | null>(null);
+   161→  const [submitting, setSubmitting] = useState(false);
+   162→
+   163→  /* ─── Fetch promos ─── */
+   164→  const fetchPromos = useCallback(async () => {
+   165→    setLoading(true);
+   166→    try {
+   167→      const res = await fetch('/api/admin/promos');
+   168→      if (!res.ok) throw new Error('Failed');
+   169→      const data = await res.json();
+   170→      setPromos(data);
+   171→    } catch {
+   172→      toast.error('Error al cargar promociones');
+   173→    } finally {
+   174→      setLoading(false);
+   175→    }
+   176→  }, []);
+   177→
+   178→  useEffect(() => {
+   179→    fetchPromos();
+   180→  }, [fetchPromos]);
+   181→
+   182→  /* ─── Filtered promos ─── */
+   183→  const filteredPromos = useMemo(() => {
+   184→    if (!search.trim()) return promos;
+   185→    const q = search.toUpperCase();
+   186→    return promos.filter((p) => p.code.toUpperCase().includes(q));
+   187→  }, [promos, search]);
+   188→
+   189→  /* ─── Handlers: list ─── */
+   190→
+   191→  const handleToggleActive = async (promo: PromoCode) => {
+   192→    setTogglingId(promo.id);
+   193→    try {
+   194→      const res = await fetch(`/api/admin/promos/${promo.id}`, {
+   195→        method: 'PUT',
+   196→        headers: { 'Content-Type': 'application/json' },
+   197→        body: JSON.stringify({ isActive: !promo.isActive }),
+   198→      });
+   199→      if (!res.ok) throw new Error('Failed');
+   200→      setPromos((prev) =>
+   201→        prev.map((p) =>
+   202→          p.id === promo.id ? { ...p, isActive: !p.isActive } : p
+   203→        )
+   204→      );
+   205→      toast.success(promo.isActive ? 'Cupón desactivado' : 'Cupón activado');
+   206→    } catch {
+   207→      toast.error('Error al actualizar cupón');
+   208→    } finally {
+   209→      setTogglingId(null);
+   210→    }
+   211→  };
+   212→
+   213→  const handleDelete = async (id: string) => {
+   214→    setDeletingId(id);
+   215→    try {
+   216→      const res = await fetch(`/api/admin/promos/${id}`, { method: 'DELETE' });
+   217→      if (!res.ok) throw new Error('Failed');
+   218→      setPromos((prev) => prev.filter((p) => p.id !== id));
+   219→      toast.success('Cupón eliminado');
+   220→    } catch {
+   221→      toast.error('Error al eliminar cupón');
+   222→    } finally {
+   223→      setDeletingId(null);
+   224→    }
+   225→  };
+   226→
+   227→  /* ─── Handlers: form ─── */
+   228→
+   229→  const openCreate = () => {
+   230→    setEditingId(null);
+   231→    setForm(emptyForm);
+   232→    setFormError(null);
+   233→    setView('form');
+   234→  };
+   235→
+   236→  const openEdit = (promo: PromoCode) => {
+   237→    setEditingId(promo.id);
+   238→    setForm({
+   239→      code: promo.code,
+   240→      type: promo.type,
+   241→      value: String(promo.value),
+   242→      minPurchase: promo.minPurchase != null ? String(promo.minPurchase) : '',
+   243→      maxUses: promo.maxUses != null ? String(promo.maxUses) : '',
+   244→      isActive: promo.isActive,
+   245→      expiresAt: promo.expiresAt
+   246→        ? new Date(promo.expiresAt).toISOString().split('T')[0]
+   247→        : '',
+   248→    });
+   249→    setFormError(null);
+   250→    setView('form');
+   251→  };
+   252→
+   253→  const updateField = (field: keyof PromoFormData, value: string | boolean) => {
+   254→    setForm((prev) => ({ ...prev, [field]: value }));
+   255→    setFormError(null);
+   256→  };
+   257→
+   258→  const handleSubmit = async (e: React.FormEvent) => {
+   259→    e.preventDefault();
+   260→    const error = validateForm(form);
+   261→    if (error) {
+   262→      setFormError(error);
+   263→      return;
+   264→    }
+   265→
+   266→    setSubmitting(true);
+   267→    try {
+   268→      const payload = {
+   269→        code: form.code.trim().toUpperCase(),
+   270→        type: form.type,
+   271→        value: parseFloat(form.value),
+   272→        minPurchase: form.minPurchase ? parseFloat(form.minPurchase) : null,
+   273→        maxUses: form.maxUses ? parseInt(form.maxUses, 10) : null,
+   274→        isActive: form.isActive,
+   275→        expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
+   276→      };
+   277→
+   278→      const isEdit = !!editingId;
+   279→      const url = isEdit ? `/api/admin/promos/${editingId}` : '/api/admin/promos';
+   280→      const method = isEdit ? 'PUT' : 'POST';
+   281→
+   282→      const res = await fetch(url, {
+   283→        method,
+   284→        headers: { 'Content-Type': 'application/json' },
+   285→        body: JSON.stringify(payload),
+   286→      });
+   287→
+   288→      if (!res.ok) {
+   289→        const body = await res.json().catch(() => ({}));
+   290→        throw new Error(body.error || 'Failed');
+   291→      }
+   292→
+   293→      toast.success(
+   294→        isEdit ? 'Cupón actualizado correctamente' : 'Cupón creado correctamente'
+   295→      );
+   296→      setView('list');
+   297→      fetchPromos();
+   298→    } catch (err) {
+   299→      toast.error(
+   300→        err instanceof Error ? err.message : 'Error al guardar el cupón'
+   301→      );
+   302→    } finally {
+   303→      setSubmitting(false);
+   304→    }
+   305→  };
+   306→
+   307→  /* ═══════════════════════════════════════════
+   308→     RENDER — Form View
+   309→     ═══════════════════════════════════════════ */
+   310→
+   311→  if (view === 'form') {
+   312→    const isEdit = !!editingId;
+   313→    return (
+   314→      <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
+   315→        <div className="max-w-2xl mx-auto">
+   316→          {/* Header */}
+   317→          <div className="flex items-center gap-3 mb-8">
+   318→            <button
+   319→              onClick={() => setView('list')}
+   320→              className="flex items-center justify-center w-9 h-9 border border-neutral-700 text-neutral-400 hover:text-white hover:border-neutral-500 transition-colors"
+   321→              aria-label="Volver a la lista"
+   322→            >
+   323→              <ArrowLeft className="w-4 h-4" />
+   324→            </button>
+   325→            <div>
+   326→              <h1 className="text-white text-xl md:text-2xl font-bold uppercase tracking-wider">
+   327→                {isEdit ? 'EDITAR CUPÓN' : 'NUEVO CUPÓN'}
+   328→              </h1>
+   329→              <p className="text-neutral-500 text-xs mt-0.5 uppercase tracking-wider">
+   330→                {isEdit
+   331→                  ? `Editando: ${form.code}`
+   332→                  : 'Completa la información del cupón'}
+   333→              </p>
+   334→            </div>
+   335→          </div>
+   336→
+   337→          <form onSubmit={handleSubmit} className="space-y-6">
+   338→            {/* Main Info */}
+   339→            <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5 md:p-6">
+   340→              <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-5">
+   341→                Información del Cupón
+   342→              </h2>
+   343→              <div className="space-y-4">
+   344→                {/* Code */}
+   345→                <div className="space-y-1.5">
+   346→                  <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   347→                    Código *
+   348→                  </Label>
+   349→                  <Input
+   350→                    value={form.code}
+   351→                    onChange={(e) =>
+   352→                      updateField('code', e.target.value.toUpperCase().trim())
+   353→                    }
+   354→                    className={darkInput}
+   355→                    placeholder="Ej: VERANO15"
+   356→                    maxLength={30}
+   357→                  />
+   358→                  {formError && form.code.trim().length < 3 && (
+   359→                    <p className="text-red-500 text-xs">{formError}</p>
+   360→                  )}
+   361→                </div>
+   362→
+   363→                {/* Type + Value row */}
+   364→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   365→                  <div className="space-y-1.5">
+   366→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   367→                      Tipo *
+   368→                    </Label>
+   369→                    <Select
+   370→                      value={form.type}
+   371→                      onValueChange={(val) =>
+   372→                        updateField('type', val as 'PERCENTAGE' | 'FIXED')
+   373→                      }
+   374→                    >
+   375→                      <SelectTrigger className={darkSelect + ' w-full'}>
+   376→                        <SelectValue placeholder="Seleccionar tipo" />
+   377→                      </SelectTrigger>
+   378→                      <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
+   379→                        <SelectItem
+   380→                          value="PERCENTAGE"
+   381→                          className="text-white focus:bg-[#262626] focus:text-white"
+   382→                        >
+   383→                          PORCENTAJE
+   384→                        </SelectItem>
+   385→                        <SelectItem
+   386→                          value="FIXED"
+   387→                          className="text-white focus:bg-[#262626] focus:text-white"
+   388→                        >
+   389→                          VALOR FIJO
+   390→                        </SelectItem>
+   391→                      </SelectContent>
+   392→                    </Select>
+   393→                  </div>
+   394→
+   395→                  <div className="space-y-1.5">
+   396→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   397→                      Valor *
+   398→                      <span className="text-neutral-600 ml-1 normal-case">
+   399→                        ({form.type === 'PERCENTAGE' ? '%' : 'COP'})
+   400→                      </span>
+   401→                    </Label>
+   402→                    <Input
+   403→                      type="number"
+   404→                      min={0}
+   405→                      step={form.type === 'PERCENTAGE' ? '1' : '1000'}
+   406→                      value={form.value}
+   407→                      onChange={(e) => updateField('value', e.target.value)}
+   408→                      className={darkInput}
+   409→                      placeholder={
+   410→                        form.type === 'PERCENTAGE' ? '15' : '20000'
+   411→                      }
+   412→                    />
+   413→                    {formError && parseFloat(form.value) <= 0 && (
+   414→                      <p className="text-red-500 text-xs">{formError}</p>
+   415→                    )}
+   416→                  </div>
+   417→                </div>
+   418→
+   419→                {/* Min purchase + Max uses row */}
+   420→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   421→                  <div className="space-y-1.5">
+   422→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   423→                      Compra mínima
+   424→                      <span className="text-neutral-600 ml-1 normal-case">
+   425→                        (COP, opcional)
+   426→                      </span>
+   427→                    </Label>
+   428→                    <Input
+   429→                      type="number"
+   430→                      min={0}
+   431→                      step="1000"
+   432→                      value={form.minPurchase}
+   433→                      onChange={(e) => updateField('minPurchase', e.target.value)}
+   434→                      className={darkInput}
+   435→                      placeholder="50000"
+   436→                    />
+   437→                  </div>
+   438→
+   439→                  <div className="space-y-1.5">
+   440→                    <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   441→                      Usos máximos
+   442→                      <span className="text-neutral-600 ml-1 normal-case">
+   443→                        (opcional)
+   444→                      </span>
+   445→                    </Label>
+   446→                    <Input
+   447→                      type="number"
+   448→                      min={1}
+   449→                      value={form.maxUses}
+   450→                      onChange={(e) => updateField('maxUses', e.target.value)}
+   451→                      className={darkInput}
+   452→                      placeholder="100"
+   453→                    />
+   454→                  </div>
+   455→                </div>
+   456→
+   457→                {/* Expiration */}
+   458→                <div className="space-y-1.5">
+   459→                  <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   460→                    Fecha de expiración
+   461→                    <span className="text-neutral-600 ml-1 normal-case">
+   462→                      (opcional)
+   463→                    </span>
+   464→                  </Label>
+   465→                  <Input
+   466→                    type="date"
+   467→                    value={form.expiresAt}
+   468→                    onChange={(e) => updateField('expiresAt', e.target.value)}
+   469→                    className={darkInput}
+   470→                  />
+   471→                </div>
+   472→
+   473→                {/* Active switch */}
+   474→                <div className="flex items-center gap-3 mt-2">
+   475→                  <Switch
+   476→                    checked={form.isActive}
+   477→                    onCheckedChange={(val) => updateField('isActive', val)}
+   478→                    className="data-[state=checked]:bg-red-600"
+   479→                  />
+   480→                  <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium cursor-pointer">
+   481→                    ¿Activo?
+   482→                  </Label>
+   483→                </div>
+   484→              </div>
+   485→            </div>
+   486→
+   487→            {/* Form error */}
+   488→            {formError && (
+   489→              <motion.p
+   490→                initial={{ opacity: 0, y: -4 }}
+   491→                animate={{ opacity: 1, y: 0 }}
+   492→                className="text-red-500 text-xs text-center bg-red-500/10 border border-red-500/20 px-4 py-2"
+   493→              >
+   494→                {formError}
+   495→              </motion.p>
+   496→            )}
+   497→
+   498→            {/* Actions */}
+   499→            <div className="flex flex-col sm:flex-row gap-3">
+   500→              <Button
+   501→                type="button"
+   502→                variant="outline"
+   503→                onClick={() => setView('list')}
+   504→                className="flex-1 border-neutral-700 text-white hover:bg-neutral-800 uppercase text-xs tracking-wider font-bold rounded-none h-11"
+   505→              >
+   506→                CANCELAR
+   507→              </Button>
+   508→              <Button
+   509→                type="submit"
+   510→                disabled={submitting}
+   511→                className="flex-[2] bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold rounded-none h-11 disabled:opacity-50"
+   512→              >
+   513→                {submitting ? (
+   514→                  <>
+   515→                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+   516→                    GUARDANDO...
+   517→                  </>
+   518→                ) : (
+   519→                  'GUARDAR CUPÓN'
+   520→                )}
+   521→              </Button>
+   522→            </div>
+   523→          </form>
+   524→        </div>
+   525→      </section>
+   526→    );
+   527→  }
+   528→
+   529→  /* ═══════════════════════════════════════════
+   530→     RENDER — List View
+   531→     ═══════════════════════════════════════════ */
+   532→
+   533→  return (
+   534→    <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
+   535→      <div className="max-w-6xl mx-auto">
+   536→        {/* Header */}
+   537→        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+   538→          <div className="flex items-center gap-3">
+   539→            <button
+   540→              onClick={() => navigate('admin-dashboard')}
+   541→              className="flex items-center justify-center w-9 h-9 border border-neutral-700 text-neutral-400 hover:text-white hover:border-neutral-500 transition-colors flex-shrink-0"
+   542→              aria-label="Volver al Dashboard"
+   543→            >
+   544→              <ArrowLeft className="w-4 h-4" />
+   545→            </button>
+   546→            <div>
+   547→              <h1 className="text-white text-xl md:text-2xl font-bold uppercase tracking-wider">
+   548→                GESTIÓN DE PROMOCIONES
+   549→              </h1>
+   550→              {!loading && (
+   551→                <p className="text-neutral-500 text-xs mt-1 uppercase tracking-wider">
+   552→                  {promos.length} cupón{promos.length !== 1 ? 'es' : ''}
+   553→                </p>
+   554→              )}
+   555→            </div>
+   556→          </div>
+   557→          <Button
+   558→            onClick={openCreate}
+   559→            className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold rounded-none h-9 px-5"
+   560→          >
+   561→            <Plus className="w-4 h-4 mr-2" />
+   562→            CREAR NUEVO CUPÓN
+   563→          </Button>
+   564→        </div>
+   565→
+   566→        {/* Search */}
+   567→        <div className="relative max-w-sm mb-6">
+   568→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+   569→          <Input
+   570→            value={search}
+   571→            onChange={(e) => setSearch(e.target.value)}
+   572→            placeholder="Buscar cupón..."
+   573→            className="bg-[#1a1a1a] border-[#262626] text-white placeholder:text-neutral-600 text-sm rounded-none pl-9 h-10 focus-visible:border-red-600"
+   574→          />
+   575→        </div>
+   576→
+   577→        {/* Promos Table */}
+   578→        <div className="bg-[#0a0a0a] border border-[#1a1a1a] overflow-hidden">
+   579→          <div className="overflow-x-auto">
+   580→            <Table>
+   581→              <TableHeader>
+   582→                <TableRow className="border-b-[#1a1a1a] hover:bg-transparent">
+   583→                  <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   584→                    Código
+   585→                  </TableHead>
+   586→                  <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   587→                    Tipo
+   588→                  </TableHead>
+   589→                  <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   590→                    Valor
+   591→                  </TableHead>
+   592→                  <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium hidden sm:table-cell">
+   593→                    Mínimo Compra
+   594→                  </TableHead>
+   595→                  <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium hidden md:table-cell">
+   596→                    Usos
+   597→                  </TableHead>
+   598→                  <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium hidden lg:table-cell">
+   599→                    Estado
+   600→                  </TableHead>
+   601→                  <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium hidden xl:table-cell">
+   602→                    Expiración
+   603→                  </TableHead>
+   604→                  <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium text-right">
+   605→                    Acciones
+   606→                  </TableHead>
+   607→                </TableRow>
+   608→              </TableHeader>
+   609→              <TableBody>
+   610→                {loading ? (
+   611→                  Array.from({ length: 5 }).map((_, i) => (
+   612→                    <TableRow
+   613→                      key={i}
+   614→                      className="border-b-[#1a1a1a] hover:bg-transparent"
+   615→                    >
+   616→                      <TableCell>
+   617→                        <Skeleton className="h-4 w-24" />
+   618→                      </TableCell>
+   619→                      <TableCell>
+   620→                        <Skeleton className="h-5 w-20 rounded-full" />
+   621→                      </TableCell>
+   622→                      <TableCell>
+   623→                        <Skeleton className="h-4 w-20" />
+   624→                      </TableCell>
+   625→                      <TableCell className="hidden sm:table-cell">
+   626→                        <Skeleton className="h-4 w-24" />
+   627→                      </TableCell>
+   628→                      <TableCell className="hidden md:table-cell">
+   629→                        <Skeleton className="h-4 w-16" />
+   630→                      </TableCell>
+   631→                      <TableCell className="hidden lg:table-cell">
+   632→                        <Skeleton className="h-5 w-16 rounded-full" />
+   633→                      </TableCell>
+   634→                      <TableCell className="hidden xl:table-cell">
+   635→                        <Skeleton className="h-4 w-20" />
+   636→                      </TableCell>
+   637→                      <TableCell>
+   638→                        <Skeleton className="h-4 w-20 ml-auto" />
+   639→                      </TableCell>
+   640→                    </TableRow>
+   641→                  ))
+   642→                ) : filteredPromos.length === 0 ? (
+   643→                  <TableRow className="border-b-0 hover:bg-transparent">
+   644→                    <TableCell colSpan={8} className="text-center py-12">
+   645→                      <Tag className="w-10 h-10 text-neutral-700 mx-auto mb-3" />
+   646→                      <p className="text-neutral-500 text-sm">
+   647→                        {search
+   648→                          ? 'No se encontraron cupones'
+   649→                          : 'No hay cupones creados aún'}
+   650→                      </p>
+   651→                      {search && (
+   652→                        <Button
+   653→                          variant="ghost"
+   654→                          onClick={() => setSearch('')}
+   655→                          className="text-neutral-500 hover:text-white text-xs mt-2 uppercase tracking-wider"
+   656→                        >
+   657→                          Limpiar búsqueda
+   658→                        </Button>
+   659→                      )}
+   660→                      {!search && (
+   661→                        <Button
+   662→                          variant="ghost"
+   663→                          onClick={openCreate}
+   664→                          className="text-neutral-500 hover:text-white text-xs mt-2 uppercase tracking-wider"
+   665→                        >
+   666→                          Crear primer cupón
+   667→                        </Button>
+   668→                      )}
+   669→                    </TableCell>
+   670→                  </TableRow>
+   671→                ) : (
+   672→                  filteredPromos.map((promo) => {
+   673→                    const status = getPromoStatus(promo);
+   674→                    return (
+   675→                      <motion.tr
+   676→                        key={promo.id}
+   677→                        initial={{ opacity: 0 }}
+   678→                        animate={{ opacity: 1 }}
+   679→                        className="border-b-[#1a1a1a] hover:bg-[#111] transition-colors"
+   680→                      >
+   681→                        {/* Code */}
+   682→                        <TableCell>
+   683→                          <p className="text-white text-xs font-bold uppercase tracking-wider">
+   684→                            {promo.code}
+   685→                          </p>
+   686→                        </TableCell>
+   687→
+   688→                        {/* Type */}
+   689→                        <TableCell>
+   690→                          <Badge
+   691→                            variant="outline"
+   692→                            className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-none border-neutral-700 text-neutral-400 bg-neutral-800/50"
+   693→                          >
+   694→                            {promo.type === 'PERCENTAGE'
+   695→                              ? 'PORCENTAJE'
+   696→                              : 'VALOR FIJO'}
+   697→                          </Badge>
+   698→                        </TableCell>
+   699→
+   700→                        {/* Value */}
+   701→                        <TableCell>
+   702→                          <p className="text-white text-xs font-medium">
+   703→                            {formatPromoValue(promo.type, promo.value)}
+   704→                          </p>
+   705→                        </TableCell>
+   706→
+   707→                        {/* Min purchase */}
+   708→                        <TableCell className="hidden sm:table-cell">
+   709→                          <p className="text-neutral-400 text-xs">
+   710→                            {formatCOP(promo.minPurchase)}
+   711→                          </p>
+   712→                        </TableCell>
+   713→
+   714→                        {/* Uses */}
+   715→                        <TableCell className="hidden md:table-cell">
+   716→                          <p className="text-neutral-400 text-xs">
+   717→                            {formatUses(promo.usedCount, promo.maxUses)}
+   718→                          </p>
+   719→                        </TableCell>
+   720→
+   721→                        {/* Status */}
+   722→                        <TableCell className="hidden lg:table-cell">
+   723→                          <Badge
+   724→                            variant="outline"
+   725→                            className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-none border ${
+   726→                              status === 'active'
+   727→                                ? 'bg-green-500/10 text-green-400 border-green-500/30'
+   728→                                : status === 'expired'
+   729→                                  ? 'bg-red-500/10 text-red-400 border-red-500/30'
+   730→                                  : 'bg-neutral-500/10 text-neutral-500 border-neutral-500/30'
+   731→                            }`}
+   732→                          >
+   733→                            {status === 'active'
+   734→                              ? 'Activo'
+   735→                              : status === 'expired'
+   736→                                ? 'Expirado'
+   737→                                : 'Inactivo'}
+   738→                          </Badge>
+   739→                        </TableCell>
+   740→
+   741→                        {/* Expiration */}
+   742→                        <TableCell className="hidden xl:table-cell">
+   743→                          <p className="text-neutral-400 text-xs">
+   744→                            {formatDate(promo.expiresAt)}
+   745→                          </p>
+   746→                        </TableCell>
+   747→
+   748→                        {/* Actions */}
+   749→                        <TableCell>
+   750→                          <div className="flex items-center justify-end gap-1">
+   751→                            {/* Toggle active */}
+   752→                            <Button
+   753→                              variant="ghost"
+   754→                              size="sm"
+   755→                              onClick={() => handleToggleActive(promo)}
+   756→                              disabled={togglingId === promo.id || status === 'expired'}
+   757→                              className={`h-8 w-8 p-0 rounded-none hover:bg-[#1a1a1a] ${
+   758→                                promo.isActive
+   759→                                  ? 'text-green-500 hover:text-green-400'
+   760→                                  : 'text-neutral-500 hover:text-neutral-400'
+   761→                              } disabled:opacity-30`}
+   762→                              title={
+   763→                                promo.isActive ? 'Desactivar' : 'Activar'
+   764→                              }
+   765→                            >
+   766→                              {promo.isActive ? (
+   767→                                <Power className="w-3.5 h-3.5" />
+   768→                              ) : (
+   769→                                <PowerOff className="w-3.5 h-3.5" />
+   770→                              )}
+   771→                            </Button>
+   772→
+   773→                            {/* Edit */}
+   774→                            <Button
+   775→                              variant="ghost"
+   776→                              size="sm"
+   777→                              onClick={() => openEdit(promo)}
+   778→                              className="h-8 w-8 p-0 rounded-none hover:bg-[#1a1a1a] text-neutral-400 hover:text-white"
+   779→                              title="Editar"
+   780→                            >
+   781→                              <Pencil className="w-3.5 h-3.5" />
+   782→                            </Button>
+   783→
+   784→                            {/* Delete */}
+   785→                            <AlertDialog>
+   786→                              <AlertDialogTrigger asChild>
+   787→                                <Button
+   788→                                  variant="ghost"
+   789→                                  size="sm"
+   790→                                  disabled={deletingId === promo.id}
+   791→                                  className="h-8 w-8 p-0 rounded-none hover:bg-red-600/10 text-neutral-500 hover:text-red-500"
+   792→                                  title="Eliminar"
+   793→                                >
+   794→                                  {deletingId === promo.id ? (
+   795→                                    <Skeleton className="h-3.5 w-3.5 rounded" />
+   796→                                  ) : (
+   797→                                    <Trash2 className="w-3.5 h-3.5" />
+   798→                                  )}
+   799→                                </Button>
+   800→                              </AlertDialogTrigger>
+   801→                              <AlertDialogContent className="bg-[#0a0a0a] border-[#262626] rounded-none">
+   802→                                <AlertDialogHeader>
+   803→                                  <AlertDialogTitle className="text-white uppercase tracking-wider text-sm">
+   804→                                    ¿Eliminar cupón?
+   805→                                  </AlertDialogTitle>
+   806→                                  <AlertDialogDescription className="text-neutral-400 text-xs">
+   807→                                    Esta acción no se puede deshacer. Se
+   808→                                    eliminará el cupón &quot;{promo.code}&quot;
+   809→                                    permanentemente.
+   810→                                  </AlertDialogDescription>
+   811→                                </AlertDialogHeader>
+   812→                                <AlertDialogFooter>
+   813→                                  <AlertDialogCancel className="border-neutral-700 text-white hover:bg-neutral-800 rounded-none uppercase text-xs tracking-wider font-bold">
+   814→                                    Cancelar
+   815→                                  </AlertDialogCancel>
+   816→                                  <AlertDialogAction
+   817→                                    onClick={() => handleDelete(promo.id)}
+   818→                                    className="bg-red-600 hover:bg-red-700 text-white rounded-none uppercase text-xs tracking-wider font-bold"
+   819→                                  >
+   820→                                    Eliminar
+   821→                                  </AlertDialogAction>
+   822→                                </AlertDialogFooter>
+   823→                              </AlertDialogContent>
+   824→                            </AlertDialog>
+   825→                          </div>
+   826→                        </TableCell>
+   827→                      </motion.tr>
+   828→                    );
+   829→                  })
+   830→                )}
+   831→              </TableBody>
+   832→            </Table>
+   833→          </div>
+   834→        </div>
+   835→      </div>
+   836→    </section>
+   837→  );
+   838→}

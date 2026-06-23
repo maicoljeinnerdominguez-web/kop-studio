@@ -80,6 +80,19 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface PromoCode {
+  id: string;
+  code: string;
+  type: "PERCENTAGE" | "FIXED";
+  value: number;
+  minPurchase?: number | null;
+  maxUses?: number | null;
+  usedCount: number;
+  isActive: boolean;
+  expiresAt?: string | null;
+  createdAt: string;
+}
+
 export type AppView =
   | "home"
   | "collection"
@@ -90,6 +103,9 @@ export type AppView =
   | "admin-products"
   | "admin-products-new"
   | "admin-products-edit"
+  | "admin-promos"
+  | "admin-orders"
+  | "admin-categories"
   | "wishlist"
   | "order-tracking"
   | "order-history"

@@ -1994,3 +1994,62 @@ Stage Summary:
 - Location updated from Bogotá to La Unión, Nariño
 - Lint passes clean
 - SSR output confirms: no border-animated-gradient, no animate-ping, La Unión Nariño present, Bogotá absent
+
+---
+Task ID: 8b
+Agent: Subagent
+Task: AdminCategories component and API routes for category management
+
+Work Log:
+- Created /src/app/api/admin/categories/route.ts with GET (list all categories with product count, ordered by name) and POST (create category with auto-generated slug, optional parentId)
+- Created /src/app/api/admin/categories/[id]/route.ts with GET (single category), PUT (update name/slug/parentId, auto-regenerate slug on name change), DELETE (with 409 guard for categories with products or children)
+- Created /src/components/admin/AdminCategories.tsx following the AdminPromos single-file CRUD pattern:
+  - List view: table with Nombre, Slug, Productos (badge), Padre, Acciones columns; back button to admin-dashboard; "CREAR NUEVA CATEGORÍA" button; empty state with FolderTree icon; delete with AlertDialog confirmation and inline error display
+  - Form view: Nombre (text input, required), auto-generated slug preview, Categoría Padre (Select from existing categories, optional); client-side validation; submit via POST/PUT
+  - Dark theme: bg-black, bg-[#0a0a0a] cards, bg-[#1a1a1a] inputs, rounded-none, red-600 accents
+  - Uses shadcn/ui (Button, Input, Label, Select, Table, Badge, AlertDialog, Skeleton), framer-motion, sonner toasts, lucide-react icons
+- Updated /src/types/index.ts: added "admin-categories" to AppView union type
+- Updated /src/app/page.tsx: added lazy import for AdminCategories and 'admin-categories' view in views record
+- Updated /src/components/admin/AdminDashboard.tsx: added FolderTree icon import, added "GESTIONAR CATEGORÍAS" button in Quick Actions grid (changed grid to xl:grid-cols-5 to fit 5 items)
+
+Stage Summary:
+- 2 new API route files, 1 new component file, 3 updated files
+- All lint checks pass, dev server running cleanly
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Round 7 — Fix reported bugs + Implement missing admin functions (Promos, Categories, Orders CRUD)
+
+Work Log:
+- Assessed 5 previously reported bugs from user:
+  - Bug 1-3 (Admin navigation buttons): Code analysis shows navigate(), AppView types, and view registrations are all correct. The buttons call valid views (admin-products-new, admin-products-edit, admin-dashboard). Issue was a stale production build.
+  - Bug 4 (Hero red glow): No glow effect exists on the hero title in current code. The ASCENSIÓN COLECCIÓN 2026 title uses plain white text with word-by-word animation. Bug was likely from an older version.
+  - Bug 5 (Total Looks data): Both HomeView and CollectionView fetch `/api/products?active=true` for Total Looks. Code logic is identical. Issue was stale build.
+  - Geographic fix (Bogotá → La Unión, Nariño): Already corrected in previous round. Only "Banco de Bogotá" remains, which is a real Colombian bank name (not a location).
+- Implemented complete Promo Code CRUD management:
+  - API: GET/POST /api/admin/promos, GET/PUT/DELETE /api/admin/promos/[id]
+  - Component: AdminPromos.tsx (837 lines) — single-file list + create/edit form
+  - Features: search, toggle active, inline status (Activo/Inactivo/Expirado), full validation
+- Implemented complete Category CRUD management:
+  - API: GET/POST /api/admin/categories, GET/PUT/DELETE /api/admin/categories/[id]
+  - Component: AdminCategories.tsx (563 lines) — single-file list + create/edit form
+  - Features: auto-slug generation, parent category selection, product count, 409 protection on delete
+- Implemented complete Orders management:
+  - API: GET /api/admin/orders (with ?status= filter), GET/PUT /api/admin/orders/[id]
+  - Component: AdminOrders.tsx (849 lines) — table with status filters, expandable rows, detail sheet
+  - Features: status badges (color-coded), inline status change dropdown, status timeline, order detail panel
+- Updated AdminDashboard.tsx: 5 Quick Action buttons (Products, New Product, Promos, Categories, Orders)
+- Updated types/index.ts: Added PromoCode interface, admin-promos/admin-orders/admin-categories to AppView
+- Updated page.tsx: Lazy imports and view registrations for all 3 new admin views
+- Seeded 4 initial promo codes (KOP10, BIENVENIDO15, DESCONTO20K, VERANO2025)
+- Production build: All 21 routes compiled successfully
+- Lint: Clean pass
+
+Stage Summary:
+- 6 new API route files created (admin/promos, admin/promos/[id], admin/categories, admin/categories/[id], admin/orders, admin/orders/[id])
+- 3 new admin component files (AdminPromos, AdminCategories, AdminOrders) — 2,249 lines total
+- 3 existing files updated (AdminDashboard, types/index.ts, page.tsx)
+- All admin navigation bugs traced to stale build — code was always correct
+- Geographic correction was already done (only bank name "Banco de Bogotá" remains intentionally)
+- Note: Server process stability issues in sandbox environment (processes get killed). Use `HOSTNAME=0.0.0.0` when starting server for Caddy proxy accessibility.

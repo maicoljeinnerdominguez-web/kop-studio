@@ -1,0 +1,810 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback, Fragment } from 'react';
+     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→import {
+     6→     6→  DollarSign,
+     7→     7→  Clock,
+     8→     8→  Package,
+     9→     9→  ShoppingBag,
+    10→    10→  ChevronDown,
+    11→    11→  ChevronRight,
+    12→    12→  Loader2,
+    13→    13→  ClipboardList,
+    14→    14→  AlertTriangle,
+    15→    15→  Pencil,
+    16→    16→  Tag,
+    17→    17→} from 'lucide-react';
+    18→    18→import { Badge } from '@/components/ui/badge';
+    19→    19→import { Button } from '@/components/ui/button';
+    20→    20→import {
+    21→    21→  Table,
+    22→    22→  TableBody,
+    23→    23→  TableCell,
+    24→    24→  TableHead,
+    25→    25→  TableHeader,
+    26→    26→  TableRow,
+    27→    27→} from '@/components/ui/table';
+    28→    28→import {
+    29→    29→  Skeleton,
+    30→    30→} from '@/components/ui/skeleton';
+    31→    31→import {
+    32→    32→  Select,
+    33→    33→  SelectContent,
+    34→    34→  SelectItem,
+    35→    35→  SelectTrigger,
+    36→    36→  SelectValue,
+    37→    37→} from '@/components/ui/select';
+    38→    38→import { toast } from 'sonner';
+    39→    39→import { useAuthStore } from '@/stores/useAuthStore';
+    40→    40→import { useNavigationStore } from '@/stores/useNavigationStore';
+    41→    41→import AdminLogin from '@/components/layout/AdminLogin';
+    42→    42→import type { AdminStats, OrderStatus, Product } from '@/types';
+    43→    43→
+    44→    44→/* ─── Mini Sparkline SVG ─── */
+    45→    45→function MiniSparkline({ color = '#dc2626' }: { color?: string }) {
+    46→    46→  const points = [3, 12, 7, 18, 10, 22, 15, 20, 25, 18, 30, 22];
+    47→    47→  const w = 48;
+    48→    48→  const h = 20;
+    49→    49→  const max = Math.max(...points);
+    50→    50→  const min = Math.min(...points);
+    51→    51→  const range = max - min || 1;
+    52→    52→  const pathData = points
+    53→    53→    .map((p, i) => {
+    54→    54→      const x = (i / (points.length - 1)) * w;
+    55→    55→      const y = h - ((p - min) / range) * (h - 4) - 2;
+    56→    56→      return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+    57→    57→    })
+    58→    58→    .join(' ');
+    59→    59→  return (
+    60→    60→    <svg className="stat-sparkline" viewBox={`0 0 ${w} ${h}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+    61→    61→      <path d={pathData} stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    62→    62→    </svg>
+    63→    63→  );
+    64→    64→}
+    65→    65→
+    66→    66→/* ─── Animated Counter ─── */
+    67→    67→function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
+    68→    68→  const [count, setCount] = useState(0);
+    69→    69→  useEffect(() => {
+    70→    70→    const duration = 1000;
+    71→    71→    const steps = 30;
+    72→    72→    const increment = value / steps;
+    73→    73→    let current = 0;
+    74→    74→    const timer = setInterval(() => {
+    75→    75→      current += increment;
+    76→    76→      if (current >= value) {
+    77→    77→        setCount(value);
+    78→    78→        clearInterval(timer);
+    79→    79→      } else {
+    80→    80→        setCount(Math.floor(current));
+    81→    81→      }
+    82→    82→    }, duration / steps);
+    83→    83→    return () => clearInterval(timer);
+    84→    84→  }, [value]);
+    85→    85→
+    86→    86→  return <span>{prefix}{count.toLocaleString('es-CO')}{suffix}</span>;
+    87→    87→}
+    88→    88→
+    89→    89→/* ─── Low Stock Product type ─── */
+    90→    90→interface LowStockProduct {
+    91→    91→  id: string;
+    92→    92→  title: string;
+    93→    93→  slug: string;
+    94→    94→  totalStock: number;
+    95→    95→}
+    96→    96→
+    97→    97→function formatPrice(amount: number) {
+    98→    98→  return `$${Math.round(amount).toLocaleString('es-CO')}`;
+    99→    99→}
+   100→   100→
+   101→   101→function formatDate(dateStr: string) {
+   102→   102→  const d = new Date(dateStr);
+   103→   103→  return d.toLocaleDateString('es-CO', {
+   104→   104→    day: '2-digit',
+   105→   105→    month: 'short',
+   106→   106→    year: 'numeric',
+   107→   107→  });
+   108→   108→}
+   109→   109→
+   110→   110→const STATUS_COLORS: Record<OrderStatus, string> = {
+   111→   111→  PENDING: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+   112→   112→  PAID: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+   113→   113→  SHIPPED: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+   114→   114→  DELIVERED: 'bg-green-500/20 text-green-400 border-green-500/30',
+   115→   115→  CANCELLED: 'bg-red-500/20 text-red-400 border-red-500/30',
+   116→   116→};
+   117→   117→
+   118→   118→const STATUS_LABELS: Record<OrderStatus, string> = {
+   119→   119→  PENDING: 'Pendiente',
+   120→   120→  PAID: 'Pagado',
+   121→   121→  SHIPPED: 'Enviado',
+   122→   122→  DELIVERED: 'Entregado',
+   123→   123→  CANCELLED: 'Cancelado',
+   124→   124→};
+   125→   125→
+   126→   126→const ALL_STATUSES: OrderStatus[] = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+   127→   127→
+   128→   128→interface OrderItemDetail {
+   129→   129→  id: string;
+   130→   130→  quantity: number;
+   131→   131→  priceAtPurchase: number;
+   132→   132→  productVariant: {
+   133→   133→    size: string;
+   134→   134→    color: string;
+   135→   135→    product: {
+   136→   136→      title: string;
+   137→   137→    };
+   138→   138→  };
+   139→   139→}
+   140→   140→
+   141→   141→interface RecentOrder {
+   142→   142→  id: string;
+   143→   143→  totalAmount: number;
+   144→   144→  status: string;
+   145→   145→  createdAt: string;
+   146→   146→  user: { name: string; email: string } | null;
+   147→   147→  items?: OrderItemDetail[];
+   148→   148→}
+   149→   149→
+   150→   150→/* ─── OrderStatusSelect ─── */
+   151→   151→function OrderStatusSelect({
+   152→   152→  orderId,
+   153→   153→  currentStatus,
+   154→   154→  onStatusChange,
+   155→   155→}: {
+   156→   156→  orderId: string;
+   157→   157→  currentStatus: string;
+   158→   158→  onStatusChange: (orderId: string, newStatus: string) => void;
+   159→   159→}) {
+   160→   160→  const [isUpdating, setIsUpdating] = useState(false);
+   161→   161→  const [flashKey, setFlashKey] = useState(0);
+   162→   162→  const status = currentStatus as OrderStatus;
+   163→   163→
+   164→   164→  const handleChange = async (newStatus: string) => {
+   165→   165→    if (newStatus === currentStatus) return;
+   166→   166→
+   167→   167→    setIsUpdating(true);
+   168→   168→    try {
+   169→   169→      const res = await fetch(`/api/orders/${orderId}`, {
+   170→   170→        method: 'PATCH',
+   171→   171→        headers: { 'Content-Type': 'application/json' },
+   172→   172→        body: JSON.stringify({ status: newStatus }),
+   173→   173→      });
+   174→   174→
+   175→   175→      if (!res.ok) {
+   176→   176→        const err = await res.json();
+   177→   177→        throw new Error(err.error || 'Error al actualizar');
+   178→   178→      }
+   179→   179→
+   180→   180→      const updated = await res.json();
+   181→   181→      onStatusChange(orderId, updated.status);
+   182→   182→      setFlashKey((k) => k + 1);
+   183→   183→      toast.success(`Estado actualizado a ${STATUS_LABELS[newStatus as OrderStatus]}`);
+   184→   184→    } catch {
+   185→   185→      toast.error('Error al actualizar el estado');
+   186→   186→    } finally {
+   187→   187→      setIsUpdating(false);
+   188→   188→    }
+   189→   189→  };
+   190→   190→
+   191→   191→  const colorClasses = STATUS_COLORS[status] || STATUS_COLORS.PENDING;
+   192→   192→
+   193→   193→  return (
+   194→   194→    <div className="relative inline-flex">
+   195→   195→      {isUpdating && (
+   196→   196→        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0a0a0a]/80 rounded-sm">
+   197→   197→          <Loader2 className="w-3.5 h-3.5 animate-spin text-neutral-400" />
+   198→   198→        </div>
+   199→   199→      )}
+   200→   200→      <Select value={status} onValueChange={handleChange}>
+   201→   201→        <SelectTrigger
+   202→   202→          key={flashKey}
+   203→   203→          className={`inline-flex items-center gap-0 border ${colorClasses} hover:opacity-80 focus-visible:ring-1 focus-visible:ring-neutral-500 h-6 px-2 py-0 text-[10px] uppercase tracking-wider font-bold rounded-none bg-transparent cursor-pointer shadow-none transition-opacity ${flashKey > 0 ? 'status-flash' : ''}`}
+   204→   204→        >
+   205→   205→          <SelectValue />
+   206→   206→        </SelectTrigger>
+   207→   207→        <SelectContent
+   208→   208→          position="popper"
+   209→   209→          className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none"
+   210→   210→        >
+   211→   211→          {ALL_STATUSES.map((s) => (
+   212→   212→            <SelectItem
+   213→   213→              key={s}
+   214→   214→              value={s}
+   215→   215→              className={`text-xs uppercase tracking-wider font-medium rounded-none focus:bg-[#1a1a1a] ${
+   216→   216→                STATUS_COLORS[s]
+   217→   217→              } cursor-pointer`}
+   218→   218→            >
+   219→   219→              <span className="flex items-center gap-2">
+   220→   220→                <span
+   221→   221→                  className="w-2 h-2 rounded-full"
+   222→   222→                  style={{
+   223→   223→                    backgroundColor:
+   224→   224→                      s === 'PENDING'
+   225→   225→                        ? '#eab308'
+   226→   226→                        : s === 'PAID'
+   227→   227→                        ? '#10b981'
+   228→   228→                        : s === 'SHIPPED'
+   229→   229→                        ? '#f97316'
+   230→   230→                        : s === 'DELIVERED'
+   231→   231→                        ? '#22c55e'
+   232→   232→                        : '#ef4444',
+   233→   233→                  }}
+   234→   234→                />
+   235→   235→                {STATUS_LABELS[s]}
+   236→   236→              </span>
+   237→   237→            </SelectItem>
+   238→   238→          ))}
+   239→   239→        </SelectContent>
+   240→   240→      </Select>
+   241→   241→    </div>
+   242→   242→  );
+   243→   243→}
+   244→   244→
+   245→   245→/* ─── OrderItemsRow ─── */
+   246→   246→function OrderItemsRow({ items }: { items: OrderItemDetail[] }) {
+   247→   247→  return (
+   248→   248→    <motion.div
+   249→   249→      initial={{ opacity: 0 }}
+   250→   250→      animate={{ opacity: 1 }}
+   251→   251→      exit={{ opacity: 0 }}
+   252→   252→      transition={{ duration: 0.25 }}
+   253→   253→    >
+   254→   254→      <div className="bg-[#080808] border-t border-[#1a1a1a] px-4 py-3">
+   255→   255→        <Table>
+   256→   256→          <TableHeader>
+   257→   257→            <TableRow className="border-b-[#1a1a1a] hover:bg-transparent">
+   258→   258→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+   259→   259→                Producto
+   260→   260→              </TableHead>
+   261→   261→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+   262→   262→                Talla
+   263→   263→              </TableHead>
+   264→   264→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium">
+   265→   265→                Color
+   266→   266→              </TableHead>
+   267→   267→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-center">
+   268→   268→                Cantidad
+   269→   269→              </TableHead>
+   270→   270→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-right">
+   271→   271→                Precio Unitario
+   272→   272→              </TableHead>
+   273→   273→              <TableHead className="text-neutral-500 text-[10px] uppercase tracking-wider font-medium text-right">
+   274→   274→                Subtotal
+   275→   275→              </TableHead>
+   276→   276→            </TableRow>
+   277→   277→          </TableHeader>
+   278→   278→          <TableBody>
+   279→   279→            {items.map((item) => (
+   280→   280→              <TableRow key={item.id} className="border-b-[#111] hover:bg-transparent">
+   281→   281→                <TableCell className="text-neutral-300 text-xs">
+   282→   282→                  {item.productVariant.product.title}
+   283→   283→                </TableCell>
+   284→   284→                <TableCell className="text-neutral-400 text-xs">{item.productVariant.size}</TableCell>
+   285→   285→                <TableCell className="text-neutral-400 text-xs">{item.productVariant.color}</TableCell>
+   286→   286→                <TableCell className="text-neutral-400 text-xs text-center">{item.quantity}</TableCell>
+   287→   287→                <TableCell className="text-neutral-300 text-xs text-right">
+   288→   288→                  {formatPrice(item.priceAtPurchase)}
+   289→   289→                </TableCell>
+   290→   290→                <TableCell className="text-white text-xs font-medium text-right">
+   291→   291→                  {formatPrice(item.priceAtPurchase * item.quantity)}
+   292→   292→                </TableCell>
+   293→   293→              </TableRow>
+   294→   294→            ))}
+   295→   295→          </TableBody>
+   296→   296→        </Table>
+   297→   297→      </div>
+   298→   298→    </motion.div>
+   299→   299→  );
+   300→   300→}
+   301→   301→
+   302→   302→/* ─── AdminDashboard ─── */
+   303→   303→export default function AdminDashboard() {
+   304→   304→  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+   305→   305→  const navigate = useNavigationStore((s) => s.navigate);
+   306→   306→  const logout = useAuthStore((s) => s.logout);
+   307→   307→
+   308→   308→  const [showLogin, setShowLogin] = useState(false);
+   309→   309→  const [stats, setStats] = useState<AdminStats | null>(null);
+   310→   310→  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+   311→   311→  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+   312→   312→  const [loading, setLoading] = useState(true);
+   313→   313→  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+   314→   314→
+   315→   315→  useEffect(() => {
+   316→   316→    if (!isAuthenticated) {
+   317→   317→      setShowLogin(true);
+   318→   318→      return;
+   319→   319→    }
+   320→   320→    setShowLogin(false);
+   321→   321→    fetchAdminData();
+   322→   322→  }, [isAuthenticated]);
+   323→   323→
+   324→   324→  const fetchAdminData = async () => {
+   325→   325→    setLoading(true);
+   326→   326→    try {
+   327→   327→      const res = await fetch('/api/admin');
+   328→   328→      if (!res.ok) throw new Error('Failed to fetch');
+   329→   329→      const data = await res.json();
+   330→   330→      setStats({
+   331→   331→        totalSales: data.totalSales,
+   332→   332→        pendingOrders: data.pendingOrders,
+   333→   333→        activeProducts: data.activeProducts,
+   334→   334→        totalOrders: data.totalOrders,
+   335→   335→      });
+   336→   336→      setRecentOrders(data.recentOrders || []);
+   337→   337→    } catch {
+   338→   338→      toast.error('Error al cargar datos del panel');
+   339→   339→    } finally {
+   340→   340→      setLoading(false);
+   341→   341→    }
+   342→   342→
+   343→   343→    // Fetch low stock products
+   344→   344→    try {
+   345→   345→      const productsRes = await fetch('/api/products');
+   346→   346→      if (productsRes.ok) {
+   347→   347→        const products: Product[] = await productsRes.json();
+   348→   348→        const lowStock: LowStockProduct[] = products
+   349→   349→          .map((p) => ({
+   350→   350→            id: p.id,
+   351→   351→            title: p.title,
+   352→   352→            slug: p.slug,
+   353→   353→            totalStock: p.variants.reduce((sum, v) => sum + v.stockQuantity, 0),
+   354→   354→          }))
+   355→   355→          .filter((p) => p.totalStock < 5)
+   356→   356→          .sort((a, b) => a.totalStock - b.totalStock);
+   357→   357→        setLowStockProducts(lowStock);
+   358→   358→      }
+   359→   359→    } catch {
+   360→   360→      // silently fail
+   361→   361→    }
+   362→   362→  };
+   363→   363→
+   364→   364→  const handleStatusChange = useCallback((orderId: string, newStatus: string) => {
+   365→   365→    setRecentOrders((prev) =>
+   366→   366→      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+   367→   367→    );
+   368→   368→  }, []);
+   369→   369→
+   370→   370→  const toggleExpand = useCallback(async (orderId: string) => {
+   371→   371→    setExpandedOrders((prev) => {
+   372→   372→      const next = new Set(prev);
+   373→   373→      if (next.has(orderId)) {
+   374→   374→        next.delete(orderId);
+   375→   375→      } else {
+   376→   376→        next.add(orderId);
+   377→   377→      }
+   378→   378→      return next;
+   379→   379→    });
+   380→   380→  }, []);
+   381→   381→
+   382→   382→  const handleLogout = () => {
+   383→   383→    logout();
+   384→   384→    navigate('home');
+   385→   385→  };
+   386→   386→
+   387→   387→  if (showLogin) {
+   388→   388→    return (
+   389→   389→      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+   390→   390→        <div className="w-full max-w-sm">
+   391→   391→          <h1 className="text-white text-lg font-bold uppercase tracking-wider text-center mb-6">
+   392→   392→            PANEL DE ADMINISTRACIÓN
+   393→   393→          </h1>
+   394→   394→          <AdminLogin open={showLogin} onOpenChange={setShowLogin} />
+   395→   395→        </div>
+   396→   396→      </div>
+   397→   397→    );
+   398→   398→  }
+   399→   399→
+   400→   400→  const statCards = [
+   401→   401→    {
+   402→   402→      label: 'Ventas Totales',
+   403→   403→      value: stats?.totalSales ?? 0,
+   404→   404→      displayValue: stats ? (
+   405→   405→        <span className="flex items-center">
+   406→   406→          <AnimatedCounter value={stats.totalSales} prefix="$" />
+   407→   407→          <MiniSparkline color="#22c55e" />
+   408→   408→        </span>
+   409→   409→      ) : (
+   410→   410→        <span>—</span>
+   411→   411→      ),
+   412→   412→      icon: DollarSign,
+   413→   413→      color: 'text-green-500',
+   414→   414→      bgColor: 'bg-green-500/10',
+   415→   415→      trend: { value: '12%', up: true },
+   416→   416→    },
+   417→   417→    {
+   418→   418→      label: 'Órdenes Pendientes',
+   419→   419→      value: stats?.pendingOrders ?? 0,
+   420→   420→      displayValue: stats ? (
+   421→   421→        <span className="flex items-center">
+   422→   422→          <AnimatedCounter value={stats.pendingOrders} />
+   423→   423→          <MiniSparkline color="#eab308" />
+   424→   424→        </span>
+   425→   425→      ) : (
+   426→   426→        <span>—</span>
+   427→   427→      ),
+   428→   428→      icon: Clock,
+   429→   429→      color: 'text-yellow-500',
+   430→   430→      bgColor: 'bg-yellow-500/10',
+   431→   431→      trend: { value: '5%', up: false },
+   432→   432→    },
+   433→   433→    {
+   434→   434→      label: 'Productos Activos',
+   435→   435→      value: stats?.activeProducts ?? 0,
+   436→   436→      displayValue: stats ? (
+   437→   437→        <span className="flex items-center">
+   438→   438→          <AnimatedCounter value={stats.activeProducts} />
+   439→   439→          <MiniSparkline color="#f87171" />
+   440→   440→        </span>
+   441→   441→      ) : (
+   442→   442→        <span>—</span>
+   443→   443→      ),
+   444→   444→      icon: Package,
+   445→   445→      color: 'text-red-400',
+   446→   446→      bgColor: 'bg-red-500/10',
+   447→   447→      trend: { value: '3%', up: true },
+   448→   448→    },
+   449→   449→    {
+   450→   450→      label: 'Total Órdenes',
+   451→   451→      value: stats?.totalOrders ?? 0,
+   452→   452→      displayValue: stats ? (
+   453→   453→        <span className="flex items-center">
+   454→   454→          <AnimatedCounter value={stats.totalOrders} />
+   455→   455→          <MiniSparkline color="#fb923c" />
+   456→   456→        </span>
+   457→   457→      ) : (
+   458→   458→        <span>—</span>
+   459→   459→      ),
+   460→   460→      icon: ShoppingBag,
+   461→   461→      color: 'text-orange-400',
+   462→   462→      bgColor: 'bg-orange-500/10',
+   463→   463→      trend: { value: '8%', up: true },
+   464→   464→    },
+   465→   465→  ];
+   466→   466→
+   467→   467→  return (
+   468→   468→    <section className="min-h-screen bg-black px-4 py-8 md:px-8 md:py-12">
+   469→   469→      <div className="max-w-6xl mx-auto">
+   470→   470→        {/* Header */}
+   471→   471→        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+   472→   472→          <div>
+   473→   473→            <h1 className="text-white text-xl md:text-2xl font-bold uppercase tracking-wider">
+   474→   474→              PANEL DE ADMINISTRACIÓN
+   475→   475→            </h1>
+   476→   476→            <div className="h-[2px] w-16 bg-red-600 mt-2" />
+   477→   477→            <p className="text-neutral-500 text-xs mt-1 uppercase tracking-wider">
+   478→   478→              Gestiona tu tienda
+   479→   479→            </p>
+   480→   480→          </div>
+   481→   481→          <div className="flex items-center gap-3">
+   482→   482→            <Button
+   483→   483→              variant="outline"
+   484→   484→              onClick={() => navigate('home')}
+   485→   485→              className="border-neutral-700 text-white hover:bg-neutral-800 uppercase text-xs tracking-wider font-bold rounded-none h-9 px-4"
+   486→   486→            >
+   487→   487→              VOLVER A LA TIENDA
+   488→   488→            </Button>
+   489→   489→            <Button
+   490→   490→              variant="ghost"
+   491→   491→              onClick={handleLogout}
+   492→   492→              className="text-neutral-500 hover:text-red-500 uppercase text-xs tracking-wider font-bold rounded-none h-9 px-4"
+   493→   493→            >
+   494→   494→              SALIR
+   495→   495→            </Button>
+   496→   496→          </div>
+   497→   497→        </div>
+   498→   498→
+   499→   499→        {/* Stats Cards */}
+   500→   500→        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+   501→   501→          {statCards.map((card, idx) => {
+   502→   502→            const Icon = card.icon;
+   503→   503→            return (
+   504→   504→              <motion.div
+   505→   505→                key={card.label}
+   506→   506→                initial={{ opacity: 0, y: 20 }}
+   507→   507→                animate={{ opacity: 1, y: 0 }}
+   508→   508→                transition={{ delay: idx * 0.1 }}
+   509→   509→                whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(220, 38, 38, 0.08)' }}
+   510→   510→                className={`bg-[#0a0a0a] border border-[#1a1a1a] p-5 hover:border-red-600/30 transition-all duration-300 cursor-default ${idx === 0 ? 'animated-gradient-border pulse-glow-red' : ''}`}
+   511→   511→              >
+   512→   512→                {loading ? (
+   513→   513→                  <div className="space-y-3">
+   514→   514→                    <Skeleton className="h-8 w-8 rounded" />
+   515→   515→                    <Skeleton className="h-6 w-24" />
+   516→   516→                    <Skeleton className="h-4 w-32" />
+   517→   517→                  </div>
+   518→   518→                ) : (
+   519→   519→                  <>
+   520→   520→                    <div className={`w-10 h-10 ${card.bgColor} rounded-lg flex items-center justify-center mb-3`}>
+   521→   521→                      <Icon className={`w-5 h-5 ${card.color}`} />
+   522→   522→                    </div>
+   523→   523→                    <p className={`text-2xl font-bold ${card.color}`}>{card.displayValue}</p>
+   524→   524→                    <p className="text-neutral-500 text-xs uppercase tracking-wider mt-1">
+   525→   525→                      {card.label}
+   526→   526→                    </p>
+   527→   527→                    {card.trend && (
+   528→   528→                      <span className={`text-[10px] font-bold ${card.trend.up ? 'text-green-500' : 'text-red-500'}`}>
+   529→   529→                        {card.trend.up ? '↑' : '↓'} {card.trend.value}
+   530→   530→                      </span>
+   531→   531→                    )}
+   532→   532→                  </>
+   533→   533→                )}
+   534→   534→              </motion.div>
+   535→   535→            );
+   536→   536→          })}
+   537→   537→        </div>
+   538→   538→
+   539→   539→        {/* Two-column layout: Recent Activity + Low Stock Alerts */}
+   540→   540→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+   541→   541→          {/* Recent Activity - takes 2 columns */}
+   542→   542→          <div className="lg:col-span-2">
+   543→   543→            <div className="flex items-center gap-3 mb-4">
+   544→   544→              <div className="h-0.5 w-12 bg-red-600" />
+   545→   545→              <Clock className="size-4 text-neutral-500" />
+   546→   546→              <h2 className="text-white text-sm font-bold uppercase tracking-wider">
+   547→   547→                Actividad Reciente
+   548→   548→              </h2>
+   549→   549→            </div>
+   550→   550→
+   551→   551→            {/* Mobile Cards */}
+   552→   552→            <div className="md:hidden">
+   553→   553→              {loading ? (
+   554→   554→                Array.from({ length: 3 }).map((_, i) => (
+   555→   555→                  <div key={i} className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 rounded-lg mb-3">
+   556→   556→                    <Skeleton className="h-4 w-20 mb-2" />
+   557→   557→                    <Skeleton className="h-3 w-32 mb-2" />
+   558→   558→                    <Skeleton className="h-4 w-16" />
+   559→   559→                  </div>
+   560→   560→                ))
+   561→   561→              ) : recentOrders.length === 0 ? (
+   562→   562→                <div className="bg-[#0a0a0a] border border-[#1a1a1a]] p-8 text-center">
+   563→   563→                  <p className="text-neutral-500 text-sm">No hay actividad reciente</p>
+   564→   564→                </div>
+   565→   565→              ) : (
+   566→   566→                recentOrders.slice(0, 5).map((order) => (
+   567→   567→                  <div
+   568→   568→                    key={order.id}
+   569→   569→                    onClick={() => toggleExpand(order.id)}
+   570→   570→                    className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 rounded-lg mb-3 cursor-pointer hover:bg-[#111] transition-colors"
+   571→   571→                  >
+   572→   572→                    <div className="flex items-center justify-between mb-2">
+   573→   573→                      <span className="text-white text-xs font-mono font-bold">#{order.id.slice(0, 8)}</span>
+   574→   574→                      <span className={`text-[10px] uppercase tracking-wider font-bold border px-2 py-0.5 rounded-sm ${STATUS_COLORS[order.status as OrderStatus] || STATUS_COLORS.PENDING}`}>
+   575→   575→                        {STATUS_LABELS[order.status as OrderStatus] || order.status}
+   576→   576→                      </span>
+   577→   577→                    </div>
+   578→   578→                    <p className="text-neutral-300 text-xs mb-1">
+   579→   579→                      {order.user?.name || order.user?.email || 'Guest'}
+   580→   580→                    </p>
+   581→   581→                    <div className="flex items-center justify-between">
+   582→   582→                      <span className="text-white text-sm font-bold">{formatPrice(order.totalAmount)}</span>
+   583→   583→                      <span className="text-neutral-500 text-xs">{formatDate(order.createdAt)}</span>
+   584→   584→                    </div>
+   585→   585→                    <AnimatePresence>
+   586→   586→                      {expandedOrders.has(order.id) && order.items && order.items.length > 0 && (
+   587→   587→                        <motion.div
+   588→   588→                          initial={{ opacity: 0, height: 0 }}
+   589→   589→                          animate={{ opacity: 1, height: 'auto' }}
+   590→   590→                          exit={{ opacity: 0, height: 0 }}
+   591→   591→                          className="mt-3 pt-3 border-t border-[#1a1a1a] overflow-hidden"
+   592→   592→                        >
+   593→   593→                          {order.items.map((item) => (
+   594→   594→                            <div key={item.id} className="flex justify-between text-xs py-1">
+   595→   595→                              <span className="text-neutral-300">{item.productVariant.product.title} ({item.productVariant.size}/{item.productVariant.color}) ×{item.quantity}</span>
+   596→   596→                              <span className="text-white font-medium">{formatPrice(item.priceAtPurchase * item.quantity)}</span>
+   597→   597→                            </div>
+   598→   598→                          ))}
+   599→   599→                        </motion.div>
+   600→   600→                      )}
+   601→   601→                    </AnimatePresence>
+   602→   602→                  </div>
+   603→   603→                ))
+   604→   604→              )}
+   605→   605→            </div>
+   606→   606→
+   607→   607→            {/* Desktop Table */}
+   608→   608→            <div className="hidden md:block">
+   609→   609→              <div className="bg-[#0a0a0a] border border-[#1a1a1a] overflow-hidden">
+   610→   610→                <div className="overflow-x-auto">
+   611→   611→                  <Table>
+   612→   612→                    <TableHeader>
+   613→   613→                      <TableRow className="border-b-[#1a1a1a] hover:bg-transparent">
+   614→   614→                        <TableHead className="w-8" />
+   615→   615→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   616→   616→                          Orden ID
+   617→   617→                        </TableHead>
+   618→   618→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   619→   619→                          Cliente
+   620→   620→                        </TableHead>
+   621→   621→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   622→   622→                          Total
+   623→   623→                        </TableHead>
+   624→   624→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   625→   625→                          Estado
+   626→   626→                        </TableHead>
+   627→   627→                        <TableHead className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+   628→   628→                          Fecha
+   629→   629→                        </TableHead>
+   630→   630→                      </TableRow>
+   631→   631→                    </TableHeader>
+   632→   632→                    <TableBody>
+   633→   633→                      {loading ? (
+   634→   634→                        Array.from({ length: 5 }).map((_, i) => (
+   635→   635→                          <TableRow key={i} className="border-b-[#1a1a1a] hover:bg-transparent">
+   636→   636→                            <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+   637→   637→                            <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+   638→   638→                            <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+   639→   639→                            <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+   640→   640→                            <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+   641→   641→                            <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+   642→   642→                          </TableRow>
+   643→   643→                        ))
+   644→   644→                      ) : recentOrders.length === 0 ? (
+   645→   645→                        <TableRow className="border-b-0 hover:bg-transparent">
+   646→   646→                          <TableCell colSpan={6} className="text-center py-8">
+   647→   647→                            <p className="text-neutral-500 text-sm">No hay actividad reciente</p>
+   648→   648→                          </TableCell>
+   649→   649→                        </TableRow>
+   650→   650→                      ) : (
+   651→   651→                        recentOrders.slice(0, 5).map((order, idx) => {
+   652→   652→                          const isExpanded = expandedOrders.has(order.id);
+   653→   653→                          return (
+   654→   654→                            <Fragment key={order.id}>
+   655→   655→                              <TableRow
+   656→   656→                                className={`border-b-[#1a1a1a] hover:bg-white/[0.02] transition-colors cursor-pointer row-hover-highlight ${isExpanded ? 'bg-[#111]' : idx % 2 === 0 ? 'bg-[#0a0a0a]' : 'bg-white/[0.015]'}`}
+   657→   657→                                onClick={() => toggleExpand(order.id)}
+   658→   658→                              >
+   659→   659→                                <TableCell className="w-8">
+   660→   660→                                  <button
+   661→   661→                                    className="text-neutral-500 hover:text-white transition-colors"
+   662→   662→                                    aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
+   663→   663→                                  >
+   664→   664→                                    {isExpanded ? (
+   665→   665→                                      <ChevronDown className="w-4 h-4" />
+   666→   666→                                    ) : (
+   667→   667→                                      <ChevronRight className="w-4 h-4" />
+   668→   668→                                    )}
+   669→   669→                                  </button>
+   670→   670→                                </TableCell>
+   671→   671→                                <TableCell className="text-white text-xs font-mono">
+   672→   672→                                  #{order.id.slice(0, 8)}
+   673→   673→                                </TableCell>
+   674→   674→                                <TableCell className="text-white text-xs">
+   675→   675→                                  {order.user?.name || order.user?.email || 'Guest'}
+   676→   676→                                </TableCell>
+   677→   677→                                <TableCell className="text-white text-xs font-medium">
+   678→   678→                                  {formatPrice(order.totalAmount)}
+   679→   679→                                </TableCell>
+   680→   680→                                <TableCell onClick={(e) => e.stopPropagation()}>
+   681→   681→                                  <OrderStatusSelect
+   682→   682→                                    orderId={order.id}
+   683→   683→                                    currentStatus={order.status}
+   684→   684→                                    onStatusChange={handleStatusChange}
+   685→   685→                                  />
+   686→   686→                                </TableCell>
+   687→   687→                                <TableCell className="text-neutral-400 text-xs">
+   688→   688→                                  {formatDate(order.createdAt)}
+   689→   689→                                </TableCell>
+   690→   690→                              </TableRow>
+   691→   691→                              <AnimatePresence>
+   692→   692→                                {isExpanded && order.items && order.items.length > 0 && (
+   693→   693→                                  <TableRow className="border-b-[#1a1a1a] hover:bg-transparent p-0">
+   694→   694→                                    <TableCell colSpan={6} className="p-0">
+   695→   695→                                      <OrderItemsRow items={order.items} />
+   696→   696→                                    </TableCell>
+   697→   697→                                  </TableRow>
+   698→   698→                                )}
+   699→   699→                              </AnimatePresence>
+   700→   700→                            </Fragment>
+   701→   701→                          );
+   702→   702→                        })
+   703→   703→                      )}
+   704→   704→                    </TableBody>
+   705→   705→                  </Table>
+   706→   706→                </div>
+   707→   707→              </div>
+   708→   708→            </div>
+   709→   709→          </div>
+   710→   710→
+   711→   711→          {/* Low Stock Alerts - 1 column */}
+   712→   712→          <div className="lg:col-span-1">
+   713→   713→            <div className="flex items-center gap-2 mb-4">
+   714→   714→              <AlertTriangle className="size-4 text-yellow-500" />
+   715→   715→              <h2 className="text-white text-sm font-bold uppercase tracking-wider">
+   716→   716→                Alerta de Stock Bajo
+   717→   717→              </h2>
+   718→   718→            </div>
+   719→   719→            <div className="bg-[#0a0a0a] border border-[#1a1a1a] overflow-hidden">
+   720→   720→              {loading ? (
+   721→   721→                <div className="p-4 space-y-3">
+   722→   722→                  {Array.from({ length: 3 }).map((_, i) => (
+   723→   723→                    <div key={i} className="flex items-center justify-between">
+   724→   724→                      <Skeleton className="h-4 w-28" />
+   725→   725→                      <Skeleton className="h-4 w-10" />
+   726→   726→                    </div>
+   727→   727→                  ))}
+   728→   728→                </div>
+   729→   729→              ) : lowStockProducts.length === 0 ? (
+   730→   730→                <div className="p-6 text-center">
+   731→   731→                  <Package className="size-8 text-neutral-700 mx-auto mb-2" />
+   732→   732→                  <p className="text-neutral-500 text-xs">Todo el inventario está bien</p>
+   733→   733→                </div>
+   734→   734→              ) : (
+   735→   735→                <div className="divide-y divide-[#1a1a1a]">
+   736→   736→                  {lowStockProducts.map((product) => (
+   737→   737→                    <div
+   738→   738→                      key={product.id}
+   739→   739→                      className="flex items-center justify-between px-4 py-3 hover:bg-[#111] transition-colors"
+   740→   740→                    >
+   741→   741→                      <div className="min-w-0 flex-1 mr-3">
+   742→   742→                        <p className="text-white text-xs font-medium truncate">
+   743→   743→                          {product.title}
+   744→   744→                        </p>
+   745→   745→                      </div>
+   746→   746→                      <div className="flex items-center gap-2 flex-shrink-0">
+   747→   747→                        <span
+   748→   748→                          className={`text-xs font-bold ${
+   749→   749→                            product.totalStock === 0
+   750→   750→                              ? 'text-red-500'
+   751→   751→                              : 'text-yellow-500'
+   752→   752→                          }`}
+   753→   753→                        >
+   754→   754→                          {product.totalStock === 0 ? 'AGOTADO' : `${product.totalStock} uds`}
+   755→   755→                        </span>
+   756→   756→                        <button
+   757→   757→                          onClick={() => navigate('admin-products-edit', { id: product.id })}
+   758→   758→                          className="p-1 hover:bg-[#222] rounded-sm transition-colors"
+   759→   759→                          aria-label={`Editar ${product.title}`}
+   760→   760→                        >
+   761→   761→                          <Pencil size={12} className="text-neutral-500 hover:text-white transition-colors" />
+   762→   762→                        </button>
+   763→   763→                      </div>
+   764→   764→                    </div>
+   765→   765→                  ))}
+   766→   766→                </div>
+   767→   767→              )}
+   768→   768→            </div>
+   769→   769→          </div>
+   770→   770→        </div>
+   771→   771→
+   772→   772→        {/* Quick Actions */}
+   773→   773→        <div className="mb-8">
+   774→   774→          <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
+   775→   775→            Acciones Rápidas
+   776→   776→          </h2>
+   777→   777→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+   778→   778→            <Button
+   779→   779→              onClick={() => navigate('admin-products')}
+   780→   780→              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+   781→   781→            >
+   782→   782→              <Package className="w-4 h-4 mr-2" />
+   783→   783→              GESTIONAR PRODUCTOS
+   784→   784→            </Button>
+   785→   785→            <Button
+   786→   786→              onClick={() => navigate('admin-products-new')}
+   787→   787→              className="bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+   788→   788→            >
+   789→   789→              CREAR NUEVO PRODUCTO
+   790→   790→            </Button>
+   791→   791→            <Button
+   792→   792→              onClick={() => navigate('admin-promos')}
+   793→   793→              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+   794→   794→            >
+   795→   795→              <Tag className="w-4 h-4 mr-2" />
+   796→   796→              PROMOCIONES Y CUPONES
+   797→   797→            </Button>
+   798→   798→            <Button
+   799→   799→              onClick={() => toast.info('Vista de órdenes completas próximamente')}
+   800→   800→              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+   801→   801→            >
+   802→   802→              <ClipboardList className="w-4 h-4 mr-2" />
+   803→   803→              VER ÓRDENES COMPLETAS
+   804→   804→            </Button>
+   805→   805→          </div>
+   806→   806→        </div>
+   807→   807→      </div>
+   808→   808→    </section>
+   809→   809→  );
+   810→   810→}
