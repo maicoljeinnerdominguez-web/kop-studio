@@ -1,6 +1,6 @@
 #!/bin/bash
 cd /home/z/my-project
 while true; do
-  node_modules/.bin/next dev -p 3000
-  sleep 1
+  HOSTNAME=0.0.0.0 node .next/standalone/server.js 2>/tmp/srv-err.log
+  sleep 0.5
 done
