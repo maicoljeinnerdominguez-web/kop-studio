@@ -1,0 +1,15 @@
+Dockerfile
+.dockerignore
+node_modules
+.next
+.git
+*.md
+.env
+.env.local
+.env.*.local
+db/*.db
+db/*.db-journal
+dev.log
+server.log
+screenshot-*.png
+worklog.md

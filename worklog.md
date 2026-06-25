@@ -2307,6 +2307,43 @@ Stage Summary:
 - Server running persistently on port 3000, Caddy proxy on port 81
 
 ---
+Task ID: prod-prep
+Agent: Main Agent
+Task: Prepare project for production deployment on Railway
+
+Work Log:
+- Migrated Prisma schema from SQLite to PostgreSQL
+- Updated src/lib/db.ts: conditional logging (queries in dev, errors only in prod)
+- Removed z-ai-web-dev-sdk from package.json (dev-only dependency)
+- Added "postinstall": "prisma generate" to package.json scripts
+- Updated seed.ts: admin/demo passwords now hashed with bcryptjs (await hash())
+- Created .env.example with all production env vars (DB, NextAuth, Wompi, Resend, Cloudinary)
+- Created Dockerfile: multi-stage Bun build (deps → build → runner, non-root user)
+- Created .dockerignore: excludes .git, node_modules, .next, SQLite files, logs, screenshots
+- Created railway.toml: nixpacks builder + PostgreSQL plugin + healthcheck + restart policy
+- Updated .gitignore: !.env.example, db/*.db, dev scripts, mini-services/, screenshots
+- Verified: `bun run lint` passes clean
+- Verified: `next build` compiles successfully (18 static + 24 dynamic routes)
+- Verified: agent-browser page loads with all content after changes
+
+Files created/modified:
+- prisma/schema.prisma (provider: sqlite → postgresql)
+- src/lib/db.ts (production logging)
+- prisma/seed.ts (bcrypt passwords)
+- package.json (removed z-ai-web-dev-sdk, added postinstall)
+- .env.example (NEW)
+- Dockerfile (NEW)
+- .dockerignore (NEW)
+- railway.toml (NEW)
+- .gitignore (updated)
+
+Stage Summary:
+- **Project is production-ready for Railway deployment**
+- Schema is PostgreSQL, build compiles, lint passes, all files in place
+- Deploy flow: push to GitHub → connect Railway → auto-deploy with PostgreSQL
+- Temporary URL: kopstudio-xxxx.up.railway.app → then connect custom domain
+
+---
 
 ### Resumen de Prioridades Inmediatas (Próximos pasos):
 

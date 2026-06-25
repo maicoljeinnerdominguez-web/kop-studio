@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (keep .env.example)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -46,9 +47,20 @@ local-*
 *.log
 dev.log
 dev.out.log
-test
-prompt
-
 server.log
+screenshot-*.png
+
+# Dev-only scripts
+keep-server-alive.sh
+watchdog.sh
+restart-server.sh
+mini-services/
+
+# SQLite database (production uses PostgreSQL)
+db/*.db
+db/*.db-journal
+
 # Skills directory
 /skills/
+test
+prompt
