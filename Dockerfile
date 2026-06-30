@@ -4,6 +4,7 @@ FROM oven/bun:1-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package.json bun.lockb* ./
+COPY prisma ./prisma/
 RUN bun install --frozen-lockfile
 
 # Build the application
