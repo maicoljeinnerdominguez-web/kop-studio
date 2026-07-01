@@ -1,12 +1,4 @@
-[build]
-builder = "nixpacks"
-buildCommand = "bun run db:generate && bun run build"
-
-[env]
-NIXPACKS_NODE_VERSION = "22"
-
 [deploy]
-startCommand = "bunx prisma db push --accept-data-loss && node .next/standalone/server.js"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
