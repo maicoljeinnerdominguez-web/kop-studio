@@ -4,13 +4,10 @@ import { db } from "@/lib/db";
 
 // This endpoint seeds the database with initial data.
 // Visit /api/setup/seed ONCE after deployment to load products.
-// It is safe to run multiple times (uses upsert for products).
+// It is safe to run multiple times (uses upsert).
 
 export async function GET() {
   try {
-    // Check if database is reachable
-    await db.$queryRaw`SELECT 1`;
-
     // Create admin user
     const admin = await db.user.upsert({
       where: { email: "admin@kopstudio.com" },
@@ -239,7 +236,6 @@ export async function GET() {
     let productCount = 0;
     for (const pd of productsData) {
       const existing = await db.product.findUnique({ where: { slug: pd.slug } });
-
       if (!existing) {
         await db.product.create({
           data: {
@@ -257,10 +253,8 @@ export async function GET() {
             images: { create: pd.images },
           },
         });
-        productCount++;
-      } else {
-        productCount++;
       }
+      productCount++;
     }
 
     // Promo codes
