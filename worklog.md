@@ -2395,3 +2395,29 @@ Unresolved:
 - After successful deploy: need to run /api/setup/seed
 - After seeding: need to add NEXTAUTH_URL env var
 - Wompi payment integration still pending
+
+---
+Task ID: deploy-fix
+Agent: Main Agent
+Task: Fix Railway deployment and get KOP STUDIO live
+
+Work Log:
+- Diagnosed project: Dockerfile was missing, railway.toml used unreliable Nixpacks, no domain configured
+- Created production Dockerfile with multi-stage build (node:22-slim)
+- Key fix #1: Added HOSTNAME=0.0.0.0 to entrypoint (Docker sets HOSTNAME to container ID, breaking Next.js binding)
+- Key fix #2: Created Railway domain with explicit port 8080 target (was missing, causing 404)
+- Key fix #3: Entry point runs prisma db push --skip-generate on every start
+- Key fix #4: Copied Prisma client + engine to standalone output for runtime
+- Removed healthcheck initially to diagnose 502, re-enabled after fix confirmed
+- Pushed 7 commits to GitHub, triggered multiple Railway deploys via CLI
+- Database seeded with 8 products, 8 categories, 3 promo codes, 8 reviews, 2 users
+- Verified via agent-browser: homepage, product cards, quick buy modal, login dialog all working
+
+Stage Summary:
+- LIVE URL: https://kop-studio-production.up.railway.app/
+- Railway project: helpful-courage (41b28395-2efe-4579-ad9b-fd3b73c641dd)
+- Service: kop-studio (b61f8e4c-c014-4aa6-86b2-f8d355554a60)
+- Database: PostgreSQL on Railway, tables synced via prisma db push
+- Root cause of all previous failures: HOSTNAME env var + missing domain port config
+- Admin credentials: admin@kopstudio.com / admin123
+- Demo credentials: cliente@kopstudio.com / demo123
