@@ -2518,3 +2518,28 @@ Stage Summary:
 - 1 new API route: /api/contact
 - 3 files modified: types/index.ts, page.tsx, Footer.tsx
 - Footer info links (Envíos, Devoluciones, Términos, Privacidad, Contacto) now navigate to real content pages
+
+---
+Task ID: info-pages
+Agent: Main Agent
+Task: Fix .filter() crash bug + Build complete informational pages for KOP STUDIO
+
+Work Log:
+- Fixed 3 crash bugs: HomeView.tsx (product.images?.filter().slice() chain), AdminProducts.tsx (product.images.find without guard), ProductReviews.tsx (data?.reviews.filter without guard)
+- All fixes use (arr || []) defensive guard pattern consistent with previous .reduce() fixes
+- Created InfoPageView.tsx (1016 lines) - single component handling 6 informational pages: envios, devoluciones, terminos, privacidad, contacto, faq
+- Created /api/contact POST route with field validation
+- Added 'info-page' to AppView type union
+- Updated page.tsx with lazy import and view registration
+- Updated Footer.tsx to navigate('info-page', { slug }) instead of navigate('home')
+- Ran lint: zero errors
+- Committed and pushed to main
+- Deployed to Railway via railway up
+- Verified production site returns HTTP 200
+
+Stage Summary:
+- Bug fix: 3 additional defensive guards added for .filter() and .find() on potentially undefined arrays
+- New feature: 6 complete informational pages (Envíos, Devoluciones, Términos, Privacidad, Contacto, FAQ)
+- All content in Spanish (Colombia), matching dark gothic aesthetic
+- Contact page includes functional form with API route
+- Production URL: https://kop-studio-production.up.railway.app (HTTP 200 confirmed)
