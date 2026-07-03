@@ -48,8 +48,8 @@ export async function POST(request: Request) {
     const filePath = path.join(uploadsDir, filename);
     await writeFile(filePath, buffer);
 
-    // Return the public URL
-    const publicUrl = `/uploads/products/${filename}`;
+    // Return the API URL (standalone doesn't serve new files from public/)
+    const publicUrl = `/api/uploads/products/${filename}`;
 
     return NextResponse.json({ url: publicUrl, filename });
   } catch (error) {
