@@ -2447,3 +2447,45 @@ Stage Summary:
 - Product form now shows upload buttons, image previews, and clear error messages
 - Editing products now properly saves images and variants (deletes old, creates new)
 - All verified working on production via curl tests
+
+---
+Task ID: fix-images-persistence-crash
+Agent: Main Agent
+Task: Fix client-side crash, missing product images, and data persistence across deploys
+
+Work Log:
+- Diagnosed 3 root causes of the reported issues:
+  1. **Missing product images**: `public/images/products/` was empty — all 12 seed product image files (tshirt-gothic-1.png, hoodie-mandala-2.png, etc.) referenced in seed data didn't exist
+  2. **Upload images lost on deploy**: `/api/upload` saved files to container filesystem (ephemeral on Railway). Every redeploy wiped uploaded images
+  3. **No error boundary**: Missing image files + unhandled errors caused "Application error: a client-side exception has occurred" white screen
+- Generated 12 AI product images (gothic streetwear aesthetic, black background, studio lighting):
+  - Primary: tshirt-gothic-1.png, hoodie-mandala-2.png, cargo-black-3.png, tshirt-pray-4.png, puffer-bag-5.png, jogger-6.png, tshirt-angel-7.png
+  - Secondary/detail: hoodie-mandala-new.png, tshirt-oracion.png, puffer-bag-chain.png, jogger-basic.png, tshirt-angel-wings.png
+- Rewrote `/api/upload/route.ts` to return base64 data URLs instead of saving to filesystem — images now stored in PostgreSQL and persist across deploys
+- Created `/src/app/global-error.tsx` — branded error boundary (dark theme, retry button) prevents white screen crashes
+- Updated `docker-entrypoint.sh` with safer prisma db push (non-fatal on failure)
+- Verified locally: no console errors, products display with images, product detail page works
+- Deployed to Railway, verified live:
+  - https://kop-studio-production.up.railway.app/ returns 200
+  - No client-side errors
+  - All seed products visible with images
+  - User-added products ("COLOMBIA", "CFCF") PERSISTED across redeploy ✓
+  - Re-seeded database successfully (8 products, 8 categories, 3 promos, 8 reviews)
+
+Stage Summary:
+- **Images FIXED**: 12 AI-generated product images baked into Docker image (persist across deploys)
+- **Upload FIXED**: New uploads stored as base64 in PostgreSQL (persist across deploys)
+- **Crash FIXED**: Global error boundary prevents white screen
+- **Persistence CONFIRMED**: User-added products survive redeploy
+- **Live URL**: https://kop-studio-production.up.railway.app/
+
+Current Project Status:
+- Site live and fully functional
+- 8 seed products + user-added products all visible
+- Images load correctly
+- Data persists in Railway PostgreSQL across deploys
+- Admin: admin@kopstudio.com / admin123
+
+Unresolved:
+- User's previously uploaded product images (COLOMBIA, CFCF) may still point to old file-based URLs — need re-upload via admin
+- Wompi payment integration still pending
