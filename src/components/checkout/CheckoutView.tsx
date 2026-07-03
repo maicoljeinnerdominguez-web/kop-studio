@@ -327,6 +327,7 @@ function OrderSummarySidebar({
                     src={img}
                     alt={item.product.title}
                     className="w-full h-full object-cover"
+                    loading="lazy" decoding="async"
                   />
                 )}
               </div>
@@ -454,6 +455,7 @@ function MobileOrderSummary({
                             src={img}
                             alt={item.product.title}
                             className="w-full h-full object-cover"
+                            loading="lazy" decoding="async"
                           />
                         )}
                       </div>

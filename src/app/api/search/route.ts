@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { rewriteProductImages } from "@/lib/rewriteImages";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -25,5 +26,5 @@ export async function GET(request: Request) {
     take: 8,
   });
 
-  return NextResponse.json(products);
+  return NextResponse.json(rewriteProductImages(products as unknown as Record<string, unknown>[]) as typeof products);
 }

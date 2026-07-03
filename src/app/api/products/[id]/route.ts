@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { rewriteImageUrls } from "@/lib/rewriteImages";
 
 export async function GET(
   _request: Request,
@@ -20,7 +21,7 @@ export async function GET(
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
     const safe = { ...product, variants: product.variants || [], images: product.images || [] };
-    return NextResponse.json(safe);
+    return NextResponse.json(rewriteImageUrls(safe as unknown as Record<string, unknown>));
   } catch (error) {
     console.error("GET /api/products/[id] error:", error);
     return NextResponse.json({ error: "Error al obtener producto" }, { status: 500 });
@@ -107,7 +108,7 @@ export async function PUT(
     });
 
     const safe = updated ? { ...updated, variants: updated.variants || [], images: updated.images || [] } : updated;
-    return NextResponse.json(safe);
+    return NextResponse.json(updated ? rewriteImageUrls(safe as unknown as Record<string, unknown>) : updated);
   } catch (error) {
     console.error("PUT /api/products/[id] error:", error);
     return NextResponse.json(

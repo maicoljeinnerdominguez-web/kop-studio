@@ -68,6 +68,7 @@ export default function CompareFloatingBar() {
                         src={thumbnails[id]}
                         alt=""
                         className="w-full h-full object-cover"
+                        loading="lazy" decoding="async"
                       />
                     ) : (
                       <div className="w-full h-full animate-pulse bg-[#1a1a1a]" />

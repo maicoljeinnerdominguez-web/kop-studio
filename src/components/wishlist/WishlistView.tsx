@@ -78,6 +78,7 @@ function WishlistItem({ product, index, onRemove, onMoveToCart }: WishlistItemPr
               src={primaryImage.url}
               alt={primaryImage.altText}
               className="absolute inset-0 w-full h-full object-cover opacity-100 group-hover:opacity-0 transition-opacity duration-500"
+              loading="lazy" decoding="async"
               onError={() => setImageError(true)}
             />
           ) : (
@@ -91,6 +92,7 @@ function WishlistItem({ product, index, onRemove, onMoveToCart }: WishlistItemPr
               src={secondaryImage.url}
               alt={secondaryImage.altText}
               className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              loading="lazy" decoding="async"
               onError={() => setImageError(true)}
             />
           )}

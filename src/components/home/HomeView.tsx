@@ -191,6 +191,7 @@ export default function HomeView() {
             src="/images/brand/ascension-collection-2026.jpeg"
             alt="KOP STUDIO - Ascensión Colección 2026"
             className="w-full h-full object-cover object-top"
+            loading="eager" decoding="async" fetchPriority="high"
           />
           <div className="absolute inset-0 bg-black/50" />
         </motion.div>
@@ -373,6 +374,7 @@ export default function HomeView() {
                         src={imageSrc}
                         alt={product.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        loading="lazy" decoding="async"
                       />
 
                       {/* Dark overlay gradient */}
@@ -454,6 +456,7 @@ export default function HomeView() {
                   src={cat.image}
                   alt={cat.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy" decoding="async"
                 />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
               </div>
@@ -658,7 +661,7 @@ export default function HomeView() {
                 src="/images/brand/memento-vivere.jpeg"
                 alt="Memento Vivere"
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                loading="lazy"
+                loading="lazy" decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
@@ -681,7 +684,7 @@ export default function HomeView() {
                 src="/images/brand/kop-monogram.jpeg"
                 alt="KOP Monogram"
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                loading="lazy"
+                loading="lazy" decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
@@ -704,7 +707,7 @@ export default function HomeView() {
                 src="/images/brand/72-plus-1.jpeg"
                 alt="72+1"
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                loading="lazy"
+                loading="lazy" decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
@@ -727,7 +730,7 @@ export default function HomeView() {
                 src="/images/brand/praying-figure-pink.jpeg"
                 alt="Figura Orante"
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                loading="lazy"
+                loading="lazy" decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
@@ -750,7 +753,7 @@ export default function HomeView() {
                 src="/images/brand/hooded-crown-thorns.jpeg"
                 alt="Corona de Espinas"
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                loading="lazy"
+                loading="lazy" decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
@@ -773,7 +776,7 @@ export default function HomeView() {
                 src="/images/brand/brand-collage.jpeg"
                 alt="KOP STUDIO Brand Identity"
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                loading="lazy"
+                loading="lazy" decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
@@ -803,7 +806,7 @@ export default function HomeView() {
                 src="/images/brand/hooded-crown-thorns.jpeg"
                 alt="KOP STUDIO - Icono Sagrado"
                 className="w-full aspect-[4/3] object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                loading="lazy"
+                loading="lazy" decoding="async"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -812,7 +815,7 @@ export default function HomeView() {
                   src="/images/brand/memento-vivere.jpeg"
                   alt="Memento Vivere"
                   className="w-full aspect-square object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                  loading="lazy"
+                  loading="lazy" decoding="async"
                 />
               </div>
               <div className="overflow-hidden rounded-md relative">
@@ -820,7 +823,7 @@ export default function HomeView() {
                   src="/images/brand/brand-collage.jpeg"
                   alt="KOP STUDIO"
                   className="w-full aspect-square object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                  loading="lazy"
+                  loading="lazy" decoding="async"
                 />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                   <span className="text-white text-3xl font-black uppercase tracking-widest" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>KOP</span>
@@ -843,6 +846,7 @@ export default function HomeView() {
                 src="/images/brand/kop-studio-text.jpeg"
                 alt="KOP STUDIO"
                 className="h-6 w-auto object-contain opacity-70"
+                loading="lazy" decoding="async"
               />
             </div>
             <h2 className="text-sm font-bold uppercase tracking-widest text-white">

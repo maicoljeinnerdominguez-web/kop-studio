@@ -50,9 +50,12 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [quickBuyOpen, setQuickBuyOpen] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({})
+  const [isTouchDevice] = useState(
+    typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  )
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cardRef.current) return
+    if (!cardRef.current || isTouchDevice) return
     const rect = cardRef.current.getBoundingClientRect()
     const x = (e.clientX - rect.left) / rect.width
     const y = (e.clientY - rect.top) / rect.height
@@ -140,7 +143,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       onClick={handleClick}
       ref={cardRef}
       onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onMouseLeave={isTouchDevice ? undefined : handleMouseLeave}
     >
       <div
         className={`relative overflow-hidden rounded-md bg-[#0a0a0a] border transition-all duration-300 hover:shadow-lg hover:shadow-red-600/20 shine-follow ${wishlisted ? 'border-red-600/40' : 'border-[#1a1a1a] hover:border-red-600/50 hover:shadow-[0_0_15px_rgba(220,38,38,0.15)]'}`}
@@ -159,6 +162,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               src={primaryImage.url}
               alt={primaryImage.altText}
               className="product-card-image product-card-image-primary absolute inset-0 w-full h-full object-cover opacity-100 group-hover:opacity-0 transition-opacity duration-500"
+              loading="lazy"
+              decoding="async"
+              fetchPriority={index < 4 ? 'high' : 'low'}
               onError={() => setImageError(true)}
             />
           ) : (
@@ -167,11 +173,13 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             </div>
           )}
 
-          {!imageError && secondaryImage && (
+          {!imageError && !isTouchDevice && secondaryImage && (
             <img
               src={secondaryImage.url}
               alt={secondaryImage.altText}
               className="product-card-image product-card-image-secondary absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              loading="lazy"
+              decoding="async"
               onError={() => setImageError(true)}
             />
           )}

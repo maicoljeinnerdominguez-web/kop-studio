@@ -146,6 +146,7 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
                 className={`w-full h-full object-cover transition-opacity duration-500 ${
                   imageHovered && secondaryImage ? 'opacity-0' : 'opacity-100'
                 }`}
+                loading="lazy" decoding="async"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -159,6 +160,7 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
                 className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
                   imageHovered ? 'opacity-100' : 'opacity-0'
                 }`}
+                loading="lazy" decoding="async"
               />
             )}
             {product.isNew && (

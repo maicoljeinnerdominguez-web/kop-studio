@@ -377,6 +377,7 @@ export default function ProductLightbox({
                       alt={image.altText}
                       className="w-full h-full object-cover"
                       draggable={false}
+                      loading="lazy" decoding="async"
                     />
                   </button>
                 ))}

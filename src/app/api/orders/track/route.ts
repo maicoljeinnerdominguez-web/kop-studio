@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { rewriteOrderImagesList } from '@/lib/rewriteImages';
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ orders });
+    return NextResponse.json({ orders: rewriteOrderImagesList(orders as unknown as Record<string, unknown>[]) as typeof orders });
   } catch {
     return NextResponse.json(
       { error: 'Error al buscar pedidos' },

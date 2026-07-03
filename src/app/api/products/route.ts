@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { rewriteImageUrls, rewriteProductImages } from "@/lib/rewriteImages";
 
 // Ensure every product always has arrays for variants/images (defensive against null/undefined)
 function safeProduct(p: Record<string, unknown>) {
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
       orderBy,
     });
 
-    return NextResponse.json(products.map(safeProduct));
+    return NextResponse.json(rewriteProductImages(products.map(safeProduct)));
   } catch (error) {
     console.error("GET /api/products error:", error);
     return NextResponse.json({ error: "Error al obtener productos" }, { status: 500 });
@@ -123,7 +124,7 @@ export async function POST(request: Request) {
       include: { category: true, variants: true, images: true },
     });
 
-    return NextResponse.json(safeProduct(product as unknown as Record<string, unknown>), { status: 201 });
+    return NextResponse.json(rewriteImageUrls(safeProduct(product as unknown as Record<string, unknown>)), { status: 201 });
   } catch (error) {
     console.error("POST /api/products error:", error);
     return NextResponse.json(

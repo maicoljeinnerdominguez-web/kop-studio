@@ -2543,3 +2543,23 @@ Stage Summary:
 - All content in Spanish (Colombia), matching dark gothic aesthetic
 - Contact page includes functional form with API route
 - Production URL: https://kop-studio-production.up.railway.app (HTTP 200 confirmed)
+
+---
+Task ID: img-perf
+Agent: Main Agent
+Task: Add lazy loading and decoding="async" to ALL img tags for mobile performance
+
+Work Log:
+- Added `loading="lazy" decoding="async"` to 33 img tags across 18 component files
+- Hero image in HomeView.tsx (line 190) uses `loading="eager" decoding="async" fetchPriority="high"` for LCP optimization
+- Skipped ProductCard.tsx lines 163/179 (already had loading="lazy")
+- Added `decoding="async"` to 10 img tags in HomeView.tsx that already had `loading="lazy"` but were missing `decoding`
+- Fixed pre-existing lint error in ProductCard.tsx: replaced `useState(false)` + `useEffect(setState)` with `useState(() => ...)` to avoid "set-state-in-effect" rule violation
+- Files modified: HomeView.tsx (13 imgs), ProductDetailView.tsx (2), ProductQuickView.tsx (2), WishlistView.tsx (2), CompleteTheLook.tsx (1), CheckoutView.tsx (2), QuickBuyModal.tsx (1), CompareFloatingBar.tsx (1), ProductComparisonView.tsx (1), OrderHistoryView.tsx (1), OrderTrackingView.tsx (1), CartDrawer.tsx (1), SearchCommandPalette.tsx (1), ImageLightbox.tsx (1), ProductLightbox.tsx (1), SocialFeed.tsx (1), AdminOrders.tsx (2), AdminProducts.tsx (1), AdminProductForm.tsx (1), ProductCard.tsx (lint fix)
+- Ran lint: zero errors (exit code 0)
+
+Stage Summary:
+- 33 img tags updated with lazy loading + async decoding across 18 files
+- 1 pre-existing lint error fixed in ProductCard.tsx
+- Hero image optimized with eager loading + fetchPriority="high" for LCP
+- Zero lint errors

@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { rewriteOrderImages } from '@/lib/rewriteImages';
 
 const VALID_STATUSES = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'] as const;
 
@@ -35,7 +36,7 @@ export async function GET(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
-  return NextResponse.json(order);
+  return NextResponse.json(rewriteOrderImages(order as unknown as Record<string, unknown>) as typeof order);
 }
 
 export async function PUT(
@@ -83,7 +84,7 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(updatedOrder);
+    return NextResponse.json(rewriteOrderImages(updatedOrder as unknown as Record<string, unknown>) as typeof updatedOrder);
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }

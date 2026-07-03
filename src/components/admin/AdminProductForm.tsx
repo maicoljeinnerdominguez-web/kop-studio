@@ -519,6 +519,7 @@ export default function AdminProductForm() {
                               src={img.url}
                               alt={img.altText || 'Preview'}
                               className="w-full h-full object-cover"
+                              loading="lazy" decoding="async"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = 'none';
                               }}

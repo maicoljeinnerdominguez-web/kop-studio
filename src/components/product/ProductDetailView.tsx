@@ -214,6 +214,7 @@ function RecentlyViewedSection({ currentProductId }: { currentProductId: string 
                   src={item.images[0].url}
                   alt={item.images[0].altText}
                   className="w-full h-full object-cover"
+                  loading="lazy" decoding="async"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -558,6 +559,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                       src={image.url}
                       alt={image.altText}
                       className="w-full h-full object-cover img-blur-up"
+                      loading="lazy" decoding="async"
                     />
                   </button>
                 ))}

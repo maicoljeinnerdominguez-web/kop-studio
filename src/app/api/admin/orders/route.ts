@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { rewriteOrderImagesList } from '@/lib/rewriteImages';
 
 const VALID_STATUSES = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'] as const;
 
@@ -35,5 +36,5 @@ export async function GET(request: Request) {
     orderBy: { createdAt: 'desc' },
   });
 
-  return NextResponse.json(orders);
+  return NextResponse.json(rewriteOrderImagesList(orders as unknown as Record<string, unknown>[]) as typeof orders);
 }

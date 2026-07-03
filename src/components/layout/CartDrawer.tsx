@@ -192,6 +192,7 @@ export default function CartDrawer() {
                               src={imageUrl}
                               alt={item.product.title}
                               className="w-full h-full object-cover"
+                              loading="lazy" decoding="async"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-neutral-600 text-[10px]">
