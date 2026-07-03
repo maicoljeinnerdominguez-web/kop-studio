@@ -174,7 +174,7 @@ function OrderCard({ order }: { order: Order }) {
 
       {/* Product Thumbnails */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4">
-        {order.items.map((item) => (
+        {(order.items || []).map((item) => (
           <ProductThumb key={item.id} item={item} />
         ))}
       </div>

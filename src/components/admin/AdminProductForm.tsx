@@ -132,9 +132,9 @@ export default function AdminProductForm() {
         isBestseller: product.isBestseller,
       });
 
-      if (product.images.length > 0) {
+      if ((product.images || []).length > 0) {
         setImages(
-          product.images.map((img) => ({
+          (product.images || []).map((img) => ({
             url: img.url,
             altText: img.altText,
             isPrimary: img.isPrimary,
@@ -142,9 +142,9 @@ export default function AdminProductForm() {
         );
       }
 
-      if (product.variants.length > 0) {
+      if ((product.variants || []).length > 0) {
         setVariants(
-          product.variants.map((v) => ({
+          (product.variants || []).map((v) => ({
             size: v.size,
             color: v.color,
             stockQuantity: v.stockQuantity,

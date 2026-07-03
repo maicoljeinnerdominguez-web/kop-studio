@@ -91,7 +91,7 @@ export default function CompleteTheLook({ categorySlug, currentProductId }: Comp
 
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
-    const variant = product.variants.find((v) => v.stockQuantity > 0);
+    const variant = (product.variants || []).find((v) => v.stockQuantity > 0);
     if (variant) {
       addItem(product, variant);
       toast.success('Producto añadido al carrito');

@@ -1,6 +1,15 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+// Ensure every product always has arrays for variants/images (defensive against null/undefined)
+function safeProduct(p: Record<string, unknown>) {
+  return {
+    ...p,
+    variants: Array.isArray(p.variants) ? p.variants : [],
+    images: Array.isArray(p.images) ? p.images : [],
+  };
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -37,7 +46,7 @@ export async function GET(request: Request) {
       orderBy,
     });
 
-    return NextResponse.json(products);
+    return NextResponse.json(products.map(safeProduct));
   } catch (error) {
     console.error("GET /api/products error:", error);
     return NextResponse.json({ error: "Error al obtener productos" }, { status: 500 });
@@ -114,7 +123,7 @@ export async function POST(request: Request) {
       include: { category: true, variants: true, images: true },
     });
 
-    return NextResponse.json(product, { status: 201 });
+    return NextResponse.json(safeProduct(product as unknown as Record<string, unknown>), { status: 201 });
   } catch (error) {
     console.error("POST /api/products error:", error);
     return NextResponse.json(

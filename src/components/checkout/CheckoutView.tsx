@@ -309,7 +309,7 @@ function OrderSummarySidebar({
   const total = subtotal + shipping - discount;
 
   const primaryImage = (product: { images: { url: string; isPrimary: boolean }[] }) =>
-    product.images.find((img) => img.isPrimary)?.url || product.images[0]?.url || '';
+    (product.images || []).find((img) => img.isPrimary)?.url || (product.images || [])[0]?.url || '';
 
   return (
     <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-6">
@@ -399,7 +399,7 @@ function MobileOrderSummary({
   const total = subtotal + shipping - discount;
 
   const primaryImage = (product: { images: { url: string; isPrimary: boolean }[] }) =>
-    product.images.find((img) => img.isPrimary)?.url || product.images[0]?.url || '';
+    (product.images || []).find((img) => img.isPrimary)?.url || (product.images || [])[0]?.url || '';
 
   return (
     <div className="mb-6 border border-[#1a1a1a] bg-[#0a0a0a]">

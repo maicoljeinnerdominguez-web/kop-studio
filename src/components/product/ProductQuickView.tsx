@@ -71,7 +71,7 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
 
   // Get unique sizes
   const seen = new Set<string>()
-  const sizes = product.variants.filter((v) => {
+  const sizes = (product.variants || []).filter((v) => {
     if (seen.has(v.size)) return false
     seen.add(v.size)
     return true
@@ -111,7 +111,7 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
 
   const handleAddToCart = () => {
     if (!selectedSize) return
-    const variant = product.variants.find(
+    const variant = (product.variants || []).find(
       (v) => v.size === selectedSize && v.stockQuantity > 0
     )
     if (!variant) return

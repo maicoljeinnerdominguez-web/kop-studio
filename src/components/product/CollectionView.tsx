@@ -293,7 +293,7 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
 
     if (selectedSizes.length > 0) {
       result = result.filter((p) =>
-        p.variants.some((v) => selectedSizes.includes(v.size))
+        (p.variants || []).some((v) => selectedSizes.includes(v.size))
       )
     }
 

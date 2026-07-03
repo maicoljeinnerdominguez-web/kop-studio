@@ -219,7 +219,7 @@ export default function WishlistView() {
   const productCount = wishlistProducts.length;
 
   const moveToCart = useCallback((product: Product) => {
-    const availableVariant = product.variants.find((v: ProductVariant) => v.stockQuantity > 0);
+    const availableVariant = (product.variants || []).find((v: ProductVariant) => v.stockQuantity > 0);
     if (availableVariant) {
       addItem(product, availableVariant);
       toast.success(`${product.title} añadido al carrito`);
@@ -237,7 +237,7 @@ export default function WishlistView() {
   const handleBuyAll = useCallback(() => {
     let added = 0;
     wishlistProducts.forEach((product) => {
-      const availableVariant = product.variants.find((v: ProductVariant) => v.stockQuantity > 0);
+      const availableVariant = (product.variants || []).find((v: ProductVariant) => v.stockQuantity > 0);
       if (availableVariant) {
         addItem(product, availableVariant);
         added++;

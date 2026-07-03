@@ -26,7 +26,7 @@ export default function QuickBuyModal({ product, open, onOpenChange }: QuickBuyM
   const navigate = useNavigationStore((s) => s.navigate);
 
   const availableVariants = useMemo(
-    () => product?.variants.filter((v) => v.stockQuantity > 0) || [],
+    () => (product?.variants || []).filter((v) => v.stockQuantity > 0) || [],
     [product]
   );
 
@@ -47,7 +47,7 @@ export default function QuickBuyModal({ product, open, onOpenChange }: QuickBuyM
   const selectedVariant = useMemo(() => {
     if (!product) return null;
     // If only one variant, auto-select it
-    if (product.variants.length === 1) return product.variants[0];
+    if ((product.variants || []).length === 1) return (product.variants || [])[0];
     // If only one available variant, auto-select it
     if (availableVariants.length === 1) return availableVariants[0];
     // Otherwise, find by selected size and color
@@ -60,7 +60,7 @@ export default function QuickBuyModal({ product, open, onOpenChange }: QuickBuyM
 
   const formatPrice = (price: number) => `$${price.toLocaleString('es-CO')}`;
 
-  const hasOnlyOneVariant = product ? product.variants.length === 1 : false;
+  const hasOnlyOneVariant = product ? (product.variants || []).length === 1 : false;
 
   const handleBuyNow = async () => {
     if (!product || !selectedVariant) return;

@@ -207,8 +207,8 @@ function OrderCard({ order }: { order: TrackedOrder }) {
           Productos
         </p>
         <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-          {order.items.map((item) => {
-            const primaryImage = item.productVariant.product.images[0];
+          {(order.items || []).map((item) => {
+            const primaryImage = (item.productVariant?.product?.images || [])[0];
             return (
               <div
                 key={item.id}

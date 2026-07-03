@@ -258,17 +258,19 @@ function ProductDetailInner({ slug }: { slug: string }) {
       .then((r) => r.json())
       .then((data: Product[]) => {
         const found = data.find((p) => p.slug === slug) || null
-        setProduct(found)
-        if (found) {
+        // Normalize to guarantee arrays exist
+        const safe = found ? { ...found, variants: found.variants || [], images: found.images || [] } : null
+        setProduct(safe)
+        if (safe) {
           addViewedProduct({
-            id: found.id,
-            title: found.title,
-            slug: found.slug,
-            price: found.price,
-            images: found.images.map((img) => ({ url: img.url, altText: img.altText })),
+            id: safe.id,
+            title: safe.title,
+            slug: safe.slug,
+            price: safe.price,
+            images: (safe.images || []).map((img) => ({ url: img.url, altText: img.altText })),
           })
           const related = data
-            .filter((p) => p.categoryId === found.categoryId && p.id !== found.id)
+            .filter((p) => p.categoryId === safe.categoryId && p.id !== safe.id)
             .slice(0, 4)
           setRelatedProducts(related)
         } else {
@@ -293,7 +295,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
   const availableSizes = useMemo(() => {
     if (!product) return []
     const seen = new Set<string>()
-    return product.variants.filter((v) => {
+    return (product.variants || []).filter((v) => {
       if (seen.has(v.size)) return false
       seen.add(v.size)
       return true
@@ -303,7 +305,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
   const availableColors = useMemo(() => {
     if (!product) return []
     const seen = new Set<string>()
-    return product.variants.filter((v) => {
+    return (product.variants || []).filter((v) => {
       if (seen.has(v.color)) return false
       seen.add(v.color)
       return true
@@ -311,7 +313,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
   }, [product])
 
   const isOutOfStock = product
-    ? product.variants.every((v) => v.stockQuantity === 0)
+    ? (product.variants || []).every((v) => v.stockQuantity === 0)
     : false
 
   const selectedVariantStock = selectedVariant?.stockQuantity ?? 0
@@ -491,7 +493,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
               onKeyDown={(e) => { if (e.key === 'Enter') setLightboxOpen(true) }}
             >
               <AnimatePresence mode="wait">
-                {product.images.map((image, i) => (
+                {(product.images || []).map((image, i) => (
                   <ImageZoom
                     key={image.id}
                     src={image.url}
@@ -535,14 +537,14 @@ function ProductDetailInner({ slug }: { slug: string }) {
               <p className="text-xs text-neutral-500">
                 <span className="text-white font-medium">{selectedImageIndex + 1}</span>
                 {' / '}
-                {product.images.length}
+                {(product.images || []).length}
               </p>
             </div>
 
             {/* Thumbnails */}
-            {product.images.length > 1 && (
+            {(product.images || []).length > 1 && (
               <div className="flex gap-2 sm:gap-2.5 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
-                {product.images.map((image, i) => (
+                {(product.images || []).map((image, i) => (
                   <button
                     key={image.id}
                     onClick={() => setSelectedImageIndex(i)}
@@ -962,7 +964,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
         open={sizeQuizOpen}
         onOpenChange={setSizeQuizOpen}
         onSizeSelect={(size) => {
-          const variant = product.variants.find(
+          const variant = (product.variants || []).find(
             (v) => v.size === size && v.stockQuantity > 0 && (!effectiveColor || v.color === effectiveColor)
           )
           if (variant) setSelectedVariant(variant)
@@ -971,7 +973,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
       {/* Product Lightbox */}
       <ProductLightbox
-        images={product.images.map((img) => ({ url: img.url, altText: img.altText }))}
+        images={(product.images || []).map((img) => ({ url: img.url, altText: img.altText }))}
         initialIndex={selectedImageIndex}
         open={lightboxOpen}
         onOpenChange={setLightboxOpen}

@@ -19,7 +19,8 @@ export async function GET(
     if (!product) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
-    return NextResponse.json(product);
+    const safe = { ...product, variants: product.variants || [], images: product.images || [] };
+    return NextResponse.json(safe);
   } catch (error) {
     console.error("GET /api/products/[id] error:", error);
     return NextResponse.json({ error: "Error al obtener producto" }, { status: 500 });
@@ -105,7 +106,8 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(updated);
+    const safe = updated ? { ...updated, variants: updated.variants || [], images: updated.images || [] } : updated;
+    return NextResponse.json(safe);
   } catch (error) {
     console.error("PUT /api/products/[id] error:", error);
     return NextResponse.json(

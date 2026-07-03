@@ -280,10 +280,10 @@ function OrderItemsRow({ items }: { items: OrderItemDetail[] }) {
             {items.map((item) => (
               <TableRow key={item.id} className="border-b-[#111] hover:bg-transparent">
                 <TableCell className="text-neutral-300 text-xs">
-                  {item.productVariant.product.title}
+                  {item.productVariant?.product?.title || 'Producto'}
                 </TableCell>
-                <TableCell className="text-neutral-400 text-xs">{item.productVariant.size}</TableCell>
-                <TableCell className="text-neutral-400 text-xs">{item.productVariant.color}</TableCell>
+                <TableCell className="text-neutral-400 text-xs">{item.productVariant?.size || '-'}</TableCell>
+                <TableCell className="text-neutral-400 text-xs">{item.productVariant?.color || '-'}</TableCell>
                 <TableCell className="text-neutral-400 text-xs text-center">{item.quantity}</TableCell>
                 <TableCell className="text-neutral-300 text-xs text-right">
                   {formatPrice(item.priceAtPurchase)}
@@ -584,16 +584,16 @@ export default function AdminDashboard() {
                       <span className="text-neutral-500 text-xs">{formatDate(order.createdAt)}</span>
                     </div>
                     <AnimatePresence>
-                      {expandedOrders.has(order.id) && order.items && order.items.length > 0 && (
+                      {expandedOrders.has(order.id) && (order.items || []).length > 0 && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
                           className="mt-3 pt-3 border-t border-[#1a1a1a] overflow-hidden"
                         >
-                          {order.items.map((item) => (
+                          {(order.items || []).map((item) => (
                             <div key={item.id} className="flex justify-between text-xs py-1">
-                              <span className="text-neutral-300">{item.productVariant.product.title} ({item.productVariant.size}/{item.productVariant.color}) ×{item.quantity}</span>
+                              <span className="text-neutral-300">{item.productVariant?.product?.title || 'Producto'} ({item.productVariant?.size || '-'}/{item.productVariant?.color || '-'}) ×{item.quantity}</span>
                               <span className="text-white font-medium">{formatPrice(item.priceAtPurchase * item.quantity)}</span>
                             </div>
                           ))}
@@ -690,10 +690,10 @@ export default function AdminDashboard() {
                                 </TableCell>
                               </TableRow>
                               <AnimatePresence>
-                                {isExpanded && order.items && order.items.length > 0 && (
+                                {isExpanded && (order.items || []).length > 0 && (
                                   <TableRow className="border-b-[#1a1a1a] hover:bg-transparent p-0">
                                     <TableCell colSpan={6} className="p-0">
-                                      <OrderItemsRow items={order.items} />
+                                      <OrderItemsRow items={order.items || []} />
                                     </TableCell>
                                   </TableRow>
                                 )}

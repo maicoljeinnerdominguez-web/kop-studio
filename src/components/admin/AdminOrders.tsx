@@ -507,7 +507,7 @@ export default function AdminOrders() {
                                     Items de la orden
                                   </p>
                                   <div className="space-y-2">
-                                    {order.items.map((item) => {
+                                    {(order.items || []).map((item) => {
                                       const productTitle = item.productVariant?.product?.title || 'Producto';
                                       const primaryImage = item.productVariant?.product?.images?.[0]?.url;
                                       return (
@@ -727,10 +727,10 @@ export default function AdminOrders() {
                 {/* Order Items */}
                 <div>
                   <p className="text-neutral-500 text-[10px] uppercase tracking-widest font-bold mb-3">
-                    Productos ({detailOrder.items.length})
+                    Productos ({(detailOrder.items || []).length})
                   </p>
                   <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-                    {detailOrder.items.map((item) => {
+                    {(detailOrder.items || []).map((item) => {
                       const productTitle =
                         item.productVariant?.product?.title || 'Producto';
                       const primaryImage =
