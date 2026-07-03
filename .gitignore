@@ -64,3 +64,14 @@ db/*.db-journal
 /skills/
 test
 prompt.railway.json
+bun.lock
+.railway.json
+Dockerfile.test
+*.png
+tool-results/
+.zscripts/
+dev-keepalive.sh
+keep-server-alive.sh
+keepalive.sh
+download/
+agent-ctx/
