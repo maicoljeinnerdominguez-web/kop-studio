@@ -114,3 +114,10 @@ model PromoCode {
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())
 }
+
+model SiteSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String // JSON string for complex data, plain string for simple values
+  updatedAt DateTime @updatedAt
+}

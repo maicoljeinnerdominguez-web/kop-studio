@@ -106,6 +106,7 @@ export type AppView =
   | "admin-promos"
   | "admin-orders"
   | "admin-categories"
+  | "admin-settings"
   | "wishlist"
   | "order-tracking"
   | "order-history"

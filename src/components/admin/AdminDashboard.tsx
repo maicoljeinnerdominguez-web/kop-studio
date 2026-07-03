@@ -15,6 +15,7 @@ import {
   Pencil,
   Tag,
   FolderTree,
+  Settings,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -775,7 +776,7 @@ export default function AdminDashboard() {
           <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-4">
             Acciones Rápidas
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
             <Button
               onClick={() => navigate('admin-products')}
               className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
@@ -809,6 +810,13 @@ export default function AdminDashboard() {
             >
               <ClipboardList className="w-4 h-4 mr-2" />
               VER ÓRDENES COMPLETAS
+            </Button>
+            <Button
+              onClick={() => navigate('admin-settings')}
+              className="bg-[#0a0a0a] border border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-neutral-600 uppercase text-xs tracking-wider font-bold rounded-none h-10 px-5 justify-start sm:justify-center"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              CONFIGURACIÓN DEL SITIO
             </Button>
           </div>
         </div>

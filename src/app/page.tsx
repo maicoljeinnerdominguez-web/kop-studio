@@ -27,6 +27,7 @@ const AdminProductForm = lazy(() => import('@/components/admin/AdminProductForm'
 const AdminPromos = lazy(() => import('@/components/admin/AdminPromos'));
 const AdminOrders = lazy(() => import('@/components/admin/AdminOrders'));
 const AdminCategories = lazy(() => import('@/components/admin/AdminCategories'));
+const AdminSettings = lazy(() => import('@/components/admin/AdminSettings'));
 const OrderTrackingView = lazy(() => import('@/components/order/OrderTrackingView'));
 const OrderHistoryView = lazy(() => import('@/components/order/OrderHistoryView'));
 const WishlistView = lazy(() => import('@/components/wishlist/WishlistView'));
@@ -60,6 +61,7 @@ function ViewRouter() {
     'admin-promos': <AdminPromos />,
     'admin-orders': <AdminOrders />,
     'admin-categories': <AdminCategories />,
+    'admin-settings': <AdminSettings />,
     wishlist: <WishlistView />,
     'order-tracking': <OrderTrackingView />,
     'order-history': <OrderHistoryView />,

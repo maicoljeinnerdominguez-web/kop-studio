@@ -61,6 +61,7 @@ import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useCartStore } from '@/stores/useCartStore'
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore'
 import { useCompareStore } from '@/stores/useCompareStore'
+import type { SiteSettings } from '@/lib/siteSettings'
 import ProductCard from '@/components/product/ProductCard'
 import ProductReviews from '@/components/product/ProductReviews'
 import ProductLightbox from '@/components/product/ProductLightbox'
@@ -253,6 +254,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [sizeQuizOpen, setSizeQuizOpen] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
+  const siteSettings = useSiteSettings()
 
   useEffect(() => {
     fetch('/api/products')
@@ -597,9 +599,9 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
             {/* Material tags row */}
             <div className="flex flex-wrap gap-2 mt-4">
-              <span className="material-tag">Algodón Premium</span>
-              <span className="material-tag">240gsm</span>
-              <span className="material-tag">Made in Colombia</span>
+              {siteSettings.materialTags.map((tag, i) => (
+                <span key={i} className="material-tag">{tag}</span>
+              ))}
             </div>
 
             {/* Icons row */}
@@ -864,7 +866,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     Material y Cuidado
                   </AccordionTrigger>
                   <AccordionContent className="text-sm text-neutral-400 leading-relaxed">
-                    100% Algodón Premium de 240gsm. Lavar a máquina en ciclo frío. No usar blanqueador. Secar a temperatura baja. Planchar del revés.
+                    {siteSettings.materialCare}
                   </AccordionContent>
                 </AccordionItem>
 
@@ -874,22 +876,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <ul className="text-sm text-neutral-400 space-y-1.5">
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-red-600" />
-                        Algodón premium 240gsm
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-red-600" />
-                        Corte oversize
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-red-600" />
-                        Impresión serigrafía
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-red-600" />
-                        Hecho en Colombia
-                      </li>
+                      {siteSettings.garmentDetails.map((detail, i) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <Check className="size-3.5 text-red-600" />
+                          {detail}
+                        </li>
+                      ))}
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
@@ -900,22 +892,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <ul className="text-sm text-neutral-400 space-y-1.5">
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-red-600" />
-                        Lavar a mano con agua fría
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-red-600" />
-                        No usar blanqueador
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-red-600" />
-                        Secar a la sombra
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-red-600" />
-                        Planchar a baja temperatura
-                      </li>
+                      {siteSettings.washGuide.map((step, i) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <Check className="size-3.5 text-red-600" />
+                          {step}
+                        </li>
+                      ))}
                     </ul>
                   </AccordionContent>
                 </AccordionItem>

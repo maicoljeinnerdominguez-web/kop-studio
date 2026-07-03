@@ -3,6 +3,10 @@ import { readFile } from "fs/promises";
 import { existsSync, statSync } from "fs";
 import path from "path";
 
+// In-memory cache for image files (avoids disk I/O on every request)
+const imageCache = new Map<string, { buffer: Buffer; contentType: string; size: number }>();
+const MAX_CACHE_SIZE = 50; // Evict oldest when exceeded
+
 const ALLOWED_EXT = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
 const MIME_TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -74,10 +78,29 @@ export async function GET(
       return NextResponse.json({ error: "Image not found" }, { status: 404 });
     }
 
+    // Check memory cache first
+    const cacheKey = filePath;
+    let cached = imageCache.get(cacheKey);
+    if (cached) {
+      return new NextResponse(cached.buffer, {
+        headers: {
+          "Content-Type": cached.contentType,
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "Content-Length": String(cached.size),
+        },
+      });
+    }
+
     const fileBuffer = await readFile(filePath);
-    // Use the actual file's extension for content type (in case of fallback)
     const actualExt = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[actualExt] || "application/octet-stream";
+
+    // Store in cache (evict oldest if full)
+    if (imageCache.size >= MAX_CACHE_SIZE) {
+      const firstKey = imageCache.keys().next().value;
+      imageCache.delete(firstKey);
+    }
+    imageCache.set(cacheKey, { buffer: fileBuffer, contentType, size: fileBuffer.length });
 
     return new NextResponse(fileBuffer, {
       headers: {

@@ -2611,3 +2611,39 @@ Stage Summary:
 - Deleted broken products, now 8 products all with working WebP images
 - PNG→WebP fallback ensures backward compatibility
 - All images verified: HTTP 200 on production
+
+---
+Task ID: 8
+Agent: Main Agent
+Task: Editable care labels/tags + lower social proof numbers + fix performance
+
+Work Log:
+- Fixed Cache-Control header on GET /api/products from "no-store" to "public, s-maxage=60, stale-while-revalidate=300"
+- Added in-memory cache (Map, max 50 entries) to /api/img/products/[filename]/route.ts to avoid disk I/O on every image request
+- Created SiteSetting model in Prisma (key/value store for site-wide settings)
+- Created /api/settings route (GET=public read with 30s cache, PUT=bulk upsert, POST=reset to defaults)
+- Created /src/lib/siteSettings.ts — useSiteSettings() hook with shared in-memory cache (60s TTL) and fallback defaults
+- Created /src/components/admin/AdminSettings.tsx (699 lines) — full admin UI to edit:
+  - Material tags (dynamic string array)
+  - Material y Cuidado (textarea)
+  - Detalles de la prenda (dynamic string array)
+  - Guía de lavado (dynamic string array)
+  - Social proof: enable/disable switch, timing (seconds→ms), message editor with viewing/action type toggle
+- Updated ProductDetailView.tsx to use useSiteSettings() hook instead of hardcoded "Algodón Premium", "240gsm", "Made in Colombia", care instructions, garment details, wash guide
+- Rewrote SocialProofNotification.tsx to fetch config + messages from /api/settings API
+  - Lowered viewer counts: 12→3, 8→2, 15→4 (more believable)
+  - Increased intervals: initial 8s→15s, repeat 20-35s→35-60s (less frequent)
+  - Made fully configurable from admin panel
+- Added "admin-settings" to AppView union type
+- Added AdminSettings lazy import + route in ViewRouter (page.tsx)
+- Added "CONFIGURACIÓN DEL SITIO" button in AdminDashboard quick actions grid (changed to 6 columns)
+- All lint checks pass, TypeScript compiles clean (no src/ errors)
+
+Stage Summary:
+- Products now cache for 60s at browser level (was no-store, forcing re-fetch every time)
+- Images served from memory cache after first load (no repeated disk reads)
+- All care labels, material tags, garment details, wash guide are now editable from Admin → Configuración del Sitio
+- Social proof numbers reduced significantly and made configurable
+- Social proof timing made less aggressive (appears less often)
+- New files: src/app/api/settings/route.ts, src/lib/siteSettings.ts, src/components/admin/AdminSettings.tsx
+- Modified files: prisma/schema.prisma, src/types/index.ts, src/app/page.tsx, src/components/admin/AdminDashboard.tsx, src/components/product/ProductDetailView.tsx, src/components/social/SocialProofNotification.tsx, src/app/api/products/route.ts, src/app/api/img/products/[filename]/route.ts
