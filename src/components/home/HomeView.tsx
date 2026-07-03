@@ -84,10 +84,10 @@ const brandStats = [
 ]
 
 const CATEGORIES_DISPLAY: { name: string; slug: string; image: string }[] = [
-  { name: 'New Merch', slug: 'new-merch', image: '/images/products/hoodie-mandala-2.png' },
-  { name: 'Camisetas', slug: 'camisetas', image: '/images/products/tshirt-gothic-1.png' },
-  { name: 'Inferiores', slug: 'inferiores', image: '/images/products/cargo-black-3.png' },
-  { name: 'Accesorios', slug: 'accesorios', image: '/images/products/puffer-bag-5.png' },
+  { name: 'New Merch', slug: 'new-merch', image: '/images/products/hoodie-mandala-2.webp' },
+  { name: 'Camisetas', slug: 'camisetas', image: '/images/products/tshirt-gothic-1.webp' },
+  { name: 'Inferiores', slug: 'inferiores', image: '/images/products/cargo-black-3.webp' },
+  { name: 'Accesorios', slug: 'accesorios', image: '/images/products/puffer-bag-5.webp' },
 ]
 
 const fadeInUp = {

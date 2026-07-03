@@ -47,7 +47,9 @@ export async function GET(request: Request) {
       orderBy,
     });
 
-    return NextResponse.json(rewriteProductImages(products.map(safeProduct)));
+    return NextResponse.json(rewriteProductImages(products.map(safeProduct)), {
+      headers: { "Cache-Control": "no-store, must-revalidate" },
+    });
   } catch (error) {
     console.error("GET /api/products error:", error);
     return NextResponse.json({ error: "Error al obtener productos" }, { status: 500 });

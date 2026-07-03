@@ -12,7 +12,7 @@ const SOCIAL_IMAGES = [
   { src: '/images/brand/memento-vivere.jpeg', likes: 756, comments: 61, alt: 'Memento Vivere' },
   { src: '/images/brand/72-plus-1.jpeg', likes: 493, comments: 38, alt: '72+1' },
   { src: '/images/brand/brand-collage.jpeg', likes: 823, comments: 71, alt: 'Brand Identity' },
-  { src: '/images/products/tshirt-gothic-1.png', likes: 342, comments: 28, alt: 'T-shirt Gótica' },
+  { src: '/images/products/tshirt-gothic-1.webp', likes: 342, comments: 28, alt: 'T-shirt Gótica' },
 ]
 
 const containerVariants = {

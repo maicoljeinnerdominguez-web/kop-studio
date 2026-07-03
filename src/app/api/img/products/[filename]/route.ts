@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
-import { existsSync } from "fs";
+import { existsSync, statSync } from "fs";
 import path from "path";
 
 const ALLOWED_EXT = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
@@ -18,6 +18,40 @@ const SEARCH_DIRS = [
   "public/uploads/products",
 ];
 
+// Fallback chain: .webp → .png → .jpg → .jpeg
+const WEBP_FALLBACK: Record<string, string[]> = {
+  ".png": [".webp"],
+  ".jpg": [".webp"],
+  ".jpeg": [".webp"],
+};
+
+function findFile(filename: string): string | null {
+  const basename = path.basename(filename, path.extname(filename));
+  const ext = path.extname(filename).toLowerCase();
+
+  // Try exact filename first
+  for (const dir of SEARCH_DIRS) {
+    const candidate = path.join(process.cwd(), dir, filename);
+    if (existsSync(candidate) && statSync(candidate).size > 0) {
+      return candidate;
+    }
+  }
+
+  // Try fallback extensions (e.g., if .png not found, try .webp)
+  const fallbacks = WEBP_FALLBACK[ext] || [];
+  for (const fallbackExt of fallbacks) {
+    const fallbackName = basename + fallbackExt;
+    for (const dir of SEARCH_DIRS) {
+      const candidate = path.join(process.cwd(), dir, fallbackName);
+      if (existsSync(candidate) && statSync(candidate).size > 0) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ filename: string }> }
@@ -34,21 +68,16 @@ export async function GET(
       return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
     }
 
-    let filePath: string | null = null;
-    for (const dir of SEARCH_DIRS) {
-      const candidate = path.join(process.cwd(), dir, filename);
-      if (existsSync(candidate)) {
-        filePath = candidate;
-        break;
-      }
-    }
+    const filePath = findFile(filename);
 
     if (!filePath) {
       return NextResponse.json({ error: "Image not found" }, { status: 404 });
     }
 
     const fileBuffer = await readFile(filePath);
-    const contentType = MIME_TYPES[ext] || "application/octet-stream";
+    // Use the actual file's extension for content type (in case of fallback)
+    const actualExt = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[actualExt] || "application/octet-stream";
 
     return new NextResponse(fileBuffer, {
       headers: {
