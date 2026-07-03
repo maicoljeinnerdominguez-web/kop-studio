@@ -44,7 +44,8 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copy public directory
 COPY --from=builder /app/public ./public
 
+# PORT is set by Railway (default 8080). Next.js standalone reads this env var.
 EXPOSE 3000
 
-# Start: set DATABASE_URL, push schema, start server
-CMD ["sh", "-c", "DATABASE_URL=${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}} && echo '=== Pushing DB schema...' && prisma db push --accept-data-loss 2>&1 && echo '=== Starting Next.js on port 3000...' && PORT=3000 exec node server.js"]
+# Start: set DATABASE_URL, push schema, start server on Railway's PORT
+CMD ["sh", "-c", "DATABASE_URL=${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}} && echo '=== Pushing DB schema...' && prisma db push --accept-data-loss 2>&1 && echo \"=== Starting Next.js on port ${PORT:-3000}...\" && exec node server.js"]
