@@ -2589,3 +2589,25 @@ Stage Summary:
 - FIX: API route proxy + URL rewriting in all product-returning APIs
 - PERFORMANCE: WebP conversion (2MB+ saved), lazy loading, touch device optimizations
 - Production verified: https://kop-studio-production.up.railway.app/api/img/products/tshirt-gothic-1.webp → 200, 62KB
+
+---
+Task ID: mobile-images-fix-2
+Agent: Main Agent
+Task: Fix remaining product image issues - broken test products, PNG fallback, hardcoded paths
+
+Work Log:
+- Found "colombia" product had upload URL pointing to non-existent file on Railway (404)
+- Found "cfcf" product had external SHEIN URL (test data)
+- Deleted both broken products from Railway PostgreSQL database
+- Enhanced /api/img/products/[filename] route with automatic PNG→WebP fallback
+- Fixed SocialFeed.tsx hardcoded .png → .webp
+- Fixed HomeView category cards .png → .webp
+- Added Cache-Control: no-store to /api/products response to prevent stale data
+- Verified all 8 products return correct WebP URLs and images serve 200
+- Verified PNG fallback works: /api/img/products/X.png → serves X.webp (200)
+
+Stage Summary:
+- Root cause: 2 test products with broken images ("colombia" with missing upload, "cfcf" with SHEIN link)
+- Deleted broken products, now 8 products all with working WebP images
+- PNG→WebP fallback ensures backward compatibility
+- All images verified: HTTP 200 on production
