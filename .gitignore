@@ -63,4 +63,4 @@ db/*.db-journal
 # Skills directory
 /skills/
 test
-prompt
+prompt.railway.json
