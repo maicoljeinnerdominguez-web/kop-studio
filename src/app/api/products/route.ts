@@ -77,6 +77,10 @@ export async function POST(request: Request) {
       isBestseller,
       variants,
       images,
+      materialTags,
+      materialCare,
+      garmentDetails,
+      washGuide,
     } = body;
 
     if (!title || !description || !price || !categoryId) {
@@ -129,6 +133,10 @@ export async function POST(request: Request) {
               isPrimary: idx === 0 ? true : img.isPrimary || false,
             })),
         },
+        materialTags: materialTags || null,
+        materialCare: materialCare || null,
+        garmentDetails: garmentDetails || null,
+        washGuide: washGuide || null,
       },
       include: { category: true, variants: true, images: true },
     });

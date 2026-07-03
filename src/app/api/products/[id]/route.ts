@@ -55,6 +55,10 @@ export async function PUT(
         isNew: body.isNew ?? false,
         isBestseller: body.isBestseller ?? false,
         isActive: body.isActive ?? true,
+        materialTags: body.materialTags || null,
+        materialCare: body.materialCare || null,
+        garmentDetails: body.garmentDetails || null,
+        washGuide: body.washGuide || null,
       },
       include: { category: true, variants: true, images: true },
     });

@@ -44,6 +44,11 @@ model Product {
   variants       ProductVariant[]
   images         ProductImage[]
   reviews        Review[]
+  // Per-product care labels (JSON strings for arrays, plain string for text)
+  materialTags   String?         // JSON array e.g. ["Algodón Premium","240gsm","Made in Colombia"]
+  materialCare   String?         // e.g. "100% Algodón Premium de 240gsm..."
+  garmentDetails String?         // JSON array e.g. ["Corte oversize","Serigrafía"]
+  washGuide      String?         // JSON array e.g. ["Lavar a mano","No blanqueador"]
   createdAt      DateTime        @default(now())
 }
 

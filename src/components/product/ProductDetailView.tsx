@@ -256,6 +256,21 @@ function ProductDetailInner({ slug }: { slug: string }) {
   const [addedToCart, setAddedToCart] = useState(false)
   const siteSettings = useSiteSettings()
 
+  // Resolve labels: per-product > global fallback
+  const labels = useMemo(() => {
+    if (!product) return siteSettings
+    const parseArr = (str: string | null | undefined, fallback: string[]) => {
+      if (!str) return fallback
+      try { return JSON.parse(str) } catch { return fallback }
+    }
+    return {
+      materialTags: parseArr(product.materialTags, siteSettings.materialTags),
+      materialCare: product.materialCare || siteSettings.materialCare,
+      garmentDetails: parseArr(product.garmentDetails, siteSettings.garmentDetails),
+      washGuide: parseArr(product.washGuide, siteSettings.washGuide),
+    }
+  }, [product, siteSettings])
+
   useEffect(() => {
     fetch('/api/products')
       .then((r) => r.json())
@@ -599,7 +614,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
             {/* Material tags row */}
             <div className="flex flex-wrap gap-2 mt-4">
-              {siteSettings.materialTags.map((tag, i) => (
+              {labels.materialTags.map((tag, i) => (
                 <span key={i} className="material-tag">{tag}</span>
               ))}
             </div>
@@ -866,7 +881,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     Material y Cuidado
                   </AccordionTrigger>
                   <AccordionContent className="text-sm text-neutral-400 leading-relaxed">
-                    {siteSettings.materialCare}
+                    {labels.materialCare}
                   </AccordionContent>
                 </AccordionItem>
 
@@ -876,7 +891,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <ul className="text-sm text-neutral-400 space-y-1.5">
-                      {siteSettings.garmentDetails.map((detail, i) => (
+                      {labels.garmentDetails.map((detail, i) => (
                         <li key={i} className="flex items-center gap-2">
                           <Check className="size-3.5 text-red-600" />
                           {detail}
@@ -892,7 +907,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <ul className="text-sm text-neutral-400 space-y-1.5">
-                      {siteSettings.washGuide.map((step, i) => (
+                      {labels.washGuide.map((step, i) => (
                         <li key={i} className="flex items-center gap-2">
                           <Check className="size-3.5 text-red-600" />
                           {step}

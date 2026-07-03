@@ -33,6 +33,10 @@ export interface Product {
   category?: Category;
   variants: ProductVariant[];
   images: ProductImage[];
+  materialTags?: string | null;
+  materialCare?: string | null;
+  garmentDetails?: string | null;
+  washGuide?: string | null;
   createdAt: string;
 }
 

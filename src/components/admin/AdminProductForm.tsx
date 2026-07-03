@@ -15,6 +15,7 @@ import {
   Upload,
   X,
   Check,
+  ChevronDown,
 } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
@@ -80,6 +81,12 @@ export default function AdminProductForm() {
     SIZES.map((size) => ({ size, color: 'Negro', stockQuantity: 0 }))
   );
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const [materialTags, setMaterialTags] = useState<string[]>([]);
+  const [materialCare, setMaterialCare] = useState('');
+  const [garmentDetails, setGarmentDetails] = useState<string[]>([]);
+  const [washGuide, setWashGuide] = useState<string[]>([]);
+  const [careLabelsOpen, setCareLabelsOpen] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -150,6 +157,21 @@ export default function AdminProductForm() {
             stockQuantity: v.stockQuantity,
           }))
         );
+      }
+
+      // Parse care label fields
+      try {
+        if (product.materialTags) setMaterialTags(JSON.parse(product.materialTags));
+      } catch { /* ignore */ }
+      if (product.materialCare) setMaterialCare(product.materialCare);
+      try {
+        if (product.garmentDetails) setGarmentDetails(JSON.parse(product.garmentDetails));
+      } catch { /* ignore */ }
+      try {
+        if (product.washGuide) setWashGuide(JSON.parse(product.washGuide));
+      } catch { /* ignore */ }
+      if (product.materialTags || product.materialCare || product.garmentDetails || product.washGuide) {
+        setCareLabelsOpen(true);
       }
     } catch {
       toast.error('Error al cargar producto');
@@ -276,6 +298,10 @@ export default function AdminProductForm() {
             ...v,
             stockQuantity: Number(v.stockQuantity),
           })),
+        materialTags: JSON.stringify(materialTags.filter((t) => t.trim())),
+        materialCare: materialCare || null,
+        garmentDetails: JSON.stringify(garmentDetails.filter((d) => d.trim())),
+        washGuide: JSON.stringify(washGuide.filter((w) => w.trim())),
       };
 
       const url = isEditMode ? `/api/products/${productId}` : '/api/products';
@@ -686,6 +712,174 @@ export default function AdminProductForm() {
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               Añadir variante
             </Button>
+          </div>
+
+          {/* Care Labels - Etiquetas de la Prenda */}
+          <div className="bg-[#0a0a0a] border border-[#1a1a1a]">
+            <button
+              type="button"
+              onClick={() => setCareLabelsOpen(!careLabelsOpen)}
+              className="w-full flex items-center justify-between p-5 md:p-6 text-left hover:bg-[#111] transition-colors"
+            >
+              <h2 className="text-white text-sm font-bold uppercase tracking-wider">
+                ETIQUETAS DE LA PRENDA
+              </h2>
+              <ChevronDown
+                className={`w-4 h-4 text-neutral-500 transition-transform duration-200 ${
+                  careLabelsOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+            <AnimatePresence>
+              {careLabelsOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-5 md:px-6 pb-5 md:pb-6 space-y-6">
+                    {/* Etiquetas de Material */}
+                    <div className="space-y-3">
+                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        Etiquetas de Material
+                      </Label>
+                      <div className="space-y-2">
+                        {materialTags.map((tag, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={tag}
+                              onChange={(e) => {
+                                const updated = [...materialTags];
+                                updated[index] = e.target.value;
+                                setMaterialTags(updated);
+                              }}
+                              className={darkInput}
+                              placeholder="Ej: Algodón 100%"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setMaterialTags((prev) => prev.filter((_, i) => i !== index))}
+                              className="text-neutral-500 hover:text-red-500 hover:bg-red-600/10 h-9 w-9 p-0 rounded-none flex-shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setMaterialTags((prev) => [...prev, ''])}
+                        className="text-neutral-500 hover:text-white hover:bg-[#1a1a1a] uppercase text-[10px] tracking-wider font-bold rounded-none h-8 px-3"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Añadir etiqueta
+                      </Button>
+                    </div>
+
+                    {/* Material y Cuidado */}
+                    <div className="space-y-1.5">
+                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        Material y Cuidado
+                      </Label>
+                      <Textarea
+                        value={materialCare}
+                        onChange={(e) => setMaterialCare(e.target.value)}
+                        className={darkInput + ' min-h-[80px]'}
+                        placeholder="Describe el material y cuidados especiales..."
+                        rows={3}
+                      />
+                    </div>
+
+                    {/* Detalles de la Prenda */}
+                    <div className="space-y-3">
+                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        Detalles de la Prenda
+                      </Label>
+                      <div className="space-y-2">
+                        {garmentDetails.map((detail, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={detail}
+                              onChange={(e) => {
+                                const updated = [...garmentDetails];
+                                updated[index] = e.target.value;
+                                setGarmentDetails(updated);
+                              }}
+                              className={darkInput}
+                              placeholder="Ej: Costuras reforzadas"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setGarmentDetails((prev) => prev.filter((_, i) => i !== index))}
+                              className="text-neutral-500 hover:text-red-500 hover:bg-red-600/10 h-9 w-9 p-0 rounded-none flex-shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setGarmentDetails((prev) => [...prev, ''])}
+                        className="text-neutral-500 hover:text-white hover:bg-[#1a1a1a] uppercase text-[10px] tracking-wider font-bold rounded-none h-8 px-3"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Añadir detalle
+                      </Button>
+                    </div>
+
+                    {/* Guía de Lavado */}
+                    <div className="space-y-3">
+                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        Guía de Lavado
+                      </Label>
+                      <div className="space-y-2">
+                        {washGuide.map((guide, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={guide}
+                              onChange={(e) => {
+                                const updated = [...washGuide];
+                                updated[index] = e.target.value;
+                                setWashGuide(updated);
+                              }}
+                              className={darkInput}
+                              placeholder="Ej: Lavar a máquina en frío"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setWashGuide((prev) => prev.filter((_, i) => i !== index))}
+                              className="text-neutral-500 hover:text-red-500 hover:bg-red-600/10 h-9 w-9 p-0 rounded-none flex-shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setWashGuide((prev) => [...prev, ''])}
+                        className="text-neutral-500 hover:text-white hover:bg-[#1a1a1a] uppercase text-[10px] tracking-wider font-bold rounded-none h-8 px-3"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Añadir instrucción
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Actions */}
