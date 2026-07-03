@@ -109,7 +109,8 @@ export type AppView =
   | "wishlist"
   | "order-tracking"
   | "order-history"
-  | "product-comparison";
+  | "product-comparison"
+  | "info-page";
 
 export interface ProductFilters {
   sizes: string[];

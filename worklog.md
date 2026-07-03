@@ -2489,3 +2489,32 @@ Current Project Status:
 Unresolved:
 - User's previously uploaded product images (COLOMBIA, CFCF) may still point to old file-based URLs — need re-upload via admin
 - Wompi payment integration still pending
+
+---
+Task ID: 7-info-pages
+Agent: Main Agent
+Task: Create informational pages (Envíos, Devoluciones, Términos, Privacidad, Contacto, FAQ)
+
+Work Log:
+- Added "info-page" to AppView union type in types/index.ts
+- Created InfoPageView component at src/components/info/InfoPageView.tsx with 6 full content pages:
+  - Envíos: coverage zones, shipping costs table, delivery times, transport companies, tracking, disclaimers
+  - Devoluciones: 7-day policy, conditions, non-eligible products, 5-step return process, refunds, factory defects, costs
+  - Términos y Condiciones: 10-section legal document (Colombian law references, Ley 1480/2011)
+  - Privacidad: 9-section privacy policy (Ley 1581/2012, ARCO rights, cookies, security, minors)
+  - Contacto: contact cards (WhatsApp, email, hours, location), social links, FAQ link, contact form with validation
+  - FAQ: 8 frequently asked questions with answers
+- All pages match dark gothic aesthetic (bg-[#0a0a0a], red accents, uppercase tracking-widest headers)
+- Framer-motion scroll-triggered animations on all sections
+- Responsive mobile-first design, max-w-3xl readability
+- Back-to-home button with ArrowLeft icon
+- Created /api/contact POST route with field validation (name, email, subject, message, max length)
+- Updated page.tsx with lazy import and view mapping for 'info-page'
+- Updated Footer.tsx to navigate('info-page', { slug }) instead of navigate('home')
+- Zero lint errors
+
+Stage Summary:
+- 1 new component: InfoPageView (6 content pages in one file)
+- 1 new API route: /api/contact
+- 3 files modified: types/index.ts, page.tsx, Footer.tsx
+- Footer info links (Envíos, Devoluciones, Términos, Privacidad, Contacto) now navigate to real content pages

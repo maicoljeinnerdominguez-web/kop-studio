@@ -225,8 +225,8 @@ export default function AdminProducts() {
                 ) : (
                   filteredProducts.map((product) => {
                     const primaryImage =
-                      product.images.find((img) => img.isPrimary)?.url ||
-                      product.images[0]?.url ||
+                      (product.images || []).find((img) => img.isPrimary)?.url ||
+                      (product.images || [])[0]?.url ||
                       '';
                     const totalStock = (product.variants || []).reduce(
                       (sum, v) => sum + v.stockQuantity,

@@ -188,7 +188,7 @@ export default function Footer() {
                       if (link.view) {
                         navigate(link.view);
                       } else {
-                        navigate('home');
+                        navigate('info-page', { slug: link.slug });
                       }
                     }}
                     className="text-neutral-400 hover:text-white text-sm transition-colors footer-link-hover hover-ripple py-1 px-1 -mx-1 rounded-sm"

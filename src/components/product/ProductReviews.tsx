@@ -115,7 +115,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
 
   // Rating distribution
   const distribution = [5, 4, 3, 2, 1].map((star) => {
-    const count = data?.reviews.filter((r) => r.rating === star).length || 0
+    const count = (data?.reviews || []).filter((r) => r.rating === star).length
     const pct = data?.totalReviews ? (count / data.totalReviews) * 100 : 0
     return { star, count, pct }
   })

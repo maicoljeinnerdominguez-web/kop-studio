@@ -31,6 +31,7 @@ const OrderTrackingView = lazy(() => import('@/components/order/OrderTrackingVie
 const OrderHistoryView = lazy(() => import('@/components/order/OrderHistoryView'));
 const WishlistView = lazy(() => import('@/components/wishlist/WishlistView'));
 const ProductComparisonView = lazy(() => import('@/components/product/ProductComparisonView'));
+const InfoPageView = lazy(() => import('@/components/info/InfoPageView'));
 
 function LoadingFallback() {
   return (
@@ -63,6 +64,7 @@ function ViewRouter() {
     'order-tracking': <OrderTrackingView />,
     'order-history': <OrderHistoryView />,
     'product-comparison': <ProductComparisonView />,
+    'info-page': <InfoPageView />,
   };
 
   return (

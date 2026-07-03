@@ -344,7 +344,7 @@ export default function HomeView() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {totalLooksProducts.slice(0, 3).map((product, i) => {
                 const primaryImage = product.images?.find((img) => img.isPrimary) || product.images?.[0]
-                const secondaryImages = product.images?.filter((img) => !img.isPrimary).slice(0, 2) || []
+                const secondaryImages = (product.images || []).filter((img) => !img.isPrimary).slice(0, 2)
                 const imageSrc = primaryImage?.url || '/images/products/placeholder.png'
 
                 return (
