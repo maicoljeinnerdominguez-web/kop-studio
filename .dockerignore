@@ -9,3 +9,5 @@ mini-services/
 examples/
 Dockerfile
 railway.toml
+bun.lock
+bun.lockb
