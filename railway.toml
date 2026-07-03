@@ -1,6 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "echo 'BUILD TEST OK' > /tmp/test.txt"
 
 [deploy]
-startCommand = "sh -c 'cat /tmp/test.txt && sleep 3600'"
+startCommand = "sh -c 'echo DATABASE_URL=${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}} > .next/standalone/.env && cd .next/standalone && npx prisma@6.11.1 db push --accept-data-loss && exec node server.js'"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
