@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
+import crypto from "crypto";
 
-// Allowed image types
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "products");
 
 export async function POST(request: Request) {
   try {
@@ -27,14 +30,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Ensure upload directory exists
+    await mkdir(UPLOAD_DIR, { recursive: true });
+
+    // Generate unique filename preserving extension
+    const ext = path.extname(file.name) || ".png";
+    const filename = `${crypto.randomUUID()}${ext}`;
+    const filePath = path.join(UPLOAD_DIR, filename);
+
+    // Write file to disk
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    await writeFile(filePath, Buffer.from(bytes));
 
-    // Convert to base64 data URL — stored in DB, persists across deploys
-    const base64 = buffer.toString("base64");
-    const dataUrl = `data:${file.type};base64,${base64}`;
+    // Return the API-serving path (works in standalone Docker)
+    const url = `/api/uploads/products/${filename}`;
 
-    return NextResponse.json({ url: dataUrl });
+    return NextResponse.json({ url });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Error al subir la imagen" }, { status: 500 });

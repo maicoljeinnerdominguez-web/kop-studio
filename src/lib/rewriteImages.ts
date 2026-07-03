@@ -1,24 +1,20 @@
 /**
- * Rewrite a single image URL from /images/products/X.png to /api/img/products/X.webp
- * Prefer WebP for better mobile performance, keep API route prefix for standalone Docker serving.
+ * Rewrite image URLs to use static WebP paths.
+ * PNG/JPG → WebP for better compression. Static serving is faster than API proxy.
  */
 function rewriteUrl(url: string): string {
   if (url.startsWith("/images/products/")) {
-    // Convert .png/.jpg to .webp for better compression
-    const webpUrl = url
-      .replace("/images/products/", "/api/img/products/")
+    return url
       .replace(/\.png$/, ".webp")
       .replace(/\.jpg$/, ".webp")
       .replace(/\.jpeg$/, ".webp");
-    return webpUrl;
   }
   if (url.startsWith("/uploads/products/")) {
-    const webpUrl = url
-      .replace("/uploads/products/", "/api/img/products/")
+    return url
+      .replace("/uploads/products/", "/images/products/")
       .replace(/\.png$/, ".webp")
       .replace(/\.jpg$/, ".webp")
       .replace(/\.jpeg$/, ".webp");
-    return webpUrl;
   }
   return url;
 }

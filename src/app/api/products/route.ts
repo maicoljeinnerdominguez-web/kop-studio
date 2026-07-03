@@ -3,11 +3,18 @@ import { NextResponse } from "next/server";
 import { rewriteImageUrls, rewriteProductImages } from "@/lib/rewriteImages";
 
 // Ensure every product always has arrays for variants/images (defensive against null/undefined)
+// Also filters out base64 data URLs which can be 4MB+ and kill mobile performance
 function safeProduct(p: Record<string, unknown>) {
+  const images = Array.isArray(p.images)
+    ? p.images.filter((img: Record<string, unknown>) => {
+        const url = typeof img.url === "string" ? img.url : "";
+        return url && !url.startsWith("data:");
+      })
+    : [];
   return {
     ...p,
     variants: Array.isArray(p.variants) ? p.variants : [],
-    images: Array.isArray(p.images) ? p.images : [],
+    images,
   };
 }
 
@@ -115,7 +122,7 @@ export async function POST(request: Request) {
         },
         images: {
           create: (images || [])
-            .filter((img: { url: string }) => img.url?.trim())
+            .filter((img: { url: string }) => img.url?.trim() && !img.url.startsWith("data:"))
             .map((img: { url: string; altText: string; isPrimary: boolean }, idx: number) => ({
               url: img.url,
               altText: img.altText || title,
