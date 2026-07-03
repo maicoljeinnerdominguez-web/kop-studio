@@ -1,8 +1,4 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
-import { randomUUID } from "crypto";
 
 // Allowed image types
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -34,24 +30,11 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Generate unique filename
-    const ext = file.name.split(".").pop() || "jpg";
-    const filename = `${randomUUID()}.${ext}`;
+    // Convert to base64 data URL — stored in DB, persists across deploys
+    const base64 = buffer.toString("base64");
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "products");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
-    // Write file
-    const filePath = path.join(uploadsDir, filename);
-    await writeFile(filePath, buffer);
-
-    // Return the API URL (standalone doesn't serve new files from public/)
-    const publicUrl = `/api/uploads/products/${filename}`;
-
-    return NextResponse.json({ url: publicUrl, filename });
+    return NextResponse.json({ url: dataUrl });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Error al subir la imagen" }, { status: 500 });
