@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/' prisma/schema.prisma && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "sh -c 'DB_URL=${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}} && DATABASE_URL=$DB_URL npx prisma@6.11.1 db push --accept-data-loss && cd .next/standalone && DATABASE_URL=$DB_URL exec node server.js'"
+startCommand = "sh -c 'DB_URL=${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}} && cd .next/standalone && DATABASE_URL=$DB_URL exec node server.js'"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
