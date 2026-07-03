@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npx prisma generate && echo 'GENERATE OK' > /tmp/test.txt"
+buildCommand = "npx prisma generate && npm run build && echo 'BUILD OK' > /tmp/test.txt"
 
 [deploy]
 startCommand = "sh -c 'cat /tmp/test.txt && sleep 3600'"
