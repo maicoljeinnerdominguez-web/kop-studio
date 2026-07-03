@@ -2421,3 +2421,29 @@ Stage Summary:
 - Root cause of all previous failures: HOSTNAME env var + missing domain port config
 - Admin credentials: admin@kopstudio.com / admin123
 - Demo credentials: cliente@kopstudio.com / demo123
+
+---
+Task ID: fix-product-save-images
+Agent: Main Agent
+Task: Fix product creation (images not saving, products disappearing)
+
+Work Log:
+- Diagnosed 4 root causes:
+  1. No image upload API (form only accepted URLs)
+  2. PUT /api/products/[id] didn't update images or variants, only basic fields
+  3. No error handling in POST/PUT (silent failures)
+  4. Next.js standalone doesn't serve new files from public/ at runtime
+- Created /api/upload (POST) — accepts FormData, saves to public/uploads/products/, returns URL
+- Created /api/uploads/products/[filename] (GET) — serves uploaded images via API route
+- Rewrote /api/products POST with: validation, duplicate slug check, proper error messages
+- Rewrote /api/products/[id] PUT: now deletes old images/variants and recreates them
+- Rewrote AdminProductForm: file upload button with drag zone, image preview, upload progress, validation (min 1 image, min 1 variant with stock), detailed error messages from API
+- Added mkdir -p /app/public/uploads/products to docker-entrypoint.sh
+- Full flow tested via curl: upload → create product → verify in list → delete → all working
+
+Stage Summary:
+- Upload API: POST /api/upload → returns /api/uploads/products/{uuid}.{ext}
+- Image serving: GET /api/uploads/products/{filename} → serves file with proper MIME type + cache
+- Product form now shows upload buttons, image previews, and clear error messages
+- Editing products now properly saves images and variants (deletes old, creates new)
+- All verified working on production via curl tests
