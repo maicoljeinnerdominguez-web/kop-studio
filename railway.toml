@@ -1,5 +1,11 @@
-# Railway uses Dockerfile (not Nixpacks) since Dockerfile exists in root.
-# Only [[plugins]] is used from this file when Dockerfile is present.
+# Dockerfile takes precedence over Nixpacks when present.
+# [[plugins]] always works regardless of build method.
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
 
 [[plugins]]
 plugin = "postgresql"
