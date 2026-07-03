@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -12,6 +12,9 @@ import {
   ArrowLeft,
   Loader2,
   Image as ImageIcon,
+  Upload,
+  X,
+  Check,
 } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
@@ -49,6 +52,7 @@ interface ImageRow {
   url: string;
   altText: string;
   isPrimary: boolean;
+  uploading?: boolean;
 }
 
 interface VariantRow {
@@ -75,6 +79,7 @@ export default function AdminProductForm() {
   const [variants, setVariants] = useState<VariantRow[]>(
     SIZES.map((size) => ({ size, color: 'Negro', stockQuantity: 0 }))
   );
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -105,7 +110,7 @@ export default function AdminProductForm() {
         setCategories(data);
       }
     } catch {
-      // categories are optional, no toast needed
+      // categories are optional
     }
   };
 
@@ -154,6 +159,56 @@ export default function AdminProductForm() {
     }
   };
 
+  const uploadImage = async (file: File, index: number) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Solo se permiten imágenes');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La imagen no puede ser mayor a 5MB');
+      return;
+    }
+
+    // Mark as uploading
+    setImages((prev) =>
+      prev.map((img, i) => (i === index ? { ...img, uploading: true } : img))
+    );
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Error al subir');
+      }
+
+      const data = await res.json();
+
+      setImages((prev) =>
+        prev.map((img, i) =>
+          i === index
+            ? { ...img, url: data.url, altText: img.altText || '', uploading: false, isPrimary: i === 0 || img.isPrimary }
+            : img
+        )
+      );
+      toast.success('Imagen subida correctamente');
+    } catch (error) {
+      setImages((prev) =>
+        prev.map((img, i) => (i === index ? { ...img, uploading: false } : img))
+      );
+      toast.error(error instanceof Error ? error.message : 'Error al subir la imagen');
+    }
+  };
+
   const handleAddImage = () => {
     setImages((prev) => [...prev, { url: '', altText: '', isPrimary: false }]);
   };
@@ -166,21 +221,19 @@ export default function AdminProductForm() {
     setImages((prev) =>
       prev.map((img, i) => {
         if (i !== index) return img;
-        if (field === 'isPrimary' && value === true) {
-          return { ...img, isPrimary: true };
-        }
-        if (field === 'isPrimary' && value === false) {
-          return img;
-        }
+        if (field === 'isPrimary' && value === false) return img;
         return { ...img, [field]: value };
       })
     );
-    // When setting primary, unset others
     if (field === 'isPrimary' && value === true) {
       setImages((prev) =>
         prev.map((img, i) => (i === index ? { ...img, isPrimary: true } : { ...img, isPrimary: false }))
       );
     }
+  };
+
+  const handleFileSelect = (index: number) => {
+    fileInputRefs.current[index]?.click();
   };
 
   const handleAddVariant = () => {
@@ -198,15 +251,31 @@ export default function AdminProductForm() {
   };
 
   const handleSubmit = async (data: ProductFormData) => {
+    // Validate at least one image with URL
+    const validImages = images.filter((img) => img.url.trim());
+    if (validImages.length === 0) {
+      toast.error('Agrega al menos una imagen al producto');
+      return;
+    }
+
+    // Validate at least one variant with stock
+    const validVariants = variants.filter((v) => v.size && v.stockQuantity > 0);
+    if (validVariants.length === 0) {
+      toast.error('Agrega al menos una talla con stock mayor a 0');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
         ...data,
-        images: images.filter((img) => img.url.trim()),
-        variants: variants.map((v) => ({
-          ...v,
-          stockQuantity: Number(v.stockQuantity),
-        })),
+        images: validImages.map(({ url, altText, isPrimary }) => ({ url, altText, isPrimary })),
+        variants: variants
+          .filter((v) => v.size)
+          .map((v) => ({
+            ...v,
+            stockQuantity: Number(v.stockQuantity),
+          })),
       };
 
       const url = isEditMode ? `/api/products/${productId}` : '/api/products';
@@ -218,14 +287,19 @@ export default function AdminProductForm() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error('Failed');
+      const responseData = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const msg = responseData?.error || 'Error desconocido';
+        throw new Error(msg);
+      }
 
       toast.success(
         isEditMode ? 'Producto actualizado correctamente' : 'Producto creado correctamente'
       );
       navigate('admin-products');
-    } catch {
-      toast.error('Error al guardar el producto. Intenta de nuevo.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al guardar el producto');
     } finally {
       setSubmitting(false);
     }
@@ -297,7 +371,7 @@ export default function AdminProductForm() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                    Precio *
+                    Precio (COP) *
                   </Label>
                   <Input
                     {...form.register('price')}
@@ -417,68 +491,131 @@ export default function AdminProductForm() {
 
           {/* Images */}
           <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5 md:p-6">
-            <h2 className="text-white text-sm font-bold uppercase tracking-wider mb-5">
-              Imágenes
-            </h2>
-            <div className="space-y-3">
-              {images.map((img, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col sm:flex-row gap-3 items-start"
-                >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="w-3.5 h-3.5 text-neutral-500 flex-shrink-0" />
-                      <Input
-                        value={img.url}
-                        onChange={(e) => handleUpdateImage(index, 'url', e.target.value)}
-                        className={darkInput}
-                        placeholder="URL de la imagen"
-                      />
-                    </div>
-                    <div className="flex gap-3">
-                      <Input
-                        value={img.altText}
-                        onChange={(e) => handleUpdateImage(index, 'altText', e.target.value)}
-                        className={darkInput}
-                        placeholder="Texto alternativo"
-                      />
-                      <label className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={img.isPrimary}
-                          onChange={(e) => handleUpdateImage(index, 'isPrimary', e.target.checked)}
-                          className="w-4 h-4 rounded-none bg-[#1a1a1a] border-[#262626] accent-red-600"
-                        />
-                        <span className="text-neutral-400 text-[11px] uppercase tracking-wider whitespace-nowrap">
-                          Principal
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveImage(index)}
-                    disabled={images.length === 1}
-                    className="text-neutral-500 hover:text-red-500 hover:bg-red-600/10 h-9 w-9 p-0 rounded-none flex-shrink-0 disabled:opacity-30"
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-white text-sm font-bold uppercase tracking-wider">
+                Imágenes
+              </h2>
+              <span className="text-neutral-600 text-[10px] uppercase tracking-wider">
+                Sube o pega URL
+              </span>
+            </div>
+            <div className="space-y-4">
+              <AnimatePresence>
+                {images.map((img, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="bg-[#111] border border-[#1a1a1a] p-4"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </motion.div>
-              ))}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {/* Image preview / upload zone */}
+                      <div className="flex-shrink-0">
+                        {img.url ? (
+                          <div className="relative w-20 h-20 bg-[#1a1a1a] border border-[#262626] group cursor-pointer"
+                            onClick={() => handleFileSelect(index)}>
+                            <img
+                              src={img.url}
+                              alt={img.altText || 'Preview'}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Upload className="w-5 h-5 text-white" />
+                            </div>
+                            {img.isPrimary && (
+                              <div className="absolute -top-1.5 -left-1.5 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 uppercase">
+                                Principal
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleFileSelect(index)}
+                            className="w-20 h-20 bg-[#1a1a1a] border border-dashed border-neutral-700 hover:border-red-600 flex flex-col items-center justify-center gap-1 transition-colors"
+                            disabled={img.uploading}
+                          >
+                            {img.uploading ? (
+                              <Loader2 className="w-5 h-5 text-red-500 animate-spin" />
+                            ) : (
+                              <>
+                                <Upload className="w-5 h-5 text-neutral-500" />
+                                <span className="text-[8px] text-neutral-600 uppercase">Subir</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                        <input
+                          ref={(el) => { fileInputRefs.current[index] = el; }}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) uploadImage(file, index);
+                            e.target.value = '';
+                          }}
+                        />
+                      </div>
+
+                      {/* URL and alt text inputs */}
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <ImageIcon className="w-3.5 h-3.5 text-neutral-500 flex-shrink-0" />
+                          <Input
+                            value={img.url}
+                            onChange={(e) => handleUpdateImage(index, 'url', e.target.value)}
+                            className={darkInput}
+                            placeholder="URL de la imagen o sube un archivo"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={img.altText}
+                            onChange={(e) => handleUpdateImage(index, 'altText', e.target.value)}
+                            className={darkInput}
+                            placeholder="Texto alternativo (SEO)"
+                          />
+                          <label className="flex items-center gap-1.5 flex-shrink-0 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={img.isPrimary}
+                              onChange={(e) => handleUpdateImage(index, 'isPrimary', e.target.checked)}
+                              className="w-3.5 h-3.5 rounded-none bg-[#1a1a1a] border-[#262626] accent-red-600"
+                            />
+                            <span className="text-neutral-500 text-[10px] uppercase tracking-wider whitespace-nowrap">
+                              Principal
+                            </span>
+                          </label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveImage(index)}
+                            disabled={images.length === 1}
+                            className="text-neutral-500 hover:text-red-500 h-8 w-8 p-0 rounded-none flex-shrink-0 disabled:opacity-20"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
             <Button
               type="button"
               variant="ghost"
               onClick={handleAddImage}
-              className="mt-3 text-neutral-500 hover:text-white hover:bg-[#1a1a1a] uppercase text-xs tracking-wider font-bold rounded-none h-9 px-4"
+              className="mt-4 text-neutral-500 hover:text-white hover:bg-[#1a1a1a] uppercase text-xs tracking-wider font-bold rounded-none h-9 px-4 border border-dashed border-neutral-800 hover:border-neutral-600 w-full"
             >
               <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Añadir imagen
+              Añadir otra imagen
             </Button>
           </div>
 
@@ -551,7 +688,7 @@ export default function AdminProductForm() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 pb-8">
             <Button
               type="button"
               variant="outline"
@@ -571,7 +708,10 @@ export default function AdminProductForm() {
                   GUARDANDO...
                 </>
               ) : (
-                'GUARDAR PRODUCTO'
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  {isEditMode ? 'ACTUALIZAR PRODUCTO' : 'GUARDAR PRODUCTO'}
+                </>
               )}
             </Button>
           </div>
