@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/' prisma/schema.prisma && DATABASE_URL='postgresql://x:x@x:5432/x' bun run db:generate && bun run build"
+buildCommand = "sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/' prisma/schema.prisma && DATABASE_URL='postgresql://x:x@x:5432/x' bunx prisma@6 generate && bun run build"
 
 [deploy]
 startCommand = "bash start.sh"

@@ -26,8 +26,8 @@ fi
 
 echo "DATABASE_URL configured successfully"
 
-# Push schema to database (use LOCAL prisma, NOT bunx which downloads latest)
-./node_modules/.bin/prisma db push --accept-data-loss 2>&1
+# Push schema to database (bunx prisma@6 forces Prisma 6.x, not 7.x)
+bunx prisma@6 db push --accept-data-loss 2>&1
 if [ $? -ne 0 ]; then
   echo "ERROR: prisma db push failed"
   exit 1
