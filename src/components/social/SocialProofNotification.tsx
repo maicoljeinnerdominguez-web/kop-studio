@@ -12,15 +12,15 @@ interface SocialMessage {
   time?: string
 }
 
-// Fallback messages with lower, more believable numbers
+// Fallback messages with Nariño municipalities and believable numbers
 const FALLBACK_MESSAGES: SocialMessage[] = [
-  { text: 'alguien en La Unión', action: 'acaba de comprar', product: 'Sivere Hoodie - Mandala Sacred', time: 'hace 2 min' },
+  { text: 'alguien en Pasto', action: 'acaba de comprar', product: 'Sivere Hoodie - Mandala Sacred', time: 'hace 2 min' },
   { text: 'personas viendo', product: 'Ascensión Tee - Angel Wings', count: 3 },
-  { text: 'alguien en Medellín', action: 'agregó al carrito', product: 'Puffer Bag Urban - Chain Edition', time: 'hace 5 min' },
+  { text: 'alguien en Tumaco', action: 'agregó al carrito', product: 'Puffer Bag Urban - Chain Edition', time: 'hace 5 min' },
   { text: 'personas viendo', product: '72+1 Cargo Pants - Tactical Black', count: 2 },
-  { text: 'alguien en Cali', action: 'compró', product: 'Memento Tee - Gothic Cross', time: 'hace 1 min' },
+  { text: 'alguien en Ipiales', action: 'compró', product: 'Memento Tee - Gothic Cross', time: 'hace 1 min' },
   { text: 'personas viendo', product: 'Basic Essential Tee - Midnight', count: 4 },
-  { text: 'alguien en Barranquilla', action: 'acaba de comprar', product: 'Fiat Lux Tee - Oración', time: 'hace 3 min' },
+  { text: 'alguien en La Unión', action: 'acaba de comprar', product: 'Fiat Lux Tee - Oración', time: 'hace 3 min' },
 ]
 
 const FALLBACK_CONFIG = {
