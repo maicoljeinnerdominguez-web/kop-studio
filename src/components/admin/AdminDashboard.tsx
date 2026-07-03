@@ -351,7 +351,7 @@ export default function AdminDashboard() {
             id: p.id,
             title: p.title,
             slug: p.slug,
-            totalStock: p.variants.reduce((sum, v) => sum + v.stockQuantity, 0),
+            totalStock: (p.variants || []).reduce((sum, v) => sum + v.stockQuantity, 0),
           }))
           .filter((p) => p.totalStock < 5)
           .sort((a, b) => a.totalStock - b.totalStock);

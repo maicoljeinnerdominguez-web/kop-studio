@@ -110,8 +110,9 @@ function getStatusBadge(status: string) {
    Product Thumbnail
    ──────────────────────────────────────────── */
 function ProductThumb({ item }: { item: OrderItem }) {
-  const primaryImage = item.productVariant.product.images.find((img) => img.isPrimary);
-  const fallbackImage = item.productVariant.product.images[0];
+  const imgs = item.productVariant?.product?.images || [];
+  const primaryImage = imgs.find((img) => img.isPrimary);
+  const fallbackImage = imgs[0];
   const imageUrl = primaryImage?.url || fallbackImage?.url;
 
   return (

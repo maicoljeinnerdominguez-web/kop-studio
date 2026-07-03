@@ -37,7 +37,7 @@ function formatPrice(price: number) {
 }
 
 function StockBadge({ variants }: { variants: Product['variants'] }) {
-  const totalStock = variants.reduce((acc, v) => acc + v.stockQuantity, 0)
+  const totalStock = (variants || []).reduce((acc, v) => acc + v.stockQuantity, 0)
   if (totalStock === 0) return <span className="text-red-500 font-semibold text-xs">Agotado</span>
   if (totalStock <= 5) return <span className="text-yellow-500 font-semibold text-xs">Últimas unidades</span>
   return <span className="text-green-500 font-semibold text-xs">En stock</span>

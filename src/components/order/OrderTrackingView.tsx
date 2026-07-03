@@ -162,7 +162,7 @@ function StatusTimeline({ status }: { status: string }) {
    ──────────────────────────────────────────── */
 function OrderCard({ order }: { order: TrackedOrder }) {
   const statusInfo = STATUS_MAP[order.status] ?? STATUS_MAP.PENDING;
-  const subtotal = order.items.reduce((sum, item) => sum + item.priceAtPurchase * item.quantity, 0);
+  const subtotal = (order.items || []).reduce((sum, item) => sum + item.priceAtPurchase * item.quantity, 0);
   const shipping = order.totalAmount >= 250000 ? 0 : 15000;
   const discount = Math.max(0, subtotal + shipping - order.totalAmount);
 

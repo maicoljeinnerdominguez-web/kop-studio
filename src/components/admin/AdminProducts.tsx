@@ -228,7 +228,7 @@ export default function AdminProducts() {
                       product.images.find((img) => img.isPrimary)?.url ||
                       product.images[0]?.url ||
                       '';
-                    const totalStock = product.variants.reduce(
+                    const totalStock = (product.variants || []).reduce(
                       (sum, v) => sum + v.stockQuantity,
                       0
                     );

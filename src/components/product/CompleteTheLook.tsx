@@ -162,9 +162,9 @@ export default function CompleteTheLook({ categorySlug, currentProductId }: Comp
             className="flex gap-3"
           >
             {products.map((product) => {
-              const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0];
+              const primaryImage = (product.images || []).find((img) => img.isPrimary) || (product.images || [])[0];
               const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
-              const inStock = product.variants.some((v) => v.stockQuantity > 0);
+              const inStock = (product.variants || []).some((v) => v.stockQuantity > 0);
 
               return (
                 <motion.div

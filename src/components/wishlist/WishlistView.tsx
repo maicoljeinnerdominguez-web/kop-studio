@@ -36,8 +36,8 @@ function WishlistItem({ product, index, onRemove, onMoveToCart }: WishlistItemPr
     }
   }, [addedToCart]);
 
-  const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0];
-  const secondaryImage = product.images.find((img) => !img.isPrimary) || product.images[1];
+  const primaryImage = (product.images || []).find((img) => img.isPrimary) || (product.images || [])[0];
+  const secondaryImage = (product.images || []).find((img) => !img.isPrimary) || (product.images || [])[1];
 
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
   const discountPercent = hasDiscount
@@ -45,7 +45,7 @@ function WishlistItem({ product, index, onRemove, onMoveToCart }: WishlistItemPr
     : 0;
   const savingsAmount = hasDiscount ? product.compareAtPrice! - product.price : 0;
 
-  const totalStock = product.variants.reduce((sum, v) => sum + v.stockQuantity, 0);
+  const totalStock = (product.variants || []).reduce((sum, v) => sum + v.stockQuantity, 0);
   const stockStatus = totalStock === 0 ? 'out' : totalStock < 5 ? 'low' : 'in';
   const stockDotColor = stockStatus === 'in' ? 'bg-green-500' : stockStatus === 'low' ? 'bg-yellow-500' : 'bg-red-500';
 

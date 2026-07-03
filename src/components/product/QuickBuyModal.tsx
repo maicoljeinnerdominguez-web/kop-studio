@@ -95,7 +95,7 @@ export default function QuickBuyModal({ product, open, onOpenChange }: QuickBuyM
 
   if (!product) return null;
 
-  const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0];
+  const primaryImage = (product.images || []).find((img) => img.isPrimary) || (product.images || [])[0];
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
 
   return (

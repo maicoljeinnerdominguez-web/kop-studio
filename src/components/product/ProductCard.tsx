@@ -88,16 +88,17 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     }
   }, [addedToCart])
 
-  const totalStock = product.variants.reduce((sum, v) => sum + v.stockQuantity, 0)
-  const availableSizes = product.variants.filter((v) => v.stockQuantity > 0).map((v) => v.size)
+  const variants = product.variants || []
+  const totalStock = variants.reduce((sum, v) => sum + v.stockQuantity, 0)
+  const availableSizes = variants.filter((v) => v.stockQuantity > 0).map((v) => v.size)
 
   const stockStatus = totalStock === 0 ? 'out' : totalStock < 5 ? 'low' : 'in'
   const stockDotColor = stockStatus === 'in' ? 'bg-green-500' : stockStatus === 'low' ? 'bg-yellow-500' : 'bg-red-500'
 
   const { rating: productRating, count: reviewCount } = getProductRating(product.id)
 
-  const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0]
-  const secondaryImage = product.images.find((img) => !img.isPrimary) || product.images[1]
+  const primaryImage = (product.images || []).find((img) => img.isPrimary) || (product.images || [])[0]
+  const secondaryImage = (product.images || []).find((img) => !img.isPrimary) || (product.images || [])[1]
 
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price
   const discountPercent = hasDiscount
@@ -113,7 +114,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation()
-    const availableVariant = product.variants.find((v) => v.stockQuantity > 0)
+    const availableVariant = (product.variants || []).find((v) => v.stockQuantity > 0)
     if (availableVariant) {
       addItem(product, availableVariant)
       toast.success('Producto añadido al carrito')

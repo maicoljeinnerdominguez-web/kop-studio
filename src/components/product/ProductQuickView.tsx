@@ -62,8 +62,8 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
 
   if (!product) return null
 
-  const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0]
-  const secondaryImage = product.images.find((img) => !img.isPrimary) || product.images[1]
+  const primaryImage = (product.images || []).find((img) => img.isPrimary) || (product.images || [])[0]
+  const secondaryImage = (product.images || []).find((img) => !img.isPrimary) || (product.images || [])[1]
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price
   const discountPercent = hasDiscount
     ? Math.round(((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100)
@@ -78,7 +78,7 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
   })
 
   // Stock info
-  const totalStock = product.variants.reduce((sum, v) => sum + v.stockQuantity, 0)
+  const totalStock = (product.variants || []).reduce((sum, v) => sum + v.stockQuantity, 0)
   const stockLabel = totalStock === 0
     ? 'Agotado'
     : totalStock < 5
