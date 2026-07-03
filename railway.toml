@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/' prisma/schema.prisma && DATABASE_URL='postgresql://x:x@x:5432/x' npx prisma generate && npm run build && mkdir -p .next/standalone/prisma && cp prisma/schema.prisma .next/standalone/prisma/"
+buildCommand = "npx prisma generate && npm run build && mkdir -p .next/standalone/prisma && cp prisma/schema.prisma .next/standalone/prisma/"
 
 [deploy]
-startCommand = "sh -c 'echo DATABASE_URL=${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}} > .next/standalone/.env && cd .next/standalone && npx prisma@6.11.1 db push --accept-data-loss && exec node server.js'"
+startCommand = "sh -c 'sed -i \"s/provider = \\\"sqlite\\\"/provider = \\\"postgresql\\\"/\" .next/standalone/prisma/schema.prisma && echo DATABASE_URL=${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}} > .next/standalone/.env && cd .next/standalone && npx prisma@6.11.1 db push --accept-data-loss && exec node server.js'"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
