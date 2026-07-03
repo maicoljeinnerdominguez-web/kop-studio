@@ -1,44 +1,48 @@
-FROM oven/bun:1-alpine AS base
+# === BUILDER STAGE ===
+FROM node:22-slim AS builder
 
-# Install dependencies
-FROM base AS deps
-WORKDIR /app
-COPY package.json bun.lockb* ./
-COPY prisma ./prisma/
-RUN bun install --frozen-lockfile
+# Install Bun for building
+RUN npm install -g bun@latest
 
-# Build the application
-FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+
+# 1. Install dependencies first (layer caching)
+COPY package.json bun.lock ./
+RUN bun install
+
+# 2. Copy & patch Prisma schema (SQLite → PostgreSQL for production)
+COPY prisma/ ./prisma/
+RUN sed -i 's/provider = "sqlite"/provider = "postgresql"/' prisma/schema.prisma
+
+# 3. Generate Prisma client using the LOCAL prisma (6.11.1 from package.json)
+#    Uses dummy DB URL just for client code generation (no real DB needed)
+RUN DATABASE_URL='postgresql://x:x@x:5432/x' ./node_modules/.bin/prisma generate
+
+# 4. Copy rest of the app and build
 COPY . .
-RUN bun run db:generate
 RUN bun run build
 
-# Production image
-FROM base AS runner
+# 5. Copy Prisma schema into standalone dir so runtime can find it
+RUN mkdir -p .next/standalone/prisma && \
+    cp prisma/schema.prisma .next/standalone/prisma/
+
+# === RUNNER STAGE ===
+FROM node:22-slim
+
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy standalone output
-COPY --from=builder /app/public ./public
+# Install Prisma CLI globally with EXACT version (no 7.x surprises)
+RUN npm install -g prisma@6.11.1
+
+# Copy the entire standalone output (server + traced node_modules + static + public)
 COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-# Copy prisma for db push at startup
-COPY --from=builder /app/prisma ./prisma/
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma/
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma/
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma/
-
-# Startup script: create tables then start server
-RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
-    echo 'bunx prisma db push --accept-data-loss' >> /app/entrypoint.sh && \
-    echo 'exec node server.js' >> /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh
 
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
 
-CMD ["/app/entrypoint.sh"]
+# Startup:
+# 1. Build DATABASE_URL from Railway PostgreSQL plugin env vars
+# 2. Write it to .env so Prisma reads it
+# 3. Push schema to create/update tables
+# 4. Start the Next.js server
+CMD ["sh", "-c", "DB_URL=${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}} && echo DATABASE_URL=$DB_URL > .env && prisma db push --accept-data-loss && exec node server.js"]
