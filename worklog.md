@@ -2563,3 +2563,29 @@ Stage Summary:
 - 1 pre-existing lint error fixed in ProductCard.tsx
 - Hero image optimized with eager loading + fetchPriority="high" for LCP
 - Zero lint errors
+
+---
+Task ID: mobile-images-perf
+Agent: Main Agent
+Task: Fix product images not loading on mobile + reduce lag
+
+Work Log:
+- Diagnosed root cause: Next.js standalone Docker mode on Railway does NOT serve the public/ directory
+- Images returned 404 on production (https://kop-studio-production.up.railway.app/images/products/X.png → 404)
+- Created /api/img/products/[filename] API route that serves images from filesystem
+- Created /lib/rewriteImages.ts utility to rewrite image URLs in API responses
+- Updated 6 API routes (products, products/[id], search, orders/track, admin/orders, admin/orders/[id]) with URL rewriting
+- URLs rewritten from /images/products/X.png → /api/img/products/X.webp
+- Converted 19 PNG product images to WebP using Sharp (avg 30% smaller, max 58%)
+- Added loading="lazy" decoding="async" to 33 img tags across 19 components
+- Hero image uses loading="eager" fetchPriority="high" for LCP optimization
+- Disabled tilt effect on touch devices (isTouchDevice detection)
+- Disabled secondary (hover) image on touch devices in ProductCard
+- All images verified returning HTTP 200 on production with correct Content-Type: image/webp
+- Cache-Control: public, max-age=31536000, immutable on all image responses
+
+Stage Summary:
+- ROOT CAUSE: Next.js standalone output doesn't serve public/ directory in Docker
+- FIX: API route proxy + URL rewriting in all product-returning APIs
+- PERFORMANCE: WebP conversion (2MB+ saved), lazy loading, touch device optimizations
+- Production verified: https://kop-studio-production.up.railway.app/api/img/products/tshirt-gothic-1.webp → 200, 62KB
