@@ -2359,3 +2359,39 @@ Stage Summary:
 | 8 | Tema claro/oscuro | Medio | Medio |
 | 9 | Integración pagos real (Wompi/MercadoPago) | Alto | Crítico |
 | 10 | SEO y metadatos | Medio | Medio |
+---
+Task ID: deploy-fix-3
+Agent: Main Agent
+Task: Fix Railway deployment - bash not found, Prisma 7.x, invalid JSON
+
+Work Log:
+- Diagnosed "bash not found" error: Nixpacks minimal container has sh but not bash
+- First fix: changed railway.toml to use `sh -c` inline command (no start.sh dependency)
+- Second fix: switched from Nixpacks to Dockerfile for full environment control
+- Third fix: removed Bun from Dockerfile, using pure Node.js 22 + npm
+- Fourth fix: added `prisma --version` in runner stage to pre-download engine
+- **CRITICAL FIX**: discovered trailing comma in package.json line 14 (invalid JSON)
+  - `"db:seed": "bun run prisma/seed.ts",` → removed trailing comma
+  - Bun tolerates trailing commas, npm does NOT
+  - This caused ALL Docker builds to fail at `npm install` silently
+- Deleted start.sh (no longer needed with Dockerfile approach)
+- Created .dockerignore for smaller/faster builds
+- Simplified railway.toml to only PostgreSQL plugin + healthcheck
+
+Stage Summary:
+- Root cause found: package.json had trailing comma (invalid JSON) → npm install failed in Docker
+- Dockerfile now uses: node:22-slim builder + node:22-slim runner + prisma@6.11.1 global
+- Railway auto-deploy appears stopped after cascade of failures
+- **USER ACTION NEEDED**: Manual redeploy on Railway dashboard
+
+Current State:
+- All code fixes pushed to GitHub (commit 8cf7d10)
+- Dockerfile is correct and should build successfully
+- Railway service at kop-studio-production-9e92.up.railway.app returns 404
+- User must go to Railway dashboard → click "Redeploy" to trigger new build
+
+Unresolved:
+- Railway auto-deploy disabled (needs manual trigger)
+- After successful deploy: need to run /api/setup/seed
+- After seeding: need to add NEXTAUTH_URL env var
+- Wompi payment integration still pending
