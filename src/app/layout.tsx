@@ -18,7 +18,14 @@ export const metadata: Metadata = {
   description: "Tienda oficial de KOP STUDIO. Ropa urbana y streetwear de alta calidad. Colección Ascensión 2026.",
   keywords: ["KOP STUDIO", "streetwear", "ropa urbana", "fashion", "colombia"],
   icons: {
-    icon: "/logo.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
   },
 };
 
