@@ -168,9 +168,6 @@ export default function AdminProductForm() {
       try {
         if (product.washGuide) setWashGuide(JSON.parse(product.washGuide));
       } catch { /* ignore */ }
-      if (product.materialTags || product.materialCare || product.garmentDetails || product.washGuide) {
-        setCareLabelsOpen(true);
-      }
     } catch {
       toast.error('Error al cargar producto');
       navigate('admin-products');

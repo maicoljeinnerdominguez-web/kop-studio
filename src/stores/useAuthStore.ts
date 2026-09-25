@@ -8,6 +8,7 @@ interface AuthStore {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string, phone?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  syncSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -65,6 +66,24 @@ export const useAuthStore = create<AuthStore>()(
 
       logout: () => {
         set({ isAuthenticated: false, user: null, isAdmin: false });
+        fetch("/api/auth", { method: "DELETE" }).catch(() => {});
+      },
+
+      // The server-side cookie is the source of truth; drop stale local state
+      // (e.g. sessions persisted before server auth existed, or expired cookies).
+      syncSession: async () => {
+        try {
+          const res = await fetch("/api/auth");
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.user) {
+            set({ isAuthenticated: true, user: data.user, isAdmin: data.user.role === "ADMIN" });
+          } else {
+            set({ isAuthenticated: false, user: null, isAdmin: false });
+          }
+        } catch {
+          // offline: keep local state
+        }
       },
     }),
     {
@@ -74,6 +93,9 @@ export const useAuthStore = create<AuthStore>()(
         user: state.user,
         isAdmin: state.isAdmin,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (typeof window !== "undefined") state?.syncSession();
+      },
     }
   )
 );

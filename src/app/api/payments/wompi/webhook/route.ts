@@ -1,23 +1,21 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { verifyWompiSignature } from '@/lib/wompi';
 
 export async function POST(request: Request) {
   try {
     const event = await request.json();
 
-    // Validate the event has required fields
-    if (!event.event || !event.data) {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    // Reject anything not signed by Wompi (prevents faking "APPROVED" payments)
+    if (!verifyWompiSignature(event)) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
-    const { data } = event;
-    const transaction = data.transaction;
-
+    const transaction = event.data?.transaction;
     if (!transaction || !transaction.reference) {
       return NextResponse.json({ error: 'Missing transaction data' }, { status: 400 });
     }
 
-    // Find the order by reference
     const order = await db.order.findUnique({
       where: { reference: transaction.reference },
     });
@@ -27,24 +25,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Map Wompi status to our status
+    // An approved payment must match the order total exactly
+    const expectedCents = Math.round(order.totalAmount * 100);
+    if (transaction.status === 'APPROVED' && transaction.amount_in_cents !== expectedCents) {
+      console.error(
+        `Amount mismatch for ${order.reference}: got ${transaction.amount_in_cents}, expected ${expectedCents}`
+      );
+      await db.order.update({
+        where: { id: order.id },
+        data: { paymentStatus: 'AMOUNT_MISMATCH', wompiTransactionId: transaction.id },
+      });
+      return NextResponse.json({ received: true });
+    }
+
+    // Map Wompi status to the order statuses used by the admin panel
     const statusMap: Record<string, string> = {
-      'APPROVED': 'APPROVED',
-      'PENDING': 'PENDING',
-      'DECLINED': 'DECLINED',
-      'VOIDED': 'CANCELLED',
-      'ERROR': 'FAILED',
+      APPROVED: 'PAID',
+      DECLINED: 'CANCELLED',
+      VOIDED: 'CANCELLED',
+      ERROR: 'CANCELLED',
     };
+    const newStatus = statusMap[transaction.status] ?? order.status;
+    const wasCancelled = order.status === 'CANCELLED';
 
-    const newStatus = statusMap[transaction.status] || 'PENDING';
-    const newPaymentStatus = transaction.status === 'APPROVED' ? 'PAID' : transaction.status;
-
-    // Update order
     await db.order.update({
       where: { id: order.id },
       data: {
         status: newStatus,
-        paymentStatus: newPaymentStatus,
+        paymentStatus: transaction.status === 'APPROVED' ? 'PAID' : transaction.status,
         wompiTransactionId: transaction.id,
         paymentMethodType: transaction.payment_method_type || null,
       },
@@ -52,8 +60,8 @@ export async function POST(request: Request) {
 
     console.log(`Order ${order.reference} updated: ${transaction.status} (${transaction.payment_method_type})`);
 
-    // If payment declined, restore stock
-    if (transaction.status === 'DECLINED' || transaction.status === 'VOIDED') {
+    // Payment failed: restore stock once (webhooks may be retried)
+    if (newStatus === 'CANCELLED' && !wasCancelled) {
       const orderItems = await db.orderItem.findMany({
         where: { orderId: order.id },
       });

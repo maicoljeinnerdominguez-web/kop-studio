@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ChangePasswordCard from '@/components/admin/ChangePasswordCard';
 import {
   Settings,
   Save,
@@ -693,6 +694,8 @@ export default function AdminSettings() {
             {saving ? 'Guardando...' : 'Guardar'}
           </Button>
         </div>
+
+        <ChangePasswordCard />
       </div>
     </div>
   );

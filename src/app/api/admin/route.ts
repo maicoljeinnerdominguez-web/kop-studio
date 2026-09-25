@@ -1,7 +1,11 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const [totalSales, pendingOrders, activeProducts, totalOrders, recentOrders] =
     await Promise.all([
       db.order.aggregate({

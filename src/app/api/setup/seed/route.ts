@@ -1,36 +1,38 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcryptjs";
+import crypto from "crypto";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 
 // This endpoint seeds the database with initial data.
-// Visit /api/setup/seed ONCE after deployment to load products.
-// It is safe to run multiple times (uses upsert).
+// It only runs when no admin exists yet (first deploy) or when called by a
+// logged-in admin. Safe to run multiple times (uses upsert).
+// The admin password comes from ADMIN_PASSWORD; if unset, a random one is
+// generated and returned ONCE in the response — store it and change it.
 
 export async function GET() {
-  try {
-    // Create admin user
-    const admin = await db.user.upsert({
-      where: { email: "admin@kopstudio.com" },
-      update: {},
-      create: {
-        name: "Admin KOP",
-        email: "admin@kopstudio.com",
-        passwordHash: await hash("admin123", 10),
-        role: "ADMIN",
-      },
-    });
+  const adminCount = await db.user.count({ where: { role: "ADMIN" } });
+  if (adminCount > 0 && (await getSession())?.role !== "ADMIN") {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
-    // Create demo user
-    await db.user.upsert({
-      where: { email: "cliente@kopstudio.com" },
-      update: {},
-      create: {
-        name: "Cliente Demo",
-        email: "cliente@kopstudio.com",
-        passwordHash: await hash("demo123", 10),
-        role: "USER",
-      },
-    });
+  try {
+    const adminEmail = (process.env.ADMIN_EMAIL || "admin@kopstudio.com").toLowerCase();
+    const generatedPassword = process.env.ADMIN_PASSWORD
+      ? null
+      : crypto.randomBytes(12).toString("base64url");
+    const existingAdmin = await db.user.findUnique({ where: { email: adminEmail } });
+
+    const admin =
+      existingAdmin ??
+      (await db.user.create({
+        data: {
+          name: "Admin KOP",
+          email: adminEmail,
+          passwordHash: await hash(process.env.ADMIN_PASSWORD || generatedPassword!, 10),
+          role: "ADMIN",
+        },
+      }));
 
     // Create categories
     const catMap: Record<string, string> = {};
@@ -337,8 +339,11 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       message: "Database seeded successfully",
+      ...(!existingAdmin && generatedPassword
+        ? { adminEmail, adminPassword: generatedPassword, warning: "Guarda esta contraseña: no se volverá a mostrar." }
+        : {}),
       stats: {
-        users: 2,
+        users: 1,
         categories: categories.length,
         products: productsData.length,
         promoCodes: promoCodes.length,

@@ -27,22 +27,30 @@ export function generateWompiSignature(
   return crypto.createHash('sha256').update(stringToSign).digest('hex');
 }
 
+/**
+ * Verifies a Wompi event per https://docs.wompi.co/docs/colombia/eventos/ :
+ * SHA256( values of signature.properties (paths inside event.data) + timestamp + WOMPI_EVENTS_SECRET )
+ * must equal signature.checksum. Returns false if the secret is not configured.
+ */
 export function verifyWompiSignature(event: any): boolean {
-  const signature = event.signature;
-  if (!signature) return false;
+  const secret = process.env.WOMPI_EVENTS_SECRET;
+  const properties = event?.signature?.properties;
+  const checksum = event?.signature?.checksum;
+  if (!secret || !Array.isArray(properties) || typeof checksum !== 'string' || !event.timestamp) {
+    return false;
+  }
 
-  const integrityKey = process.env.WOMPI_EVENTS_SECRET || '';
-  // Wompi webhook signature verification
-  const data = JSON.stringify(event.data || event);
-  const expectedSignature = crypto
-    .createHmac('sha256', integrityKey)
-    .update(data)
+  const values = properties.map((prop: string) =>
+    String(prop.split('.').reduce((obj: any, key: string) => obj?.[key], event.data) ?? '')
+  );
+  const expected = crypto
+    .createHash('sha256')
+    .update(values.join('') + event.timestamp + secret)
     .digest('hex');
 
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  const a = Buffer.from(expected.toLowerCase());
+  const b = Buffer.from(checksum.toLowerCase());
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 export interface WompiCheckoutConfig {

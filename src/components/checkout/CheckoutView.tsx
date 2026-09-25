@@ -635,28 +635,20 @@ export default function CheckoutView() {
     try {
       const contact = contactForm.getValues();
       const address = addressForm.getValues();
-      const card = cardForm.getValues();
 
       const shippingAddress = `${address.address}, ${address.neighborhood}, ${address.city} - ${address.department}, CP: ${address.postalCode}`;
 
-      const discount = promoApplied?.discountAmount ?? 0;
-      const finalTotal = Math.max(0, cart.getTotal() - discount);
-
+      // Prices, shipping and discount are recomputed on the server.
+      // Card details are never sent to our backend.
       const orderData = {
-        userId: 'guest-checkout',
-        totalAmount: finalTotal,
         shippingAddress,
         customerEmail: contact.email,
-        notes: '',
         paymentMethod,
-        contact,
-        card: paymentMethod === 'card' ? card : null,
-        pseBank: paymentMethod === 'pse' ? pseBank : null,
-        nequiPhone: paymentMethod === 'nequi' ? nequiPhone : null,
+        promoCode: promoApplied?.code ?? null,
+        upsell: cart.isUpsellActive,
         items: cart.items.map((item) => ({
           variantId: item.variant.id,
           quantity: item.quantity,
-          price: item.product.price,
         })),
       };
 
@@ -667,27 +659,23 @@ export default function CheckoutView() {
       });
 
       if (!res.ok) {
-        throw new Error('Error al procesar el pedido');
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Error al procesar el pedido');
       }
 
       setOrderPlaced(true);
       toast.success('¡Pedido confirmado exitosamente!');
 
-      // Fire-and-forget: increment promo code usage
-      if (promoApplied) {
-        fetch('/api/promo/use', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: promoApplied.code }),
-        });
-      }
-
       setTimeout(() => {
         cart.clearCart();
         navigate('order-confirmation');
       }, 1500);
-    } catch {
-      toast.error('Hubo un error al procesar tu pedido. Intenta de nuevo.');
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Hubo un error al procesar tu pedido. Intenta de nuevo.'
+      );
     } finally {
       setSubmitting(false);
     }

@@ -1,8 +1,13 @@
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { setSessionCookie } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, "register", 5, 60 * 60 * 1000);
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const { name, email, password, phone } = body;
@@ -53,18 +58,13 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(
-      {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-        message: "¡Cuenta creada exitosamente!",
-      },
+    const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    const response = NextResponse.json(
+      { user: sessionUser, message: "¡Cuenta creada exitosamente!" },
       { status: 201 }
     );
+    setSessionCookie(response, sessionUser);
+    return response;
   } catch (err) {
     console.error("Registration error:", err);
     return NextResponse.json(

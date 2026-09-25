@@ -72,14 +72,18 @@ model ProductImage {
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  userId          String
-  user            User        @relation(fields: [userId], references: [id])
-  status          String      @default("PENDING")
-  totalAmount     Float
-  shippingAddress String
-  customerEmail   String?
-  createdAt       DateTime    @default(now())
+  id                 String      @id @default(cuid())
+  userId             String?     // null for guest checkout
+  user               User?       @relation(fields: [userId], references: [id])
+  status             String      @default("PENDING") // PENDING | PAID | SHIPPED | DELIVERED | CANCELLED
+  totalAmount        Float
+  shippingAddress    String
+  customerEmail      String?
+  reference          String?     @unique // Wompi payment reference
+  paymentStatus      String?
+  wompiTransactionId String?
+  paymentMethodType  String?
+  createdAt          DateTime    @default(now())
   items           OrderItem[]
 }
 

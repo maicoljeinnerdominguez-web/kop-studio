@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 
 // In-memory cache for settings (refreshed on update)
 let settingsCache: Record<string, string> | null = null;
@@ -71,6 +72,9 @@ export async function GET() {
 
 // PUT /api/settings — admin only, bulk update
 export async function PUT(request: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const updates: Record<string, string> = body;
@@ -108,6 +112,9 @@ export async function PUT(request: Request) {
 
 // POST /api/settings/reset — reset to defaults
 export async function POST(request: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     if (body?._action !== "reset") {

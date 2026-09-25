@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { rewriteImageUrls, rewriteProductImages } from "@/lib/rewriteImages";
+import { getSession, requireAdmin } from "@/lib/auth";
 
 // Ensure every product always has arrays for variants/images (defensive against null/undefined)
 // Also filters out base64 data URLs which can be 4MB+ and kill mobile performance
@@ -26,7 +27,9 @@ export async function GET(request: Request) {
     const isNew = searchParams.get("new");
     const isBestseller = searchParams.get("bestseller");
     const sort = searchParams.get("sort");
-    const activeOnly = searchParams.get("active") !== "false";
+    // Inactive (hidden) products are only listed for admins
+    const activeOnly =
+      searchParams.get("active") !== "false" || (await getSession())?.role !== "ADMIN";
 
     const where: Record<string, unknown> = {};
     if (category) where.category = { slug: category };
@@ -55,7 +58,11 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(rewriteProductImages(products.map(safeProduct)), {
-      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+      headers: {
+        "Cache-Control": activeOnly
+          ? "public, s-maxage=60, stale-while-revalidate=300"
+          : "private, no-store",
+      },
     });
   } catch (error) {
     console.error("GET /api/products error:", error);
@@ -64,6 +71,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const {
