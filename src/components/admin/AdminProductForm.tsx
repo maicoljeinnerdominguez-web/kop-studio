@@ -46,7 +46,8 @@ const productSchema = z.object({
   isBestseller: z.boolean().default(false),
 });
 
-type ProductFormData = z.infer<typeof productSchema>;
+type ProductFormInput = z.input<typeof productSchema>;
+type ProductFormData = z.output<typeof productSchema>;
 
 interface ImageRow {
   url: string;
@@ -86,7 +87,7 @@ export default function AdminProductForm() {
   const [garmentDetails, setGarmentDetails] = useState<string[]>([]);
   const [washGuide, setWashGuide] = useState<string[]>([]);
 
-  const form = useForm<ProductFormData>({
+  const form = useForm<ProductFormInput, unknown, ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       title: '',

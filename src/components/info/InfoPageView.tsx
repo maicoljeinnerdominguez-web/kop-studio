@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 
 /* ─── animation helpers ─── */
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1,

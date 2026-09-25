@@ -75,6 +75,9 @@ export default function AdminSettings() {
     'Planchar a baja temperatura',
   ]);
 
+  // Store contact
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+
   // Section 5: Social Proof
   const [socialProofEnabled, setSocialProofEnabled] = useState(false);
   const [initialDelay, setInitialDelay] = useState(5);
@@ -117,6 +120,10 @@ export default function AdminSettings() {
           } catch {
             /* keep defaults */
           }
+        }
+
+        if (data.whatsapp_number !== undefined) {
+          setWhatsappNumber(data.whatsapp_number);
         }
 
         if (data.social_proof_enabled !== undefined) {
@@ -245,6 +252,7 @@ export default function AdminSettings() {
         material_care: materialCare,
         garment_details: JSON.stringify(garmentDetails),
         wash_guide: JSON.stringify(washGuide),
+        whatsapp_number: whatsappNumber.replace(/\D/g, ''),
         social_proof_enabled: String(socialProofEnabled),
         social_proof_initial_delay: String(Number(initialDelay) * 1000),
         social_proof_interval_min: String(Number(intervalMin) * 1000),
@@ -252,11 +260,15 @@ export default function AdminSettings() {
         social_proof_messages: JSON.stringify(socialProofMessages),
       };
 
-      await fetch('/api/settings', {
+      const res = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Error al guardar');
+      }
 
       toast.success('Configuración guardada');
     } catch (err) {
@@ -269,6 +281,7 @@ export default function AdminSettings() {
   // --- Reset ---
 
   async function handleReset() {
+    if (!window.confirm('¿Restablecer toda la configuración a los valores por defecto?')) return;
     try {
       await fetch('/api/settings', {
         method: 'POST',
@@ -311,6 +324,31 @@ export default function AdminSettings() {
             </h1>
           </div>
         </div>
+
+        {/* ============================== */}
+        {/* Contacto: WhatsApp */}
+        {/* ============================== */}
+        <Card className="mb-6 border-[#1a1a1a] bg-[#0a0a0a]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-600">
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp de la tienda
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Label htmlFor="whatsapp-number" className="text-xs text-neutral-500">
+              Número con código de país, solo dígitos (ej. 573001234567). Vacío = ocultar botón.
+            </Label>
+            <Input
+              id="whatsapp-number"
+              inputMode="numeric"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              placeholder="573001234567"
+              className="border-[#1a1a1a] bg-[#111] text-white placeholder:text-neutral-500 focus:border-red-600"
+            />
+          </CardContent>
+        </Card>
 
         {/* ============================== */}
         {/* SECTION 1: Etiquetas de Material */}

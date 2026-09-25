@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_COST, UPSELL_PRICE } from "@/lib/pricing";
+import { generateOrderReference } from "@/lib/wompi";
 
 // Server-side order creation. Prices, shipping and discounts are always
 // recomputed from the database — totals sent by the browser are ignored.
@@ -130,7 +131,8 @@ export async function createOrder(input: CreateOrderInput) {
         shippingAddress,
         customerEmail: email,
         status: "PENDING",
-        reference: input.reference,
+        // Every order gets a public reference the customer can quote/track
+        reference: input.reference ?? generateOrderReference(),
         paymentStatus: input.paymentStatus,
         items: {
           create: variants.map((v) => ({
@@ -154,4 +156,30 @@ export function orderErrorResponse(error: unknown): { message: string; status: n
     console.error("Order creation error:", error);
   }
   return { message: "Error al procesar el pedido", status: 500 };
+}
+
+/**
+ * Updates an order's status, returning stock to inventory when it becomes
+ * CANCELLED and taking it back if a cancelled order is reopened.
+ */
+export async function updateOrderStatus(id: string, status: string) {
+  return db.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({ where: { id }, include: { items: true } });
+    if (!order) return null;
+
+    const wasCancelled = order.status === "CANCELLED";
+    const isCancelled = status === "CANCELLED";
+    if (wasCancelled !== isCancelled) {
+      for (const item of order.items) {
+        await tx.productVariant.update({
+          where: { id: item.productVariantId },
+          data: {
+            stockQuantity: isCancelled ? { increment: item.quantity } : { decrement: item.quantity },
+          },
+        });
+      }
+    }
+
+    return tx.order.update({ where: { id }, data: { status } });
+  });
 }

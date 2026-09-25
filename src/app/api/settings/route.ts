@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
     "Secar a la sombra",
     "Planchar a baja temperatura",
   ]),
+  whatsapp_number: "",
   social_proof_enabled: "true",
   social_proof_initial_delay: "15000",
   social_proof_interval_min: "35000",

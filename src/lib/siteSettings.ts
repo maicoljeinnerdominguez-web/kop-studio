@@ -7,6 +7,8 @@ export interface SiteSettingsData {
   materialCare: string;
   garmentDetails: string[];
   washGuide: string[];
+  /** Digits only, with country code (e.g. 573001234567); empty = not configured */
+  whatsappNumber: string;
 }
 
 const FALLBACK: SiteSettingsData = {
@@ -25,6 +27,7 @@ const FALLBACK: SiteSettingsData = {
     'Secar a la sombra',
     'Planchar a baja temperatura',
   ],
+  whatsappNumber: '',
 };
 
 function parse(data: Record<string, string>): SiteSettingsData {
@@ -33,6 +36,7 @@ function parse(data: Record<string, string>): SiteSettingsData {
     materialCare: data.material_care || FALLBACK.materialCare,
     garmentDetails: safeJsonParse(data.garment_details, FALLBACK.garmentDetails),
     washGuide: safeJsonParse(data.wash_guide, FALLBACK.washGuide),
+    whatsappNumber: (data.whatsapp_number || '').replace(/\D/g, ''),
   };
 }
 
@@ -77,4 +81,9 @@ export function useSiteSettings(): SiteSettingsData {
   }, []);
 
   return settings;
+}
+/** wa.me link for the store's WhatsApp, or null when no number is configured. */
+export function whatsappLink(number: string, text?: string): string | null {
+  if (!number) return null;
+  return `https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 }

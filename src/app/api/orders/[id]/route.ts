@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
+import { updateOrderStatus } from '@/lib/orders';
 
 const VALID_STATUSES = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'] as const;
 
@@ -54,14 +55,14 @@ export async function PATCH(
       );
     }
 
-    const order = await db.order.findUnique({ where: { id } });
-    if (!order) {
+    // Also returns/takes back stock when the order is cancelled/reopened
+    const changed = await updateOrderStatus(id, status);
+    if (!changed) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const updatedOrder = await db.order.update({
+    const updatedOrder = await db.order.findUniqueOrThrow({
       where: { id },
-      data: { status },
       include: {
         user: { select: { name: true, email: true } },
         items: {

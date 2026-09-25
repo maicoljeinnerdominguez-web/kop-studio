@@ -361,7 +361,7 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
   )
 
   return (
-    <main className="min-h-screen" ref={scrollContainerRef}>
+    <div className="min-h-screen" ref={scrollContainerRef}>
       {/* Breadcrumb */}
       <div className="border-b border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -559,7 +559,7 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
           <ArrowUp className="size-4" />
         </button>
       )}
-    </main>
+    </div>
   )
 }
 

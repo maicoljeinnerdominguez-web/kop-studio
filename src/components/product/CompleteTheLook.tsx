@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/stores/useCartStore';
@@ -18,7 +18,7 @@ const ADJACENT_CATEGORIES: Record<string, string[]> = {
   'bestsellers': ['camisetas', 'inferiores', 'accesorios'],
 };
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
@@ -27,7 +27,7 @@ const containerVariants = {
   },
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,

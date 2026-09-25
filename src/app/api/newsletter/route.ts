@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
+import { rateLimit } from '@/lib/rateLimit'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, 'newsletter', 5, 60 * 60 * 1000)
+  if (limited) return limited
+
   try {
     const body = await request.json()
     const { email } = body

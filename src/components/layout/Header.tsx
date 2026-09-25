@@ -23,6 +23,7 @@ import { useSearchOpenStore } from '@/stores/useSearchOpenStore';
 import { useWishlistStore } from '@/stores/useWishlistStore';
 import { useAuthDialogStore } from '@/stores/useAuthDialogStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useHydrated } from '@/hooks/use-hydrated';
 
 const NAV_LINKS = [
   { label: 'New Merch', slug: 'new-merch' },
@@ -37,12 +38,16 @@ const NAV_LINKS = [
 
 export default function Header() {
   const navigate = useNavigationStore((s) => s.navigate);
-  const itemCount = useCartStore((s) => s.getItemCount());
+  // Persisted (localStorage) counts are shown only after hydration
+  const hydrated = useHydrated();
+  const cartCount = useCartStore((s) => s.getItemCount());
+  const itemCount = hydrated ? cartCount : 0;
   const toggleCart = useCartStore((s) => s.toggleCart);
   const toggleSearch = useSearchOpenStore((s) => s.toggle);
-  const wishlistCount = useWishlistStore((s) => s.wishlist.length);
+  const savedCount = useWishlistStore((s) => s.wishlist.length);
+  const wishlistCount = hydrated ? savedCount : 0;
   const openAuthDialog = useAuthDialogStore((s) => s.open);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated) && hydrated;
   const userName = useAuthStore((s) => s.user?.name);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -98,7 +103,6 @@ export default function Header() {
                       className="text-left text-sm text-neutral-300 hover:text-white hover:bg-white/5 px-3 py-3 rounded-md tracking-wide uppercase font-medium flex items-center gap-2 mobile-menu-item mobile-menu-stagger"
                       style={{ animationDelay: `${0.05 + i * 0.05}s` }}
                     >
-                      {'icon' in link && link.icon && <link.icon className="size-4" />}
                       {link.label}
                     </button>
                   ))}
@@ -149,7 +153,6 @@ export default function Header() {
                 whileHover={{ y: -1 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               >
-                {'icon' in link && link.icon && <link.icon className="size-3.5" />}
                 <span className="hover-underline-red">{link.label}</span>
                 {link.slug === 'new-merch' && (
                   <span className="relative flex h-1.5 w-1.5 ml-0.5">

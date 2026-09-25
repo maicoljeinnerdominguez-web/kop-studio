@@ -418,7 +418,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
   if (loading) {
     return (
-      <main className="min-h-screen max-w-7xl mx-auto px-4 py-8">
+      <div className="min-h-screen max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           <Skeleton className="aspect-square w-full bg-[#111] rounded-md" />
           <div className="space-y-4">
@@ -429,13 +429,13 @@ function ProductDetailInner({ slug }: { slug: string }) {
             <Skeleton className="h-12 w-full bg-[#111] rounded-md" />
           </div>
         </div>
-      </main>
+      </div>
     )
   }
 
   if (!product) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
         <p className="text-gray-400 text-lg mb-4">Producto no encontrado</p>
         <Button
           variant="outline"
@@ -444,12 +444,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
         >
           Volver
         </Button>
-      </main>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen">
+    <div className="min-h-screen">
       {/* Breadcrumb */}
       <div className="border-b border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -977,7 +977,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
         open={lightboxOpen}
         onOpenChange={setLightboxOpen}
       />
-    </main>
+    </div>
   )
 }
 

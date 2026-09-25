@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'contact', 5, 60 * 60 * 1000);
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const { name, email, subject, message } = body;
@@ -16,6 +20,13 @@ export async function POST(request: NextRequest) {
     if (!email || typeof email !== 'string' || !email.trim()) {
       return NextResponse.json(
         { success: false, error: 'El correo electrónico es obligatorio' },
+        { status: 400 }
+      );
+    }
+
+    if (name.length > 100 || email.length > 254 || (typeof subject === 'string' && subject.length > 150)) {
+      return NextResponse.json(
+        { success: false, error: 'Uno de los campos es demasiado largo' },
         { status: 400 }
       );
     }

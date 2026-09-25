@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, type Variants } from 'framer-motion'
 import { Instagram, Heart, MessageCircle } from 'lucide-react'
 
 const SOCIAL_IMAGES = [
@@ -15,7 +15,7 @@ const SOCIAL_IMAGES = [
   { src: '/images/products/tshirt-gothic-1.webp', likes: 342, comments: 28, alt: 'T-shirt Gótica' },
 ]
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
@@ -24,7 +24,7 @@ const containerVariants = {
   },
 }
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
   visible: {
     opacity: 1,

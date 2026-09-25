@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,19 +71,6 @@ const DEPARTMENTS = [
   'Barranquilla',
   'Cartagena',
   'Otro',
-];
-
-const PSE_BANKS = [
-  'Bancolombia',
-  'Davivienda',
-  'BBVA',
-  'Banco de Bogotá',
-  'Banco Popular',
-  'Itaú',
-  'Scotiabank Colpatria',
-  'Occidente',
-  'Banco Agrario',
-  'Av Villas',
 ];
 
 function formatPrice(amount: number) {
@@ -557,8 +544,7 @@ function SecurityBadges() {
 export default function CheckoutView() {
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pse' | 'nequi'>('card');
-  const [pseBank, setPseBank] = useState('');
-  const [nequiPhone, setNequiPhone] = useState('');
+  const [wompiEnabled, setWompiEnabled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [promoApplied, setPromoApplied] = useState<PromoData | null>(null);
@@ -586,36 +572,22 @@ export default function CheckoutView() {
     },
   });
 
-  const cardForm = useForm({
-    defaultValues: {
-      cardNumber: '',
-      cardName: '',
-      cardExpiry: '',
-      cardCvc: '',
-    },
-  });
+  // Online payment (Wompi) is offered only when the store has configured it
+  useEffect(() => {
+    fetch('/api/payments/wompi/checkout')
+      .then((r) => r.json())
+      .then((d) => setWompiEnabled(!!d.enabled))
+      .catch(() => setWompiEnabled(false));
+  }, []);
 
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\D/g, '').slice(0, 16);
-    return v.replace(/(\d{4})(?=\d)/g, '$1 ');
-  };
-
-  const formatExpiry = (value: string) => {
-    const v = value.replace(/\D/g, '').slice(0, 4);
-    if (v.length >= 2) return v.slice(0, 2) + '/' + v.slice(2);
-    return v;
-  };
-
-  const handleContactNext = () => {
-    const valid = contactForm.formState.isValid;
-    contactForm.trigger();
-    if (!contactForm.formState.isValid) return;
+  // trigger() is async: wait for validation before reading the result
+  const handleContactNext = async () => {
+    if (!(await contactForm.trigger())) return;
     setStep(2);
   };
 
-  const handleAddressNext = () => {
-    addressForm.trigger();
-    if (!addressForm.formState.isValid) return;
+  const handleAddressNext = async () => {
+    if (!(await addressForm.trigger())) return;
     setStep(3);
   };
 
@@ -652,15 +624,31 @@ export default function CheckoutView() {
         })),
       };
 
+      if (wompiEnabled) {
+        const res = await fetch('/api/payments/wompi/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.checkoutUrl) {
+          throw new Error(data.error || 'No se pudo iniciar el pago');
+        }
+        // Stock is reserved; the cart is cleared and the customer pays on Wompi
+        cart.clearCart();
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
 
+      const order = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Error al procesar el pedido');
+        throw new Error(order.error || 'Error al procesar el pedido');
       }
 
       setOrderPlaced(true);
@@ -668,7 +656,7 @@ export default function CheckoutView() {
 
       setTimeout(() => {
         cart.clearCart();
-        navigate('order-confirmation');
+        navigate('order-confirmation', order.reference ? { ref: order.reference } : {});
       }, 1500);
     } catch (err) {
       toast.error(
@@ -1237,135 +1225,29 @@ export default function CheckoutView() {
                     </motion.button>
                   </div>
 
-                  {/* Payment Details */}
-                  <AnimatePresence mode="wait">
-                    {paymentMethod === 'card' && (
-                      <motion.div
-                        key="card-fields"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="space-y-4">
-                          <div className={fieldWrapper}>
-                            <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                              Número de tarjeta
-                            </Label>
-                            <Input
-                              {...cardForm.register('cardNumber')}
-                              className={darkInput}
-                              placeholder="1234 5678 9012 3456"
-                              maxLength={19}
-                              onChange={(e) => {
-                                e.target.value = formatCardNumber(e.target.value);
-                              }}
-                            />
-                          </div>
-                          <div className={fieldWrapper}>
-                            <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                              Nombre en la tarjeta
-                            </Label>
-                            <Input
-                              {...cardForm.register('cardName')}
-                              className={darkInput}
-                              placeholder="JUAN PÉREZ"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className={fieldWrapper}>
-                              <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                                Vencimiento (MM/YY)
-                              </Label>
-                              <Input
-                                {...cardForm.register('cardExpiry')}
-                                className={darkInput}
-                                placeholder="12/26"
-                                maxLength={5}
-                                onChange={(e) => {
-                                  e.target.value = formatExpiry(e.target.value);
-                                }}
-                              />
-                            </div>
-                            <div className={fieldWrapper}>
-                              <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                                CVC
-                              </Label>
-                              <Input
-                                {...cardForm.register('cardCvc')}
-                                className={darkInput}
-                                placeholder="123"
-                                maxLength={4}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
+                  {/* Payment Details: card data is never typed on our site */}
+                  <div className="bg-[#111] border border-[#1a1a1a] p-4 mb-2">
+                    {wompiEnabled ? (
+                      <p className="text-neutral-400 text-xs leading-relaxed">
+                        Al confirmar serás redirigido a{' '}
+                        <span className="text-white font-medium">Wompi (Bancolombia)</span> para pagar
+                        de forma segura con{' '}
+                        <span className="text-white font-medium">
+                          {paymentMethod === 'card' ? 'tu tarjeta' : paymentMethod === 'pse' ? 'PSE' : 'Nequi'}
+                        </span>
+                        . Nunca vemos ni guardamos los datos de tu tarjeta.
+                      </p>
+                    ) : (
+                      <p className="text-neutral-400 text-xs leading-relaxed">
+                        Tu pedido quedará <span className="text-white font-medium">reservado</span> y te
+                        contactaremos por correo o WhatsApp para coordinar el pago con{' '}
+                        <span className="text-white font-medium">
+                          {paymentMethod === 'card' ? 'tarjeta' : paymentMethod === 'pse' ? 'PSE' : 'Nequi'}
+                        </span>
+                        .
+                      </p>
                     )}
-
-                    {paymentMethod === 'pse' && (
-                      <motion.div
-                        key="pse-fields"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="bg-[#111] border border-[#1a1a1a] p-4 mb-4">
-                          <p className="text-neutral-400 text-xs leading-relaxed">
-                            Serás redirigido a <span className="text-white font-medium">PSE</span> para
-                            completar el pago de forma segura a través de tu banco.
-                          </p>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                            Banco
-                          </Label>
-                          <Select value={pseBank} onValueChange={setPseBank}>
-                            <SelectTrigger className={darkSelect}>
-                              <SelectValue placeholder="Selecciona tu banco" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
-                              {PSE_BANKS.map((bank) => (
-                                <SelectItem key={bank} value={bank} className="text-white focus:bg-[#262626] focus:text-white">
-                                  {bank}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {paymentMethod === 'nequi' && (
-                      <motion.div
-                        key="nequi-fields"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="bg-[#111] border border-[#1a1a1a] p-4 mb-4">
-                          <p className="text-neutral-400 text-xs leading-relaxed">
-                            Paga con <span className="text-white font-medium">Nequi</span>. Recibirás
-                            una notificación en tu app para confirmar el pago.
-                          </p>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                            Número de celular Nequi
-                          </Label>
-                          <Input
-                            value={nequiPhone}
-                            onChange={(e) => setNequiPhone(e.target.value)}
-                            inputMode="tel"
-                            className={darkInput}
-                            placeholder="+57 300 123 4567"
-                          />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  </div>
 
                   {/* Security Badges */}
                   <SecurityBadges />
@@ -1390,6 +1272,8 @@ export default function CheckoutView() {
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           PROCESANDO...
                         </>
+                      ) : wompiEnabled ? (
+                        'IR A PAGAR'
                       ) : (
                         'CONFIRMAR PEDIDO'
                       )}

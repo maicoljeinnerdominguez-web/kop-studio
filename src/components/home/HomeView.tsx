@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useReducedMotion, useScroll, useTransform, type Variants } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ChevronDown, Truck, RotateCcw, ShieldCheck, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -90,7 +90,7 @@ const CATEGORIES_DISPLAY: { name: string; slug: string; image: string }[] = [
   { name: 'Accesorios', slug: 'accesorios', image: '/images/products/puffer-bag-5.webp' },
 ]
 
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: (i: number) => ({
     opacity: 1,
@@ -127,8 +127,10 @@ export default function HomeView() {
   const heroRef = useRef<HTMLElement>(null)
 
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const heroImageY = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
+  // Scroll-linked parallax is skipped when the user prefers reduced motion
+  const reduceMotion = useReducedMotion()
+  const heroImageY = useTransform(scrollYProgress, [0, 1], reduceMotion ? ['0%', '0%'] : ['0%', '30%'])
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], reduceMotion ? [1, 1] : [1, 0])
 
   useEffect(() => {
     fetch('/api/categories')
@@ -183,7 +185,7 @@ export default function HomeView() {
   const formatPrice = (amount: number) => `$${Math.round(amount).toLocaleString('es-CO')}`
 
   return (
-    <main>
+    <div>
       {/* ===== HERO SECTION ===== */}
       <section ref={heroRef} className="relative min-h-[70vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden vignette-overlay">
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
@@ -947,6 +949,6 @@ export default function HomeView() {
       )}
 
 
-    </main>
+    </div>
   )
 }
