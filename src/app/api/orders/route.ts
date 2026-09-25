@@ -48,6 +48,7 @@ export async function POST(request: Request) {
       customerEmail: body.customerEmail,
       promoCode: body.promoCode,
       upsell: body.upsell,
+      acceptPrivacy: body.acceptPrivacy,
       userId: session?.id ?? null,
     });
 

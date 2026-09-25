@@ -536,7 +536,11 @@ export default function AdminProductForm() {
                       <div className="flex-shrink-0">
                         {img.url ? (
                           <div className="relative w-20 h-20 bg-[#1a1a1a] border border-[#262626] group cursor-pointer"
-                            onClick={() => handleFileSelect(index)}>
+                            onClick={() => handleFileSelect(index)}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Cambiar imagen"
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleFileSelect(index); } }}>
                             <img
                               src={img.url}
                               alt={img.altText || 'Preview'}

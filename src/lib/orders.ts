@@ -21,6 +21,8 @@ export interface CreateOrderInput {
   userId?: string | null;
   reference?: string;
   paymentStatus?: string;
+  /** Customer ticked the data-processing authorization (Ley 1581) */
+  acceptPrivacy?: unknown;
 }
 
 const MAX_QTY_PER_ITEM = 20;
@@ -48,6 +50,10 @@ function parseItems(raw: unknown): Map<string, number> {
 
 export async function createOrder(input: CreateOrderInput) {
   const quantities = parseItems(input.items);
+
+  if (input.acceptPrivacy !== true) {
+    throw new OrderError("Debes autorizar el tratamiento de tus datos personales para continuar");
+  }
 
   const email = typeof input.customerEmail === "string" ? input.customerEmail.toLowerCase().trim() : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
@@ -134,6 +140,7 @@ export async function createOrder(input: CreateOrderInput) {
         // Every order gets a public reference the customer can quote/track
         reference: input.reference ?? generateOrderReference(),
         paymentStatus: input.paymentStatus,
+        privacyAcceptedAt: new Date(),
         items: {
           create: variants.map((v) => ({
             productVariantId: v.id,

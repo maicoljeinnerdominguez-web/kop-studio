@@ -58,7 +58,7 @@ function TrustFeatureItem({ icon: Icon, title, desc, countTarget, countSuffix, i
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
     >
       <div className={`p-2 rounded-full ${isFirst ? 'truck-pulse-ring' : ''}`}>
-        <Icon className="size-5 text-red-600 mb-0.5 trust-feature-icon" />
+        <Icon className="size-5 text-red-500 mb-0.5 trust-feature-icon" />
       </div>
       <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-neutral-400">
         {title}
@@ -77,10 +77,11 @@ function TrustFeatureItem({ icon: Icon, title, desc, countTarget, countSuffix, i
 
 const HERO_WORDS = ['ASCENSIÓN', 'COLECCIÓN', '2026']
 
+// Only verifiable brand facts here — no invented customer counts or ratings
 const brandStats = [
-  { value: '100+', label: 'Diseños' },
-  { value: '5K+', label: 'Clientes' },
-  { value: '4.9★', label: 'Rating' },
+  { value: 'Nariño', label: 'Hecho en' },
+  { value: '240gsm', label: 'Algodón' },
+  { value: '2026', label: 'Colección' },
 ]
 
 const CATEGORIES_DISPLAY: { name: string; slug: string; image: string }[] = [
@@ -100,9 +101,10 @@ const fadeInUp: Variants = {
 }
 
 const trustFeatures = [
-  { icon: Truck, title: 'ENVÍO EXPRESS', desc: '2-4 días hábiles', countTarget: 24, countSuffix: 'H' },
-  { icon: RotateCcw, title: 'DEVOLUCIONES', desc: '30 días para cambios', countTarget: 30, countSuffix: 'DÍAS' },
-  { icon: ShieldCheck, title: 'COMPRA SEGURA', desc: 'Pago protegido', countTarget: 100, countSuffix: '%' },
+  // Must match the published policies (envíos, devoluciones) and src/lib/pricing.ts
+  { icon: Truck, title: 'ENVÍO GRATIS', desc: 'En compras desde $250.000', countTarget: 250, countSuffix: 'K' },
+  { icon: RotateCcw, title: 'CAMBIOS', desc: '7 días para cambios', countTarget: 7, countSuffix: ' DÍAS' },
+  { icon: ShieldCheck, title: 'SOPORTE', desc: 'Respuesta en 24h hábiles', countTarget: 24, countSuffix: 'H' },
 ]
 
 function formatPrice(amount: number) {
@@ -528,7 +530,7 @@ export default function HomeView() {
               ))}
             </div>
           ) : newProducts.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-12">
+            <p className="text-neutral-500 text-sm text-center py-12">
               No hay productos nuevos disponibles
             </p>
           ) : (
@@ -602,7 +604,7 @@ export default function HomeView() {
               ))}
             </div>
           ) : bestsellerProducts.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-12">
+            <p className="text-neutral-500 text-sm text-center py-12">
               No hay best sellers disponibles
             </p>
           ) : (
@@ -876,7 +878,7 @@ export default function HomeView() {
                   custom={i + 2}
                   className="flex flex-col"
                 >
-                  <span className="text-xl font-bold text-red-600">{stat.value}</span>
+                  <span className="text-xl font-bold text-red-500">{stat.value}</span>
                   <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">{stat.label}</span>
                 </motion.div>
               ))}

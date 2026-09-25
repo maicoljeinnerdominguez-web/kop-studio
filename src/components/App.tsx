@@ -15,6 +15,7 @@ import SocialProofNotification from '@/components/social/SocialProofNotification
 import CompareFloatingBar from '@/components/product/CompareFloatingBar';
 import AbandonedCartNotification from '@/components/cart/AbandonedCartNotification';
 import UserAuthDialog from '@/components/layout/UserAuthDialog';
+import CookieNotice from '@/components/layout/CookieNotice';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useSiteSettings, whatsappLink } from '@/lib/siteSettings';
 
@@ -136,6 +137,9 @@ export default function App() {
 
         {/* Compare Floating Bar */}
         {!isAdmin && <CompareFloatingBar />}
+
+        {/* Informative cookie notice (necessary cookies only) */}
+        {!isAdmin && <CookieNotice />}
 
         {/* Abandoned Cart Notification */}
         {!isAdmin && <AbandonedCartNotification />}

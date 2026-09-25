@@ -524,13 +524,13 @@ function SecurityBadges() {
         <div className="flex items-center gap-2.5 bg-[#111] border border-[#1a1a1a] p-3 rounded-sm">
           <Lock className="w-4 h-4 text-green-500/70 flex-shrink-0" />
           <span className="text-neutral-400 text-xs leading-relaxed">
-            Encriptación SSL de 256 bits
+            Conexión cifrada (HTTPS)
           </span>
         </div>
         <div className="flex items-center gap-2.5 bg-[#111] border border-[#1a1a1a] p-3 rounded-sm">
           <ShieldCheck className="w-4 h-4 text-green-500/70 flex-shrink-0" />
           <span className="text-neutral-400 text-xs leading-relaxed">
-            Garantía de devolución 30 días
+            Retracto 5 días hábiles · Cambios 7 días
           </span>
         </div>
       </div>
@@ -545,6 +545,7 @@ export default function CheckoutView() {
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pse' | 'nequi'>('card');
   const [wompiEnabled, setWompiEnabled] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [promoApplied, setPromoApplied] = useState<PromoData | null>(null);
@@ -601,6 +602,10 @@ export default function CheckoutView() {
       toast.error('Tu carrito está vacío');
       return;
     }
+    if (!acceptPrivacy) {
+      toast.error('Debes aceptar los términos y autorizar el tratamiento de tus datos');
+      return;
+    }
 
     setSubmitting(true);
 
@@ -617,6 +622,7 @@ export default function CheckoutView() {
         customerEmail: contact.email,
         paymentMethod,
         promoCode: promoApplied?.code ?? null,
+        acceptPrivacy,
         upsell: cart.isUpsellActive,
         items: cart.items.map((item) => ({
           variantId: item.variant.id,
@@ -727,8 +733,8 @@ export default function CheckoutView() {
             transition={{ delay: 1.5 }}
           >
             <p className="text-neutral-400 text-sm text-center max-w-sm">
-              Gracias por tu compra. Recibirás un email de confirmación con los
-              detalles de tu pedido.
+              Gracias por tu compra. En un momento verás tu número de orden;
+              guárdalo para rastrear tu pedido.
             </p>
           </motion.div>
           <motion.div
@@ -805,11 +811,12 @@ export default function CheckoutView() {
                   <StepHeading>Información de Contacto</StepHeading>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-firstName" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Nombre *
                       </Label>
                       <Input
                         {...contactForm.register('firstName')}
+                        id="checkout-firstName"
                         className={darkInput}
                         placeholder="Juan"
                         autoComplete="given-name"
@@ -829,11 +836,12 @@ export default function CheckoutView() {
                       </AnimatePresence>
                     </div>
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-lastName" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Apellido *
                       </Label>
                       <Input
                         {...contactForm.register('lastName')}
+                        id="checkout-lastName"
                         className={darkInput}
                         placeholder="Pérez"
                         autoComplete="family-name"
@@ -853,11 +861,12 @@ export default function CheckoutView() {
                       </AnimatePresence>
                     </div>
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-email" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Email *
                       </Label>
                       <Input
                         {...contactForm.register('email')}
+                        id="checkout-email"
                         type="email"
                         inputMode="email"
                         className={darkInput}
@@ -879,11 +888,12 @@ export default function CheckoutView() {
                       </AnimatePresence>
                     </div>
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-phone" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Teléfono *
                       </Label>
                       <Input
                         {...contactForm.register('phone')}
+                        id="checkout-phone"
                         inputMode="tel"
                         className={darkInput}
                         placeholder="+57 300 123 4567"
@@ -927,11 +937,12 @@ export default function CheckoutView() {
                   <StepHeading>Dirección de Envío</StepHeading>
                   <div className="space-y-4">
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-address" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Dirección *
                       </Label>
                       <Input
                         {...addressForm.register('address')}
+                        id="checkout-address"
                         className={darkInput}
                         placeholder="Calle 100 #15-20, Apto 302"
                         autoComplete="street-address"
@@ -952,11 +963,12 @@ export default function CheckoutView() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className={fieldWrapper}>
-                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        <Label htmlFor="checkout-city" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Ciudad *
                         </Label>
                         <Input
                           {...addressForm.register('city')}
+                          id="checkout-city"
                           className={darkInput}
                           placeholder="La Unión"
                           autoComplete="address-level2"
@@ -976,7 +988,7 @@ export default function CheckoutView() {
                         </AnimatePresence>
                       </div>
                       <div className={fieldWrapper}>
-                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        <Label htmlFor="checkout-department" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Departamento *
                         </Label>
                         <Select
@@ -987,7 +999,7 @@ export default function CheckoutView() {
                             })
                           }
                         >
-                          <SelectTrigger className={darkSelect}>
+                          <SelectTrigger id="checkout-department" className={darkSelect}>
                             <SelectValue placeholder="Seleccionar" />
                           </SelectTrigger>
                           <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
@@ -1015,11 +1027,12 @@ export default function CheckoutView() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className={fieldWrapper}>
-                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        <Label htmlFor="checkout-neighborhood" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Barrio *
                         </Label>
                         <Input
                           {...addressForm.register('neighborhood')}
+                          id="checkout-neighborhood"
                           className={darkInput}
                           placeholder="Chapinero"
                           autoComplete="address-level3"
@@ -1039,11 +1052,12 @@ export default function CheckoutView() {
                         </AnimatePresence>
                       </div>
                       <div className={fieldWrapper}>
-                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        <Label htmlFor="checkout-postalCode" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Código Postal *
                         </Label>
                         <Input
                           {...addressForm.register('postalCode')}
+                          id="checkout-postalCode"
                           inputMode="numeric"
                           className={darkInput}
                           placeholder="110231"
@@ -1252,6 +1266,27 @@ export default function CheckoutView() {
                   {/* Security Badges */}
                   <SecurityBadges />
 
+                  {/* Data-processing authorization (Ley 1581) */}
+                  <label className="mt-6 flex items-start gap-3 text-xs text-neutral-300 leading-relaxed cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptPrivacy}
+                      onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                      className="mt-0.5 size-4 accent-red-600 shrink-0"
+                    />
+                    <span>
+                      Acepto los{' '}
+                      <button type="button" onClick={() => navigate('info-page', { slug: 'terminos' })} className="text-white underline underline-offset-2">
+                        términos y condiciones
+                      </button>{' '}
+                      y autorizo el tratamiento de mis datos personales para procesar y entregar mi pedido, según la{' '}
+                      <button type="button" onClick={() => navigate('info-page', { slug: 'privacidad' })} className="text-white underline underline-offset-2">
+                        política de privacidad
+                      </button>
+                      .
+                    </span>
+                  </label>
+
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row gap-3 mt-6">
                     <Button
@@ -1264,7 +1299,7 @@ export default function CheckoutView() {
                     </Button>
                     <Button
                       onClick={handleSubmitOrder}
-                      disabled={submitting}
+                      disabled={submitting || !acceptPrivacy}
                       className="sm:flex-[2] w-full bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-widest font-bold rounded-none h-12 disabled:opacity-50"
                     >
                       {submitting ? (

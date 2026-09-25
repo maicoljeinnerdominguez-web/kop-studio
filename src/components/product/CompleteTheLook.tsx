@@ -175,6 +175,12 @@ export default function CompleteTheLook({ categorySlug, currentProductId }: Comp
                   <div
                     className="group cursor-pointer h-40 rounded-md bg-[#111] border border-[#1a1a1a] hover:border-red-600/40 transition-all duration-300 overflow-hidden"
                     onClick={() => navigate('product', { slug: product.slug })}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={product.title}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') navigate('product', { slug: product.slug })
+                    }}
                   >
                     {/* Image */}
                     <div className="relative h-[100px] overflow-hidden bg-[#0a0a0a]">

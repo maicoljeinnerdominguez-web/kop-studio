@@ -61,7 +61,7 @@ export default function PromoBanner() {
             {/* Promo text */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-center">
               <span className="text-neutral-300 text-xs sm:text-sm">
-                10% de descuento en tu primera compra con
+                10% de descuento en compras desde $100.000 con
               </span>
               <div className="flex items-center gap-1.5 bg-[#111] border border-[#333] rounded px-2 py-0.5">
                 <span className="text-red-500 text-xs sm:text-sm font-bold tracking-widest uppercase">

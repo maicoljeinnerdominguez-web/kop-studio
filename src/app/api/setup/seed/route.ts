@@ -274,39 +274,6 @@ export async function GET() {
       });
     }
 
-    // Reviews
-    const reviewsData = [
-      { productSlug: "sivere-hoodie-mandala", authorName: "Carlos M.", rating: 5, title: "El mejor hoodie que he tenido", comment: "La calidad del tejido es impresionante, super pesado y calido." },
-      { productSlug: "sivere-hoodie-mandala", authorName: "Sofia L.", rating: 5, comment: "Compre el negro y queda perfecto." },
-      { productSlug: "sivere-hoodie-mandala", authorName: "Andres R.", rating: 4, title: "Muy bueno pero tardo", comment: "Calidad 10/10 pero el envio tardo 5 dias." },
-      { productSlug: "memento-tee-gothic-cross", authorName: "Valentina P.", rating: 5, comment: "La grafica gotica es brutal." },
-      { productSlug: "memento-tee-gothic-cross", authorName: "Diego F.", rating: 4, comment: "Buena calidad, talla correcta." },
-      { productSlug: "cargo-pants-tactical-black", authorName: "Juan D.", rating: 5, title: "Cargo perfecto", comment: "La tela ripstop es de primera." },
-      { productSlug: "ascension-tee-angel-wings", authorName: "Maria G.", rating: 5, comment: "Las alas de angel se ven increibles." },
-      { productSlug: "fiat-lux-tee-oracion", authorName: "Camilo H.", rating: 4, title: "Diseno unico", comment: "La geometria sagrada es muy original." },
-    ];
-
-    for (const r of reviewsData) {
-      const product = await db.product.findUnique({ where: { slug: r.productSlug } });
-      if (product) {
-        const existing = await db.review.findFirst({
-          where: { productId: product.id, authorName: r.authorName },
-        });
-        if (!existing) {
-          await db.review.create({
-            data: {
-              productId: product.id,
-              authorName: r.authorName,
-              rating: r.rating,
-              title: r.title || null,
-              comment: r.comment,
-              isVerified: false,
-            },
-          });
-        }
-      }
-    }
-
     // Sample order for admin
     const mementoProduct = await db.product.findUnique({
       where: { slug: "memento-tee-gothic-cross" },
@@ -347,7 +314,6 @@ export async function GET() {
         categories: categories.length,
         products: productsData.length,
         promoCodes: promoCodes.length,
-        reviews: reviewsData.length,
       },
     });
   } catch (error: unknown) {

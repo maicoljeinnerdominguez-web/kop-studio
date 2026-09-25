@@ -148,7 +148,7 @@ function FilterSidebar({
         Limpiar Filtros
       </Button>
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-neutral-500">
         {productCount} producto{productCount !== 1 ? 's' : ''}
       </p>
     </div>
@@ -224,7 +224,7 @@ function ActiveFilterChips({
       ))}
       <button
         onClick={onClear}
-        className="text-xs text-red-600 hover:text-red-500 uppercase tracking-wider font-medium transition-colors"
+        className="text-xs text-red-500 hover:text-red-500 uppercase tracking-wider font-medium transition-colors"
       >
         Limpiar todo
       </button>
@@ -369,13 +369,13 @@ function CollectionInner({ categorySlug }: { categorySlug: string }) {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink
-                  className="cursor-pointer text-gray-500 hover:text-white"
+                  className="cursor-pointer text-neutral-500 hover:text-white"
                   onClick={() => navigate('home')}
                 >
                   Inicio
                 </BreadcrumbLink>
               </BreadcrumbItem>
-              <BreadcrumbSeparator className="text-gray-600" />
+              <BreadcrumbSeparator className="text-neutral-500" />
               <BreadcrumbItem>
                 <BreadcrumbPage className="text-white font-medium">
                   {categoryName}

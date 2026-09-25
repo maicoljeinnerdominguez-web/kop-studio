@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion, type Variants } from 'framer-motion'
-import { Star, Loader2 } from 'lucide-react'
+import { Star, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import type { ProductReview } from '@/types'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 interface ReviewsData {
   reviews: ProductReview[]
@@ -63,6 +64,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
   const [title, setTitle] = useState('')
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const isAdmin = useAuthStore((s) => s.isAdmin)
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -110,6 +112,21 @@ export default function ProductReviews({ productId }: { productId: string }) {
       toast.error('Error de conexión')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  // Admin moderation: remove fake or abusive reviews
+  const handleDelete = async (reviewId: string) => {
+    if (!window.confirm('¿Eliminar esta reseña?')) return
+    try {
+      const res = await fetch(`/api/products/${productId}/reviews?reviewId=${encodeURIComponent(reviewId)}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error()
+      toast.success('Reseña eliminada')
+      fetchReviews()
+    } catch {
+      toast.error('No se pudo eliminar la reseña')
     }
   }
 
@@ -202,7 +219,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
             >
               {/* Top row */}
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-red-600/20 text-red-600 text-xs font-bold flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-full bg-red-600/20 text-red-500 text-xs font-bold flex items-center justify-center shrink-0">
                   {review.authorName.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm text-white font-medium">
@@ -212,6 +229,15 @@ export default function ProductReviews({ productId }: { productId: string }) {
                 <span className="text-xs text-neutral-500 ml-auto hidden sm:block">
                   {formatDate(review.createdAt)}
                 </span>
+                {isAdmin && (
+                  <button
+                    onClick={() => handleDelete(review.id)}
+                    className="text-neutral-400 hover:text-red-500 transition-colors ml-auto sm:ml-0"
+                    aria-label={`Eliminar reseña de ${review.authorName}`}
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                )}
               </div>
 
               {/* Mobile date */}
@@ -261,7 +287,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
               placeholder="Tu nombre"
-              className="w-full bg-[#111] border border-[#333] text-sm text-white placeholder:text-[#555] px-4 py-2.5 focus:outline-none focus:border-white/50 transition-colors"
+              className="w-full bg-[#111] border border-[#333] text-sm text-white placeholder:text-neutral-500 px-4 py-2.5 focus:outline-none focus:border-white/50 transition-colors"
             />
           </div>
 
@@ -308,7 +334,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Resumen de tu experiencia"
-              className="w-full bg-[#111] border border-[#333] text-sm text-white placeholder:text-[#555] px-4 py-2.5 focus:outline-none focus:border-white/50 transition-colors"
+              className="w-full bg-[#111] border border-[#333] text-sm text-white placeholder:text-neutral-500 px-4 py-2.5 focus:outline-none focus:border-white/50 transition-colors"
             />
           </div>
 
@@ -322,7 +348,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
               onChange={(e) => setComment(e.target.value)}
               placeholder="Cuéntanos tu experiencia con este producto..."
               rows={3}
-              className="w-full bg-[#111] border border-[#333] text-sm text-white placeholder:text-[#555] px-4 py-2.5 focus:outline-none focus:border-white/50 transition-colors resize-none"
+              className="w-full bg-[#111] border border-[#333] text-sm text-white placeholder:text-neutral-500 px-4 py-2.5 focus:outline-none focus:border-white/50 transition-colors resize-none"
             />
           </div>
 
@@ -337,6 +363,10 @@ export default function ProductReviews({ productId }: { productId: string }) {
             ) : null}
             Publicar Reseña
           </Button>
+          <p className="text-[11px] text-neutral-400 leading-relaxed">
+            El nombre que escribas y tu reseña serán públicos. Publica solo opiniones sobre productos
+            que hayas comprado o usado.
+          </p>
         </form>
       </div>
     </section>

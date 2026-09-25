@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ChangePasswordCard from '@/components/admin/ChangePasswordCard';
 import {
+  Building2,
   Settings,
   Save,
   RotateCcw,
@@ -20,25 +21,20 @@ import {
   Trash2,
   Tag,
   MessageCircle,
-  Eye,
 } from 'lucide-react';
 
-interface ViewingMessage {
-  text: string;
-  product: string;
-  count: number;
-  type: 'viewing';
-}
+const BUSINESS_FIELDS = [
+  { key: 'business_name', label: 'Razón social o nombre del titular', placeholder: 'KOP STUDIO S.A.S. / Nombre Apellido' },
+  { key: 'business_nit', label: 'NIT o cédula', placeholder: '900.123.456-7' },
+  { key: 'business_address', label: 'Dirección', placeholder: 'Calle 1 #2-3, La Unión, Nariño' },
+  { key: 'business_email', label: 'Correo de contacto', placeholder: 'contacto@tudominio.com' },
+  { key: 'business_phone', label: 'Teléfono', placeholder: '+57 300 123 4567' },
+  { key: 'business_hours', label: 'Horario de atención', placeholder: 'Lun-Sáb 9:00 AM - 6:00 PM' },
+  { key: 'instagram_url', label: 'Instagram (URL)', placeholder: 'https://instagram.com/kopstudio' },
+  { key: 'twitter_url', label: 'X / Twitter (URL)', placeholder: 'https://x.com/kopstudio' },
+] as const;
 
-interface ActionMessage {
-  text: string;
-  action: string;
-  product: string;
-  time: string;
-  type: 'action';
-}
-
-type SocialProofMessage = ViewingMessage | ActionMessage;
+type BusinessKey = (typeof BUSINESS_FIELDS)[number]['key'];
 
 export default function AdminSettings() {
   const navigate = useNavigationStore((s) => s.navigate);
@@ -78,14 +74,16 @@ export default function AdminSettings() {
   // Store contact
   const [whatsappNumber, setWhatsappNumber] = useState('');
 
+  // Business identification shown in footer and legal pages
+  const [business, setBusiness] = useState<Record<BusinessKey, string>>(
+    Object.fromEntries(BUSINESS_FIELDS.map((f) => [f.key, ''])) as Record<BusinessKey, string>
+  );
+
   // Section 5: Social Proof
   const [socialProofEnabled, setSocialProofEnabled] = useState(false);
   const [initialDelay, setInitialDelay] = useState(5);
   const [intervalMin, setIntervalMin] = useState(15);
   const [intervalMax, setIntervalMax] = useState(30);
-  const [socialProofMessages, setSocialProofMessages] = useState<SocialProofMessage[]>(
-    []
-  );
 
   // Fetch settings on mount
   useEffect(() => {
@@ -126,6 +124,10 @@ export default function AdminSettings() {
           setWhatsappNumber(data.whatsapp_number);
         }
 
+        setBusiness(
+          Object.fromEntries(BUSINESS_FIELDS.map((f) => [f.key, data[f.key] ?? ''])) as Record<BusinessKey, string>
+        );
+
         if (data.social_proof_enabled !== undefined) {
           setSocialProofEnabled(data.social_proof_enabled === 'true');
         }
@@ -140,14 +142,6 @@ export default function AdminSettings() {
 
         if (data.social_proof_interval_max !== undefined) {
           setIntervalMax(Number(data.social_proof_interval_max) / 1000);
-        }
-
-        if (data.social_proof_messages) {
-          try {
-            setSocialProofMessages(JSON.parse(data.social_proof_messages));
-          } catch {
-            /* keep defaults */
-          }
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -190,58 +184,6 @@ export default function AdminSettings() {
 
   // --- Handlers for social proof messages ---
 
-  function handleMessageFieldChange(
-    index: number,
-    field: string,
-    value: string | number
-  ) {
-    setSocialProofMessages((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], [field]: value };
-      return next;
-    });
-  }
-
-  function handleMessageToggleType(index: number) {
-    setSocialProofMessages((prev) => {
-      const next = [...prev];
-      const current = next[index];
-      if (current.type === 'viewing') {
-        next[index] = {
-          type: 'action',
-          text: 'alguien en Bogotá',
-          action: 'compró',
-          product: '',
-          time: 'hace 2 min',
-        } as ActionMessage;
-      } else {
-        next[index] = {
-          type: 'viewing',
-          text: 'personas viendo',
-          product: '',
-          count: 3,
-        } as ViewingMessage;
-      }
-      return next;
-    });
-  }
-
-  function handleAddMessage() {
-    setSocialProofMessages((prev) => [
-      ...prev,
-      {
-        type: 'viewing',
-        text: 'personas viendo',
-        product: '',
-        count: 3,
-      } as ViewingMessage,
-    ]);
-  }
-
-  function handleRemoveMessage(index: number) {
-    setSocialProofMessages((prev) => prev.filter((_, i) => i !== index));
-  }
-
   // --- Save ---
 
   async function handleSave() {
@@ -253,11 +195,11 @@ export default function AdminSettings() {
         garment_details: JSON.stringify(garmentDetails),
         wash_guide: JSON.stringify(washGuide),
         whatsapp_number: whatsappNumber.replace(/\D/g, ''),
+        ...Object.fromEntries(BUSINESS_FIELDS.map((f) => [f.key, business[f.key].trim()])),
         social_proof_enabled: String(socialProofEnabled),
         social_proof_initial_delay: String(Number(initialDelay) * 1000),
         social_proof_interval_min: String(Number(intervalMin) * 1000),
         social_proof_interval_max: String(Number(intervalMax) * 1000),
-        social_proof_messages: JSON.stringify(socialProofMessages),
       };
 
       const res = await fetch('/api/settings', {
@@ -318,7 +260,7 @@ export default function AdminSettings() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-3">
-            <Settings className="h-6 w-6 text-red-600" />
+            <Settings className="h-6 w-6 text-red-500" />
             <h1 className="text-2xl font-bold tracking-tight">
               Configuración del Sitio
             </h1>
@@ -326,11 +268,46 @@ export default function AdminSettings() {
         </div>
 
         {/* ============================== */}
+        {/* Datos del negocio */}
+        {/* ============================== */}
+        <Card className="mb-6 border-[#1a1a1a] bg-[#0a0a0a]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-500">
+              <Building2 className="h-4 w-4" />
+              Datos del negocio
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs leading-relaxed text-neutral-400">
+              La ley colombiana (Ley 1480 y Ley 1581) exige que las tiendas en línea muestren quién
+              vende y cómo contactarlo. Estos datos aparecen en el pie de página, contacto y las
+              políticas. Los campos vacíos no se muestran.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {BUSINESS_FIELDS.map((field) => (
+                <div key={field.key} className="space-y-1">
+                  <Label htmlFor={field.key} className="text-xs text-neutral-400">
+                    {field.label}
+                  </Label>
+                  <Input
+                    id={field.key}
+                    value={business[field.key]}
+                    onChange={(e) => setBusiness((b) => ({ ...b, [field.key]: e.target.value }))}
+                    placeholder={field.placeholder}
+                    className="border-[#1a1a1a] bg-[#111] text-white placeholder:text-neutral-500 focus:border-red-600"
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ============================== */}
         {/* Contacto: WhatsApp */}
         {/* ============================== */}
         <Card className="mb-6 border-[#1a1a1a] bg-[#0a0a0a]">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-600">
+            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-500">
               <MessageCircle className="h-4 w-4" />
               WhatsApp de la tienda
             </CardTitle>
@@ -355,7 +332,7 @@ export default function AdminSettings() {
         {/* ============================== */}
         <Card className="mb-6 border-[#1a1a1a] bg-[#0a0a0a]">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-600">
+            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-500">
               <Tag className="h-4 w-4" />
               Etiquetas de Material
             </CardTitle>
@@ -373,7 +350,7 @@ export default function AdminSettings() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 text-neutral-500 hover:text-red-600 hover:bg-[#1a1a1a]"
+                  className="shrink-0 text-neutral-500 hover:text-red-500 hover:bg-[#1a1a1a]"
                   onClick={() =>
                     handleStringArrayRemove(setMaterialTags, materialTags, idx)
                   }
@@ -401,7 +378,7 @@ export default function AdminSettings() {
         {/* ============================== */}
         <Card className="mb-6 border-[#1a1a1a] bg-[#0a0a0a]">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-600">
+            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-500">
               <Tag className="h-4 w-4" />
               Material y Cuidado
             </CardTitle>
@@ -423,7 +400,7 @@ export default function AdminSettings() {
         {/* ============================== */}
         <Card className="mb-6 border-[#1a1a1a] bg-[#0a0a0a]">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-600">
+            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-500">
               <Tag className="h-4 w-4" />
               Detalles de la Prenda
             </CardTitle>
@@ -441,7 +418,7 @@ export default function AdminSettings() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 text-neutral-500 hover:text-red-600 hover:bg-[#1a1a1a]"
+                  className="shrink-0 text-neutral-500 hover:text-red-500 hover:bg-[#1a1a1a]"
                   onClick={() =>
                     handleStringArrayRemove(setGarmentDetails, garmentDetails, idx)
                   }
@@ -469,7 +446,7 @@ export default function AdminSettings() {
         {/* ============================== */}
         <Card className="mb-6 border-[#1a1a1a] bg-[#0a0a0a]">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-600">
+            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-500">
               <Tag className="h-4 w-4" />
               Guía de Lavado
             </CardTitle>
@@ -487,7 +464,7 @@ export default function AdminSettings() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 text-neutral-500 hover:text-red-600 hover:bg-[#1a1a1a]"
+                  className="shrink-0 text-neutral-500 hover:text-red-500 hover:bg-[#1a1a1a]"
                   onClick={() =>
                     handleStringArrayRemove(setWashGuide, washGuide, idx)
                   }
@@ -515,7 +492,7 @@ export default function AdminSettings() {
         {/* ============================== */}
         <Card className="mb-6 border-[#1a1a1a] bg-[#0a0a0a]">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-600">
+            <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-500">
               <MessageCircle className="h-4 w-4" />
               Prueba Social
             </CardTitle>
@@ -570,144 +547,10 @@ export default function AdminSettings() {
               </div>
             </div>
 
-            {/* Messages */}
-            <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                Mensajes
-              </Label>
-              {socialProofMessages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-lg border border-[#1a1a1a] bg-[#111] p-4 space-y-3"
-                >
-                  {/* Type toggle row */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {msg.type === 'viewing' ? (
-                        <Eye className="h-4 w-4 text-red-600" />
-                      ) : (
-                        <MessageCircle className="h-4 w-4 text-red-600" />
-                      )}
-                      <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                        {msg.type === 'viewing' ? 'Viendo' : 'Acción'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 gap-1 text-xs text-neutral-400 hover:text-white hover:bg-[#1a1a1a]"
-                        onClick={() => handleMessageToggleType(idx)}
-                      >
-                        Cambiar tipo
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-neutral-500 hover:text-red-600 hover:bg-[#1a1a1a]"
-                        onClick={() => handleRemoveMessage(idx)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Viewing type fields */}
-                  {msg.type === 'viewing' && (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-neutral-500">Texto</Label>
-                        <Input
-                          value={msg.text}
-                          onChange={(e) =>
-                            handleMessageFieldChange(idx, 'text', e.target.value)
-                          }
-                          className="border-[#1a1a1a] bg-[#0a0a0a] text-white focus:border-red-600"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-neutral-500">Producto</Label>
-                        <Input
-                          value={msg.product}
-                          onChange={(e) =>
-                            handleMessageFieldChange(idx, 'product', e.target.value)
-                          }
-                          className="border-[#1a1a1a] bg-[#0a0a0a] text-white focus:border-red-600"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-neutral-500">Cantidad</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={msg.count}
-                          onChange={(e) =>
-                            handleMessageFieldChange(idx, 'count', Number(e.target.value))
-                          }
-                          className="border-[#1a1a1a] bg-[#0a0a0a] text-white focus:border-red-600"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action type fields */}
-                  {msg.type === 'action' && (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-neutral-500">Texto</Label>
-                        <Input
-                          value={msg.text}
-                          onChange={(e) =>
-                            handleMessageFieldChange(idx, 'text', e.target.value)
-                          }
-                          className="border-[#1a1a1a] bg-[#0a0a0a] text-white focus:border-red-600"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-neutral-500">Acción</Label>
-                        <Input
-                          value={(msg as ActionMessage).action}
-                          onChange={(e) =>
-                            handleMessageFieldChange(idx, 'action', e.target.value)
-                          }
-                          className="border-[#1a1a1a] bg-[#0a0a0a] text-white focus:border-red-600"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-neutral-500">Producto</Label>
-                        <Input
-                          value={msg.product}
-                          onChange={(e) =>
-                            handleMessageFieldChange(idx, 'product', e.target.value)
-                          }
-                          className="border-[#1a1a1a] bg-[#0a0a0a] text-white focus:border-red-600"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-neutral-500">Tiempo</Label>
-                        <Input
-                          value={(msg as ActionMessage).time}
-                          onChange={(e) =>
-                            handleMessageFieldChange(idx, 'time', e.target.value)
-                          }
-                          className="border-[#1a1a1a] bg-[#0a0a0a] text-white focus:border-red-600"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-1 gap-1 text-neutral-400 hover:text-white hover:bg-[#1a1a1a]"
-                onClick={handleAddMessage}
-              >
-                <Plus className="h-4 w-4" />
-                Agregar mensaje
-              </Button>
-            </div>
+            <p className="text-xs leading-relaxed text-neutral-400">
+              Las notificaciones muestran solo compras reales pagadas de los últimos 30 días
+              (ciudad y producto, nunca nombres). Si no hay compras recientes, no se muestra nada.
+            </p>
           </CardContent>
         </Card>
 
@@ -731,6 +574,18 @@ export default function AdminSettings() {
             <Save className="h-4 w-4" />
             {saving ? 'Guardando...' : 'Guardar'}
           </Button>
+        </div>
+
+        <div className="mt-10 flex flex-col gap-2 border border-[#1a1a1a] bg-[#0a0a0a] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-neutral-400">
+            Suscriptores del newsletter (con fecha de autorización) para tus campañas.
+          </p>
+          <a
+            href="/api/admin/newsletter"
+            className="inline-flex items-center justify-center border border-[#333] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#1a1a1a]"
+          >
+            Descargar CSV
+          </a>
         </div>
 
         <ChangePasswordCard />

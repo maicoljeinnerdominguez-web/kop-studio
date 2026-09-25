@@ -3,6 +3,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Accessibility: the site is dark-only, so the mid greys used for secondary
+   text are lightened to meet WCAG AA contrast (4.5:1) on #000–#1a1a1a. */
+@theme {
+  --color-neutral-500: #8f8f8f;
+  --color-neutral-600: #858585;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

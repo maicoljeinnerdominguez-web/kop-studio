@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, email, password, phone } = body;
+    const { name, email, password, phone, acceptPrivacy } = body;
 
     // Validation
     if (!name || typeof name !== "string" || name.trim().length < 2) {
@@ -30,6 +30,13 @@ export async function POST(request: Request) {
     if (!password || typeof password !== "string" || password.length < 6) {
       return NextResponse.json(
         { error: "La contraseña debe tener al menos 6 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    if (acceptPrivacy !== true) {
+      return NextResponse.json(
+        { error: "Debes autorizar el tratamiento de tus datos personales" },
         { status: 400 }
       );
     }
@@ -55,6 +62,7 @@ export async function POST(request: Request) {
         passwordHash,
         phone: phone?.trim() || null,
         role: "USER",
+        privacyAcceptedAt: new Date(),
       },
     });
 

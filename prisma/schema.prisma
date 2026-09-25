@@ -14,6 +14,8 @@ model User {
   passwordHash String
   phone        String?
   role         String   @default("USER")
+  // When the user authorized personal-data processing (Ley 1581)
+  privacyAcceptedAt DateTime?
   createdAt    DateTime @default(now())
   orders       Order[]
 }
@@ -83,6 +85,7 @@ model Order {
   paymentStatus      String?
   wompiTransactionId String?
   paymentMethodType  String?
+  privacyAcceptedAt  DateTime?   // proof of data-processing authorization (Ley 1581)
   createdAt          DateTime    @default(now())
   items           OrderItem[]
 }
@@ -129,4 +132,10 @@ model SiteSetting {
   key   String @unique
   value String // JSON string for complex data, plain string for simple values
   updatedAt DateTime @updatedAt
+}
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  consentAt DateTime // express authorization to receive marketing emails
+  createdAt DateTime @default(now())
 }

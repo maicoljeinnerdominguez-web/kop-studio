@@ -120,7 +120,7 @@ export default function OrderConfirmation() {
     return (
       <div className="flex items-center justify-center py-20 px-4">
         <div className="max-w-lg mx-auto text-center space-y-6">
-          <XCircle className="size-20 text-red-600 mx-auto" />
+          <XCircle className="size-20 text-red-500 mx-auto" />
           <h1 className="text-2xl font-bold uppercase tracking-wider text-white">Pago no aprobado</h1>
           <p className="text-neutral-400 text-sm leading-relaxed">
             Tu pago para la orden <span className="font-mono text-white">{orderNumber}</span> fue rechazado o

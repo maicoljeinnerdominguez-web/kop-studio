@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { rewriteImageUrls } from "@/lib/rewriteImages";
 import { requireAdmin } from "@/lib/auth";
+import { withRatings } from "@/lib/ratings";
 
 export async function GET(
   _request: Request,
@@ -21,7 +22,8 @@ export async function GET(
     if (!product) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
-    const safe = { ...product, variants: product.variants || [], images: product.images || [] };
+    const [rated] = await withRatings([product]);
+    const safe = { ...rated, variants: product.variants || [], images: product.images || [] };
     return NextResponse.json(rewriteImageUrls(safe as unknown as Record<string, unknown>));
   } catch (error) {
     console.error("GET /api/products/[id] error:", error);

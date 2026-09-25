@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit } from '@/lib/rateLimit'
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET(
   _request: NextRequest,
@@ -98,4 +99,24 @@ export async function POST(
       { status: 500 }
     )
   }
+}
+// DELETE /api/products/:id/reviews?reviewId=... — admin moderation (fake/abusive reviews)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin()
+  if (denied) return denied
+
+  const { id } = await params
+  const reviewId = new URL(request.url).searchParams.get('reviewId')
+  if (!reviewId) {
+    return NextResponse.json({ errors: ['reviewId requerido'] }, { status: 400 })
+  }
+
+  const deleted = await db.review.deleteMany({ where: { id: reviewId, productId: id } })
+  if (deleted.count === 0) {
+    return NextResponse.json({ errors: ['Reseña no encontrada'] }, { status: 404 })
+  }
+  return NextResponse.json({ success: true })
 }

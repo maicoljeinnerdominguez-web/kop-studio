@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { rewriteImageUrls, rewriteProductImages } from "@/lib/rewriteImages";
 import { getSession, requireAdmin } from "@/lib/auth";
+import { withRatings } from "@/lib/ratings";
 
 // Ensure every product always has arrays for variants/images (defensive against null/undefined)
 // Also filters out base64 data URLs which can be 4MB+ and kill mobile performance
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
       orderBy,
     });
 
-    return NextResponse.json(rewriteProductImages(products.map(safeProduct)), {
+    return NextResponse.json(rewriteProductImages(await withRatings(products.map(safeProduct) as typeof products)), {
       headers: {
         "Cache-Control": activeOnly
           ? "public, s-maxage=60, stale-while-revalidate=300"

@@ -46,7 +46,8 @@ export const useAuthStore = create<AuthStore>()(
           const res = await fetch("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password, phone }),
+            // Only called after the user ticks the data-processing authorization
+            body: JSON.stringify({ name, email, password, phone, acceptPrivacy: true }),
           });
           if (!res.ok) {
             const data = await res.json().catch(() => ({}));

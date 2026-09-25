@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { items, shippingAddress, customerEmail, promoCode, upsell } = body;
+    const { items, shippingAddress, customerEmail, promoCode, upsell, acceptPrivacy } = body;
 
     const session = await getSession();
     const reference = generateOrderReference();
@@ -32,6 +32,7 @@ export async function POST(request: Request) {
       customerEmail,
       promoCode,
       upsell,
+      acceptPrivacy,
       userId: session?.id ?? null,
       reference,
       paymentStatus: 'PENDING',

@@ -48,7 +48,7 @@ export default function ChangePasswordCard() {
   return (
     <Card className="mt-10 border-[#1a1a1a] bg-[#0a0a0a]">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-600">
+        <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-500">
           <KeyRound className="h-4 w-4" />
           Cambiar contraseña de administrador
         </CardTitle>
