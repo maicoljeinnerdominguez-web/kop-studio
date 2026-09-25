@@ -67,7 +67,8 @@ prompt.railway.json
 bun.lock
 .railway.json
 Dockerfile.test
-*.png
+# QA screenshots in the repo root (images under public/ are tracked)
+/*.png
 tool-results/
 .zscripts/
 dev-keepalive.sh

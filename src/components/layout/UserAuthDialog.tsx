@@ -30,6 +30,7 @@ export default function UserAuthDialog() {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regConfirmPassword, setRegConfirmPassword] = useState("");
+  const [regAcceptPrivacy, setRegAcceptPrivacy] = useState(false);
   const [regPhone, setRegPhone] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
 
@@ -88,6 +89,11 @@ export default function UserAuthDialog() {
 
     if (regPassword !== regConfirmPassword) {
       setError("Las contraseñas no coinciden");
+      return;
+    }
+
+    if (!regAcceptPrivacy) {
+      setError("Debes autorizar el tratamiento de tus datos personales");
       return;
     }
 
@@ -395,6 +401,30 @@ export default function UserAuthDialog() {
                     autoComplete="new-password"
                   />
                 </div>
+
+                <label className="flex items-start gap-2 text-xs text-neutral-400 leading-relaxed cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={regAcceptPrivacy}
+                    onChange={(e) => setRegAcceptPrivacy(e.target.checked)}
+                    className="mt-0.5 accent-red-600"
+                  />
+                  <span>
+                    Autorizo el tratamiento de mis datos personales para gestionar mi cuenta y mis pedidos,
+                    según la{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        navigate("info-page", { slug: "privacidad" });
+                      }}
+                      className="text-red-500 hover:text-red-400 underline underline-offset-2"
+                    >
+                      política de privacidad
+                    </button>
+                    .
+                  </span>
+                </label>
 
                 <button
                   type="submit"

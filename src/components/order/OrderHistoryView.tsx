@@ -289,7 +289,7 @@ export default function OrderHistoryView() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-4">
-              <Loader2 className="size-8 text-red-600 animate-spin" />
+              <Loader2 className="size-8 text-red-500 animate-spin" />
               <p className="text-sm text-neutral-500 tracking-widest">CARGANDO PEDIDOS...</p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -13,20 +13,48 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.SITE_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+const description =
+  "Tienda oficial de KOP STUDIO. Ropa urbana y streetwear de alta calidad hecha en Colombia. Colección Ascensión 2026.";
+
 export const metadata: Metadata = {
-  title: "KOP STUDIO - Streetwear Urbano",
-  description: "Tienda oficial de KOP STUDIO. Ropa urbana y streetwear de alta calidad. Colección Ascensión 2026.",
-  keywords: ["KOP STUDIO", "streetwear", "ropa urbana", "fashion", "colombia"],
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "KOP STUDIO - Streetwear Urbano",
+    template: "%s",
+  },
+  description,
+  keywords: ["KOP STUDIO", "streetwear", "ropa urbana", "fashion", "colombia", "Pasto", "Nariño"],
+  applicationName: "KOP STUDIO",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "es_CO",
+    siteName: "KOP STUDIO",
+    title: "KOP STUDIO - Streetwear Urbano",
+    description,
+    url: "/",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "KOP STUDIO - Colección Ascensión 2026" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KOP STUDIO - Streetwear Urbano",
+    description,
+    images: ["/og-image.jpg"],
+  },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon.ico", sizes: "any" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
     apple: "/apple-touch-icon.png",
   },
-  other: {
-    "mobile-web-app-capable": "yes",
-  },
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -39,6 +67,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:text-sm focus:font-bold"
+        >
+          Saltar al contenido
+        </a>
         {children}
         <Toaster
           position="top-right"

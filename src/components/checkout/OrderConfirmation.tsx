@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Truck, ShoppingBag, MessageCircle, Package, Copy, PackageCheck, Clock, Share2 } from 'lucide-react';
+import { CheckCircle2, Truck, ShoppingBag, MessageCircle, Package, Copy, PackageCheck, Clock, Share2, XCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useSiteSettings, whatsappLink } from '@/lib/siteSettings';
 
 const TRACKER_STEPS = [
   { label: 'Pedido confirmado', icon: CheckCircle2 },
@@ -34,14 +35,55 @@ function getBusinessDaysFromNow(minDays: number, maxDays: number) {
   return { from: fmt(from), to: fmt(to) };
 }
 
+interface PaymentState {
+  status: string;
+  paymentStatus: string | null;
+}
+
 export default function OrderConfirmation() {
   const navigate = useNavigationStore((s) => s.navigate);
+  // ref: our order reference; id: Wompi transaction id appended on redirect
+  const { ref: reference, id: transactionId } = useNavigationStore((s) => s.viewParams);
+  const { whatsappNumber } = useSiteSettings();
+  const supportLink = whatsappLink(whatsappNumber, 'Hola, tengo una pregunta sobre mi pedido');
   const [copied, setCopied] = useState(false);
+  const [payment, setPayment] = useState<PaymentState | null>(null);
 
-  const orderNumber = useMemo(() => {
-    const digits = Math.floor(100000 + Math.random() * 900000);
-    return `KOP-${digits}`;
-  }, []);
+  const orderNumber = reference || '—';
+
+  // Load the real order/payment status; poll briefly while Wompi confirms
+  useEffect(() => {
+    if (!reference) return;
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const params = new URLSearchParams({ ref: reference });
+        if (transactionId) params.set('id', transactionId);
+        const res = await fetch(`/api/payments/wompi/status?${params}`);
+        if (!res.ok) return;
+        const data: PaymentState = await res.json();
+        if (cancelled) return;
+        setPayment(data);
+        if (data.status === 'PENDING' && transactionId && ++attempts < 12) {
+          timer = setTimeout(load, 5000);
+        }
+      } catch {
+        /* keep last known state */
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [reference, transactionId]);
+
+  const paymentFailed = payment?.status === 'CANCELLED';
+  const paymentProcessing = !!transactionId && (!payment || payment.status === 'PENDING');
+  const isPaid = payment?.status === 'PAID';
 
   const deliveryEstimate = useMemo(() => getBusinessDaysFromNow(3, 5), []);
 
@@ -73,6 +115,28 @@ export default function OrderConfirmation() {
       }
     }
   };
+
+  if (paymentFailed) {
+    return (
+      <div className="flex items-center justify-center py-20 px-4">
+        <div className="max-w-lg mx-auto text-center space-y-6">
+          <XCircle className="size-20 text-red-500 mx-auto" />
+          <h1 className="text-2xl font-bold uppercase tracking-wider text-white">Pago no aprobado</h1>
+          <p className="text-neutral-400 text-sm leading-relaxed">
+            Tu pago para la orden <span className="font-mono text-white">{orderNumber}</span> fue rechazado o
+            cancelado, así que no se realizó ningún cobro. Puedes intentarlo de nuevo con otro método de pago.
+          </p>
+          <button
+            onClick={() => navigate('home')}
+            className="inline-flex items-center gap-2 bg-white hover:bg-neutral-200 text-black uppercase text-xs tracking-widest font-bold px-6 py-3 transition-colors btn-press"
+          >
+            <ShoppingBag className="size-4" />
+            Volver a la tienda
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex items-center justify-center py-20 px-4 overflow-hidden">
@@ -183,7 +247,15 @@ export default function OrderConfirmation() {
           className="space-y-3"
         >
           <h1 className="text-2xl font-bold uppercase tracking-wider text-white">
-            ¡PEDIDO CONFIRMADO!
+            {paymentProcessing ? (
+              <span className="inline-flex items-center gap-3">
+                <Loader2 className="size-6 animate-spin" /> PAGO EN PROCESO
+              </span>
+            ) : isPaid ? (
+              '¡PAGO CONFIRMADO!'
+            ) : (
+              '¡PEDIDO RECIBIDO!'
+            )}
           </h1>
 
           {/* Order Number with Copy Button + Tooltip */}
@@ -225,8 +297,11 @@ export default function OrderConfirmation() {
           </div>
 
           <p className="text-neutral-400 text-sm leading-relaxed">
-            Gracias por tu compra. Recibirás un email de confirmación con los
-            detalles de tu pedido.
+            {paymentProcessing
+              ? 'Estamos confirmando tu pago con Wompi. Esto puede tardar unos segundos.'
+              : isPaid
+                ? 'Gracias por tu compra. Guarda tu número de orden para rastrear tu pedido.'
+                : 'Gracias por tu compra. Te contactaremos para coordinar el pago y el envío. Guarda tu número de orden.'}
           </p>
         </motion.div>
 
@@ -358,15 +433,25 @@ export default function OrderConfirmation() {
           <p className="text-neutral-400 text-sm">
             Si tienes alguna pregunta sobre tu pedido, contáctanos por WhatsApp.
           </p>
-          <a
-            href="https://wa.me/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white uppercase text-xs tracking-widest font-bold px-6 py-3 transition-colors btn-press"
-          >
-            <MessageCircle className="size-4" fill="white" />
-            WhatsApp
-          </a>
+          {supportLink ? (
+            <a
+              href={supportLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white uppercase text-xs tracking-widest font-bold px-6 py-3 transition-colors btn-press"
+            >
+              <MessageCircle className="size-4" fill="white" />
+              WhatsApp
+            </a>
+          ) : (
+            <button
+              onClick={() => navigate('info-page', { slug: 'contacto' })}
+              className="inline-flex items-center gap-2 bg-white hover:bg-neutral-200 text-black uppercase text-xs tracking-widest font-bold px-6 py-3 transition-colors btn-press"
+            >
+              <MessageCircle className="size-4" />
+              Contáctanos
+            </button>
+          )}
         </motion.div>
       </div>
     </div>

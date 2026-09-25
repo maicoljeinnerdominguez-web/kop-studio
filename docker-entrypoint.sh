@@ -6,8 +6,12 @@ set -e
 # Docker sets HOSTNAME to container ID which breaks binding
 export HOSTNAME="0.0.0.0"
 
-# Set DATABASE_URL from Railway Postgres env vars
-export DATABASE_URL="${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}}"
+# Database URL: prefer DATABASE_URL (Railway's default Postgres reference),
+# then POSTGRES_URL, then build it from individual POSTGRES_* vars.
+case "$DATABASE_URL" in
+  postgres://*|postgresql://*) ;;
+  *) export DATABASE_URL="${POSTGRES_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}}" ;;
+esac
 
 # Sync Prisma schema to database.
 # Between identical deploys this is a no-op and won't touch data.

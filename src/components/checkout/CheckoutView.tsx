@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,19 +71,6 @@ const DEPARTMENTS = [
   'Barranquilla',
   'Cartagena',
   'Otro',
-];
-
-const PSE_BANKS = [
-  'Bancolombia',
-  'Davivienda',
-  'BBVA',
-  'Banco de Bogotá',
-  'Banco Popular',
-  'Itaú',
-  'Scotiabank Colpatria',
-  'Occidente',
-  'Banco Agrario',
-  'Av Villas',
 ];
 
 function formatPrice(amount: number) {
@@ -537,13 +524,13 @@ function SecurityBadges() {
         <div className="flex items-center gap-2.5 bg-[#111] border border-[#1a1a1a] p-3 rounded-sm">
           <Lock className="w-4 h-4 text-green-500/70 flex-shrink-0" />
           <span className="text-neutral-400 text-xs leading-relaxed">
-            Encriptación SSL de 256 bits
+            Conexión cifrada (HTTPS)
           </span>
         </div>
         <div className="flex items-center gap-2.5 bg-[#111] border border-[#1a1a1a] p-3 rounded-sm">
           <ShieldCheck className="w-4 h-4 text-green-500/70 flex-shrink-0" />
           <span className="text-neutral-400 text-xs leading-relaxed">
-            Garantía de devolución 30 días
+            Retracto 5 días hábiles · Cambios 7 días
           </span>
         </div>
       </div>
@@ -557,8 +544,8 @@ function SecurityBadges() {
 export default function CheckoutView() {
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pse' | 'nequi'>('card');
-  const [pseBank, setPseBank] = useState('');
-  const [nequiPhone, setNequiPhone] = useState('');
+  const [wompiEnabled, setWompiEnabled] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [promoApplied, setPromoApplied] = useState<PromoData | null>(null);
@@ -586,36 +573,22 @@ export default function CheckoutView() {
     },
   });
 
-  const cardForm = useForm({
-    defaultValues: {
-      cardNumber: '',
-      cardName: '',
-      cardExpiry: '',
-      cardCvc: '',
-    },
-  });
+  // Online payment (Wompi) is offered only when the store has configured it
+  useEffect(() => {
+    fetch('/api/payments/wompi/checkout')
+      .then((r) => r.json())
+      .then((d) => setWompiEnabled(!!d.enabled))
+      .catch(() => setWompiEnabled(false));
+  }, []);
 
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\D/g, '').slice(0, 16);
-    return v.replace(/(\d{4})(?=\d)/g, '$1 ');
-  };
-
-  const formatExpiry = (value: string) => {
-    const v = value.replace(/\D/g, '').slice(0, 4);
-    if (v.length >= 2) return v.slice(0, 2) + '/' + v.slice(2);
-    return v;
-  };
-
-  const handleContactNext = () => {
-    const valid = contactForm.formState.isValid;
-    contactForm.trigger();
-    if (!contactForm.formState.isValid) return;
+  // trigger() is async: wait for validation before reading the result
+  const handleContactNext = async () => {
+    if (!(await contactForm.trigger())) return;
     setStep(2);
   };
 
-  const handleAddressNext = () => {
-    addressForm.trigger();
-    if (!addressForm.formState.isValid) return;
+  const handleAddressNext = async () => {
+    if (!(await addressForm.trigger())) return;
     setStep(3);
   };
 
@@ -629,36 +602,49 @@ export default function CheckoutView() {
       toast.error('Tu carrito está vacío');
       return;
     }
+    if (!acceptPrivacy) {
+      toast.error('Debes aceptar los términos y autorizar el tratamiento de tus datos');
+      return;
+    }
 
     setSubmitting(true);
 
     try {
       const contact = contactForm.getValues();
       const address = addressForm.getValues();
-      const card = cardForm.getValues();
 
       const shippingAddress = `${address.address}, ${address.neighborhood}, ${address.city} - ${address.department}, CP: ${address.postalCode}`;
 
-      const discount = promoApplied?.discountAmount ?? 0;
-      const finalTotal = Math.max(0, cart.getTotal() - discount);
-
+      // Prices, shipping and discount are recomputed on the server.
+      // Card details are never sent to our backend.
       const orderData = {
-        userId: 'guest-checkout',
-        totalAmount: finalTotal,
         shippingAddress,
         customerEmail: contact.email,
-        notes: '',
         paymentMethod,
-        contact,
-        card: paymentMethod === 'card' ? card : null,
-        pseBank: paymentMethod === 'pse' ? pseBank : null,
-        nequiPhone: paymentMethod === 'nequi' ? nequiPhone : null,
+        promoCode: promoApplied?.code ?? null,
+        acceptPrivacy,
+        upsell: cart.isUpsellActive,
         items: cart.items.map((item) => ({
           variantId: item.variant.id,
           quantity: item.quantity,
-          price: item.product.price,
         })),
       };
+
+      if (wompiEnabled) {
+        const res = await fetch('/api/payments/wompi/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.checkoutUrl) {
+          throw new Error(data.error || 'No se pudo iniciar el pago');
+        }
+        // Stock is reserved; the cart is cleared and the customer pays on Wompi
+        cart.clearCart();
+        window.location.href = data.checkoutUrl;
+        return;
+      }
 
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -666,28 +652,24 @@ export default function CheckoutView() {
         body: JSON.stringify(orderData),
       });
 
+      const order = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error('Error al procesar el pedido');
+        throw new Error(order.error || 'Error al procesar el pedido');
       }
 
       setOrderPlaced(true);
       toast.success('¡Pedido confirmado exitosamente!');
 
-      // Fire-and-forget: increment promo code usage
-      if (promoApplied) {
-        fetch('/api/promo/use', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: promoApplied.code }),
-        });
-      }
-
       setTimeout(() => {
         cart.clearCart();
-        navigate('order-confirmation');
+        navigate('order-confirmation', order.reference ? { ref: order.reference } : {});
       }, 1500);
-    } catch {
-      toast.error('Hubo un error al procesar tu pedido. Intenta de nuevo.');
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Hubo un error al procesar tu pedido. Intenta de nuevo.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -751,8 +733,8 @@ export default function CheckoutView() {
             transition={{ delay: 1.5 }}
           >
             <p className="text-neutral-400 text-sm text-center max-w-sm">
-              Gracias por tu compra. Recibirás un email de confirmación con los
-              detalles de tu pedido.
+              Gracias por tu compra. En un momento verás tu número de orden;
+              guárdalo para rastrear tu pedido.
             </p>
           </motion.div>
           <motion.div
@@ -829,11 +811,12 @@ export default function CheckoutView() {
                   <StepHeading>Información de Contacto</StepHeading>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-firstName" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Nombre *
                       </Label>
                       <Input
                         {...contactForm.register('firstName')}
+                        id="checkout-firstName"
                         className={darkInput}
                         placeholder="Juan"
                         autoComplete="given-name"
@@ -853,11 +836,12 @@ export default function CheckoutView() {
                       </AnimatePresence>
                     </div>
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-lastName" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Apellido *
                       </Label>
                       <Input
                         {...contactForm.register('lastName')}
+                        id="checkout-lastName"
                         className={darkInput}
                         placeholder="Pérez"
                         autoComplete="family-name"
@@ -877,11 +861,12 @@ export default function CheckoutView() {
                       </AnimatePresence>
                     </div>
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-email" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Email *
                       </Label>
                       <Input
                         {...contactForm.register('email')}
+                        id="checkout-email"
                         type="email"
                         inputMode="email"
                         className={darkInput}
@@ -903,11 +888,12 @@ export default function CheckoutView() {
                       </AnimatePresence>
                     </div>
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-phone" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Teléfono *
                       </Label>
                       <Input
                         {...contactForm.register('phone')}
+                        id="checkout-phone"
                         inputMode="tel"
                         className={darkInput}
                         placeholder="+57 300 123 4567"
@@ -951,11 +937,12 @@ export default function CheckoutView() {
                   <StepHeading>Dirección de Envío</StepHeading>
                   <div className="space-y-4">
                     <div className={fieldWrapper}>
-                      <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                      <Label htmlFor="checkout-address" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                         Dirección *
                       </Label>
                       <Input
                         {...addressForm.register('address')}
+                        id="checkout-address"
                         className={darkInput}
                         placeholder="Calle 100 #15-20, Apto 302"
                         autoComplete="street-address"
@@ -976,11 +963,12 @@ export default function CheckoutView() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className={fieldWrapper}>
-                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        <Label htmlFor="checkout-city" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Ciudad *
                         </Label>
                         <Input
                           {...addressForm.register('city')}
+                          id="checkout-city"
                           className={darkInput}
                           placeholder="La Unión"
                           autoComplete="address-level2"
@@ -1000,7 +988,7 @@ export default function CheckoutView() {
                         </AnimatePresence>
                       </div>
                       <div className={fieldWrapper}>
-                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        <Label htmlFor="checkout-department" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Departamento *
                         </Label>
                         <Select
@@ -1011,7 +999,7 @@ export default function CheckoutView() {
                             })
                           }
                         >
-                          <SelectTrigger className={darkSelect}>
+                          <SelectTrigger id="checkout-department" className={darkSelect}>
                             <SelectValue placeholder="Seleccionar" />
                           </SelectTrigger>
                           <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
@@ -1039,11 +1027,12 @@ export default function CheckoutView() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className={fieldWrapper}>
-                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        <Label htmlFor="checkout-neighborhood" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Barrio *
                         </Label>
                         <Input
                           {...addressForm.register('neighborhood')}
+                          id="checkout-neighborhood"
                           className={darkInput}
                           placeholder="Chapinero"
                           autoComplete="address-level3"
@@ -1063,11 +1052,12 @@ export default function CheckoutView() {
                         </AnimatePresence>
                       </div>
                       <div className={fieldWrapper}>
-                        <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
+                        <Label htmlFor="checkout-postalCode" className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
                           Código Postal *
                         </Label>
                         <Input
                           {...addressForm.register('postalCode')}
+                          id="checkout-postalCode"
                           inputMode="numeric"
                           className={darkInput}
                           placeholder="110231"
@@ -1249,138 +1239,53 @@ export default function CheckoutView() {
                     </motion.button>
                   </div>
 
-                  {/* Payment Details */}
-                  <AnimatePresence mode="wait">
-                    {paymentMethod === 'card' && (
-                      <motion.div
-                        key="card-fields"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="space-y-4">
-                          <div className={fieldWrapper}>
-                            <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                              Número de tarjeta
-                            </Label>
-                            <Input
-                              {...cardForm.register('cardNumber')}
-                              className={darkInput}
-                              placeholder="1234 5678 9012 3456"
-                              maxLength={19}
-                              onChange={(e) => {
-                                e.target.value = formatCardNumber(e.target.value);
-                              }}
-                            />
-                          </div>
-                          <div className={fieldWrapper}>
-                            <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                              Nombre en la tarjeta
-                            </Label>
-                            <Input
-                              {...cardForm.register('cardName')}
-                              className={darkInput}
-                              placeholder="JUAN PÉREZ"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className={fieldWrapper}>
-                              <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                                Vencimiento (MM/YY)
-                              </Label>
-                              <Input
-                                {...cardForm.register('cardExpiry')}
-                                className={darkInput}
-                                placeholder="12/26"
-                                maxLength={5}
-                                onChange={(e) => {
-                                  e.target.value = formatExpiry(e.target.value);
-                                }}
-                              />
-                            </div>
-                            <div className={fieldWrapper}>
-                              <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                                CVC
-                              </Label>
-                              <Input
-                                {...cardForm.register('cardCvc')}
-                                className={darkInput}
-                                placeholder="123"
-                                maxLength={4}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
+                  {/* Payment Details: card data is never typed on our site */}
+                  <div className="bg-[#111] border border-[#1a1a1a] p-4 mb-2">
+                    {wompiEnabled ? (
+                      <p className="text-neutral-400 text-xs leading-relaxed">
+                        Al confirmar serás redirigido a{' '}
+                        <span className="text-white font-medium">Wompi (Bancolombia)</span> para pagar
+                        de forma segura con{' '}
+                        <span className="text-white font-medium">
+                          {paymentMethod === 'card' ? 'tu tarjeta' : paymentMethod === 'pse' ? 'PSE' : 'Nequi'}
+                        </span>
+                        . Nunca vemos ni guardamos los datos de tu tarjeta.
+                      </p>
+                    ) : (
+                      <p className="text-neutral-400 text-xs leading-relaxed">
+                        Tu pedido quedará <span className="text-white font-medium">reservado</span> y te
+                        contactaremos por correo o WhatsApp para coordinar el pago con{' '}
+                        <span className="text-white font-medium">
+                          {paymentMethod === 'card' ? 'tarjeta' : paymentMethod === 'pse' ? 'PSE' : 'Nequi'}
+                        </span>
+                        .
+                      </p>
                     )}
-
-                    {paymentMethod === 'pse' && (
-                      <motion.div
-                        key="pse-fields"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="bg-[#111] border border-[#1a1a1a] p-4 mb-4">
-                          <p className="text-neutral-400 text-xs leading-relaxed">
-                            Serás redirigido a <span className="text-white font-medium">PSE</span> para
-                            completar el pago de forma segura a través de tu banco.
-                          </p>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                            Banco
-                          </Label>
-                          <Select value={pseBank} onValueChange={setPseBank}>
-                            <SelectTrigger className={darkSelect}>
-                              <SelectValue placeholder="Selecciona tu banco" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a1a] border-[#262626] text-white">
-                              {PSE_BANKS.map((bank) => (
-                                <SelectItem key={bank} value={bank} className="text-white focus:bg-[#262626] focus:text-white">
-                                  {bank}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {paymentMethod === 'nequi' && (
-                      <motion.div
-                        key="nequi-fields"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="bg-[#111] border border-[#1a1a1a] p-4 mb-4">
-                          <p className="text-neutral-400 text-xs leading-relaxed">
-                            Paga con <span className="text-white font-medium">Nequi</span>. Recibirás
-                            una notificación en tu app para confirmar el pago.
-                          </p>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-neutral-400 text-xs uppercase tracking-wider font-medium">
-                            Número de celular Nequi
-                          </Label>
-                          <Input
-                            value={nequiPhone}
-                            onChange={(e) => setNequiPhone(e.target.value)}
-                            inputMode="tel"
-                            className={darkInput}
-                            placeholder="+57 300 123 4567"
-                          />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  </div>
 
                   {/* Security Badges */}
                   <SecurityBadges />
+
+                  {/* Data-processing authorization (Ley 1581) */}
+                  <label className="mt-6 flex items-start gap-3 text-xs text-neutral-300 leading-relaxed cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptPrivacy}
+                      onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                      className="mt-0.5 size-4 accent-red-600 shrink-0"
+                    />
+                    <span>
+                      Acepto los{' '}
+                      <button type="button" onClick={() => navigate('info-page', { slug: 'terminos' })} className="text-white underline underline-offset-2">
+                        términos y condiciones
+                      </button>{' '}
+                      y autorizo el tratamiento de mis datos personales para procesar y entregar mi pedido, según la{' '}
+                      <button type="button" onClick={() => navigate('info-page', { slug: 'privacidad' })} className="text-white underline underline-offset-2">
+                        política de privacidad
+                      </button>
+                      .
+                    </span>
+                  </label>
 
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row gap-3 mt-6">
@@ -1394,7 +1299,7 @@ export default function CheckoutView() {
                     </Button>
                     <Button
                       onClick={handleSubmitOrder}
-                      disabled={submitting}
+                      disabled={submitting || !acceptPrivacy}
                       className="sm:flex-[2] w-full bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-widest font-bold rounded-none h-12 disabled:opacity-50"
                     >
                       {submitting ? (
@@ -1402,6 +1307,8 @@ export default function CheckoutView() {
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           PROCESANDO...
                         </>
+                      ) : wompiEnabled ? (
+                        'IR A PAGAR'
                       ) : (
                         'CONFIRMAR PEDIDO'
                       )}

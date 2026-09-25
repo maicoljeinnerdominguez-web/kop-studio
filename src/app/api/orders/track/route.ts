@@ -1,8 +1,12 @@
 import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { rewriteOrderImagesList } from '@/lib/rewriteImages';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function GET(request: NextRequest) {
+  const limited = rateLimit(request, 'track', 20, 10 * 60 * 1000);
+  if (limited) return limited;
+
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email')?.trim().toLowerCase();
@@ -22,8 +26,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ orders: [] });
     }
 
+    // Public lookup by email: never expose address or contact data
     const orders = await db.order.findMany({
       where: { userId: user.id },
+      omit: { shippingAddress: true, customerEmail: true, userId: true },
       include: {
         items: {
           include: {

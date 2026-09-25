@@ -43,15 +43,15 @@ function StockBadge({ variants }: { variants: Product['variants'] }) {
   return <span className="text-green-500 font-semibold text-xs">En stock</span>
 }
 
-function StarRating() {
+function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5 justify-center">
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
           className="size-3.5"
-          fill={i < 4 ? '#dc2626' : 'none'}
-          stroke={i < 4 ? '#dc2626' : '#404040'}
+          fill={i < Math.round(rating) ? '#dc2626' : 'none'}
+          stroke={i < Math.round(rating) ? '#dc2626' : '#404040'}
         />
       ))}
     </div>
@@ -282,10 +282,16 @@ export default function ProductComparisonView() {
               {products.map((product) => (
                 <ComparisonCell key={product.id}>
                   {product.title ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <StarRating />
-                      <span className="text-[10px] text-neutral-500">4.0 / 5</span>
-                    </div>
+                    product.reviewCount ? (
+                      <div className="flex flex-col items-center gap-1">
+                        <StarRating rating={product.ratingAvg ?? 0} />
+                        <span className="text-[10px] text-neutral-500">
+                          {product.ratingAvg} / 5 ({product.reviewCount})
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-neutral-500">Sin reseñas</span>
+                    )
                   ) : (
                     <div className="h-5 w-16 bg-[#1a1a1a] rounded animate-pulse" />
                   )}

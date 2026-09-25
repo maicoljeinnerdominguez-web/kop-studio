@@ -217,7 +217,7 @@ export default function SizeQuizDialog({
       <DialogContent className="bg-[#0a0a0a] border-[#1a1a1a] text-white sm:max-w-md rounded-none p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-sm font-bold uppercase tracking-widest text-white flex items-center gap-2">
-            <Ruler className="size-4 text-red-600" />
+            <Ruler className="size-4 text-red-500" />
             Encuentra tu Talla
           </DialogTitle>
           <DialogDescription className="text-neutral-500 text-xs">
