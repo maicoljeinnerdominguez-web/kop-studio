@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 // GET /api/admin/promos/[id] — get a single promo code
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await context.params;
 
@@ -28,6 +32,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
 // PUT /api/admin/promos/[id] — update a promo code (partial)
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await context.params;
 
@@ -191,6 +198,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
 // DELETE /api/admin/promos/[id] — delete a promo code
 export async function DELETE(_request: NextRequest, context: RouteContext) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await context.params;
 

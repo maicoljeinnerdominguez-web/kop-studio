@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/stores/useCartStore';
@@ -18,7 +18,7 @@ const ADJACENT_CATEGORIES: Record<string, string[]> = {
   'bestsellers': ['camisetas', 'inferiores', 'accesorios'],
 };
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
@@ -27,7 +27,7 @@ const containerVariants = {
   },
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -175,6 +175,12 @@ export default function CompleteTheLook({ categorySlug, currentProductId }: Comp
                   <div
                     className="group cursor-pointer h-40 rounded-md bg-[#111] border border-[#1a1a1a] hover:border-red-600/40 transition-all duration-300 overflow-hidden"
                     onClick={() => navigate('product', { slug: product.slug })}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={product.title}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') navigate('product', { slug: product.slug })
+                    }}
                   >
                     {/* Image */}
                     <div className="relative h-[100px] overflow-hidden bg-[#0a0a0a]">

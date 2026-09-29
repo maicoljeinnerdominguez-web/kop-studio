@@ -82,7 +82,7 @@ export async function GET(
     const cacheKey = filePath;
     let cached = imageCache.get(cacheKey);
     if (cached) {
-      return new NextResponse(cached.buffer, {
+      return new NextResponse(new Uint8Array(cached.buffer), {
         headers: {
           "Content-Type": cached.contentType,
           "Cache-Control": "public, max-age=31536000, immutable",
@@ -98,11 +98,11 @@ export async function GET(
     // Store in cache (evict oldest if full)
     if (imageCache.size >= MAX_CACHE_SIZE) {
       const firstKey = imageCache.keys().next().value;
-      imageCache.delete(firstKey);
+      if (firstKey) imageCache.delete(firstKey);
     }
     imageCache.set(cacheKey, { buffer: fileBuffer, contentType, size: fileBuffer.length });
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000, immutable",

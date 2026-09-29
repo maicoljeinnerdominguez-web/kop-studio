@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useNewsletterStore } from '@/stores/useNewsletterStore';
+import { useSiteSettings, type BusinessInfo } from '@/lib/siteSettings';
 
 const SHOP_LINKS = [
   { label: 'New Merch', slug: 'new-merch' },
@@ -26,14 +27,40 @@ const INFO_LINKS = [
   { label: 'Rastrear pedido', view: 'order-tracking' as const },
 ];
 
-const PAYMENT_METHODS = ['Visa', 'Mastercard', 'PSE', 'Nequi', 'Addi'];
+const PAYMENT_METHODS = ['Visa', 'Mastercard', 'PSE', 'Nequi'];
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 
+function SocialLinks({ business, className }: { business: BusinessInfo; className: string }) {
+  const links = [
+    { href: business.instagramUrl, label: 'Instagram', Icon: Instagram },
+    { href: business.twitterUrl, label: 'X / Twitter', Icon: Twitter },
+  ].filter((l) => l.href);
+  if (links.length === 0) return null;
+  return (
+    <div className={className}>
+      {links.map(({ href, label, Icon }) => (
+        <a
+          key={label}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={label}
+          className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:scale-110 hover:text-white hover:border-white/50 transition-all duration-200"
+        >
+          <Icon className="size-4" />
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export default function Footer() {
   const navigate = useNavigationStore((s) => s.navigate);
+  const { business } = useSiteSettings();
   const triggerSuccess = useNewsletterStore((s) => s.triggerSuccess);
   const [email, setEmail] = useState('');
+  const [acceptNewsletter, setAcceptNewsletter] = useState(false);
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -76,13 +103,19 @@ export default function Footer() {
         return;
       }
 
+      if (!acceptNewsletter) {
+        setErrorMessage('Marca la casilla de autorización para suscribirte');
+        setStatus('error');
+        return;
+      }
+
       setStatus('loading');
 
       try {
         const res = await fetch('/api/newsletter', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim() }),
+          body: JSON.stringify({ email: email.trim(), acceptPrivacy: true }),
         });
 
         const data = await res.json();
@@ -99,7 +132,7 @@ export default function Footer() {
         setErrorMessage('Intenta de nuevo');
       }
     },
-    [email, triggerSuccess]
+    [email, acceptNewsletter, triggerSuccess]
   );
 
   const isDisabled = status === 'loading' || status === 'success';
@@ -134,26 +167,7 @@ export default function Footer() {
               definan tu estilo urbano sin importar las reglas.
             </p>
             {/* Social Media Icons Row */}
-            <div className="flex gap-3 pt-1 md:justify-start justify-center">
-              <a
-                href="https://instagram.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:scale-110 hover:text-white hover:border-white/50 transition-all duration-200"
-              >
-                <Instagram className="size-4" />
-              </a>
-              <a
-                href="https://twitter.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Twitter"
-                className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:scale-110 hover:text-white hover:border-white/50 transition-all duration-200"
-              >
-                <Twitter className="size-4" />
-              </a>
-            </div>
+            <SocialLinks business={business} className="flex gap-3 pt-1 md:justify-start justify-center" />
           </div>
 
           {/* Col 2: Tienda */}
@@ -255,6 +269,8 @@ export default function Footer() {
                   <div className="flex gap-2">
                     <Input
                       type="email"
+                      aria-label="Correo para el newsletter"
+                      autoComplete="email"
                       placeholder="tu@email.com"
                       value={email}
                       disabled={isDisabled}
@@ -288,9 +304,28 @@ export default function Footer() {
                       </motion.p>
                     )}
                   </AnimatePresence>
-                  <p className="text-[10px] text-neutral-600 leading-relaxed">
-                    Al suscribirte, aceptas nuestra política de privacidad.
-                  </p>
+                  <label className="flex items-start gap-2 text-[10px] text-neutral-400 leading-relaxed cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptNewsletter}
+                      onChange={(e) => {
+                        setAcceptNewsletter(e.target.checked);
+                        setErrorMessage('');
+                      }}
+                      className="mt-0.5 accent-red-600"
+                    />
+                    <span>
+                      Autorizo a KOP STUDIO a tratar mi correo para enviarme novedades y promociones, según la{' '}
+                      <button
+                        type="button"
+                        onClick={() => navigate('info-page', { slug: 'privacidad' })}
+                        className="underline underline-offset-2 hover:text-white"
+                      >
+                        política de privacidad
+                      </button>
+                      . Puedo retirarme cuando quiera.
+                    </span>
+                  </label>
                 </motion.form>
               )}
             </AnimatePresence>
@@ -318,38 +353,36 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Social Bottom Bar */}
-      <div className="border-t border-[#1a1a1a]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-center gap-4">
-          <a
-            href="https://instagram.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Instagram"
-            className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:scale-110 hover:text-white hover:border-white/50 transition-all duration-200"
-          >
-            <Instagram className="size-4" />
-          </a>
-          <a
-            href="https://twitter.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Twitter"
-            className="w-9 h-9 rounded-full border border-[#333] flex items-center justify-center text-neutral-400 hover:scale-110 hover:text-white hover:border-white/50 transition-all duration-200"
-          >
-            <Twitter className="size-4" />
-          </a>
-        </div>
-      </div>
-
       {/* Divider + Powered By + Copyright */}
       <div className="border-t border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-2">
-          <p className="text-center text-neutral-600 text-xs tracking-wide">
-            Diseñado con pasión en La Unión, Nariño, Colombia 🇨🇴
+          {/* Seller identification (Ley 1480, art. 50) — filled in Admin → Configuración */}
+          {(business.name || business.nit || business.address || business.email) && (
+            <p className="text-center text-neutral-400 text-xs tracking-wide">
+              {[
+                business.name,
+                business.nit && `NIT/CC ${business.nit}`,
+                business.address,
+                business.email,
+                business.phone,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
+          <p className="text-center text-neutral-400 text-xs tracking-wide">
+            Diseñado con pasión en La Unión, Nariño, Colombia 🇨🇴 ·{' '}
+            <a
+              href="https://www.sic.gov.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-white"
+            >
+              Superintendencia de Industria y Comercio
+            </a>
           </p>
-          <p className="text-center text-neutral-600 text-xs tracking-wide">
-            © 2026 KOP STUDIO. Todos los derechos reservados.
+          <p className="text-center text-neutral-400 text-xs tracking-wide">
+            © {new Date().getFullYear()} KOP STUDIO. Todos los derechos reservados.
           </p>
         </div>
       </div>

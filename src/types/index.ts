@@ -38,6 +38,9 @@ export interface Product {
   garmentDetails?: string | null;
   washGuide?: string | null;
   createdAt: string;
+  /** Real review aggregates from the API (0 when there are no reviews) */
+  ratingAvg?: number;
+  reviewCount?: number;
 }
 
 export interface ProductVariant {

@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { rewriteImageUrls } from "@/lib/rewriteImages";
+import { requireAdmin } from "@/lib/auth";
+import { withRatings } from "@/lib/ratings";
 
 export async function GET(
   _request: Request,
@@ -20,7 +22,8 @@ export async function GET(
     if (!product) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
-    const safe = { ...product, variants: product.variants || [], images: product.images || [] };
+    const [rated] = await withRatings([product]);
+    const safe = { ...rated, variants: product.variants || [], images: product.images || [] };
     return NextResponse.json(rewriteImageUrls(safe as unknown as Record<string, unknown>));
   } catch (error) {
     console.error("GET /api/products/[id] error:", error);
@@ -32,6 +35,9 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -126,6 +132,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     await db.product.delete({ where: { id } });

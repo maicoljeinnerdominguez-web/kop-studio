@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -14,6 +15,9 @@ function generateSlug(name: string): string {
 
 // GET /api/admin/categories/[id] — get a single category
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await context.params;
 
@@ -43,6 +47,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
 // PUT /api/admin/categories/[id] — update a category
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await context.params;
 
@@ -176,6 +183,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
 // DELETE /api/admin/categories/[id] — delete a category
 export async function DELETE(_request: NextRequest, context: RouteContext) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await context.params;
 

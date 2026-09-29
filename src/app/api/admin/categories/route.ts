@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 
 function generateSlug(name: string): string {
   return name
@@ -12,6 +13,9 @@ function generateSlug(name: string): string {
 
 // GET /api/admin/categories — list all categories with product count
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const categories = await db.category.findMany({
       include: {
@@ -32,6 +36,9 @@ export async function GET() {
 
 // POST /api/admin/categories — create a new category
 export async function POST(request: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const body = await request.json();
 

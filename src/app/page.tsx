@@ -1,162 +1,52 @@
-'use client';
+import type { Metadata } from "next";
+import { db } from "@/lib/db";
+import { rewriteProductImages } from "@/lib/rewriteImages";
+import App from "@/components/App";
 
-import { useNavigationStore } from '@/stores/useNavigationStore';
-import { AnimatePresence, motion } from 'framer-motion';
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { MessageCircle, ArrowUp } from 'lucide-react';
-import AnnouncementBar from '@/components/layout/AnnouncementBar';
-import PromoBanner from '@/components/promo/PromoBanner';
-import Header from '@/components/layout/Header';
-import CartDrawer from '@/components/layout/CartDrawer';
-import Footer from '@/components/layout/Footer';
-import NewsletterSuccess from '@/components/layout/NewsletterSuccess';
-import SearchCommandPalette from '@/components/search/SearchCommandPalette';
-import SocialProofNotification from '@/components/social/SocialProofNotification';
-import CompareFloatingBar from '@/components/product/CompareFloatingBar';
-import AbandonedCartNotification from '@/components/cart/AbandonedCartNotification';
-import UserAuthDialog from '@/components/layout/UserAuthDialog';
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-const HomeView = lazy(() => import('@/components/home/HomeView'));
-const CollectionView = lazy(() => import('@/components/product/CollectionView'));
-const ProductDetailView = lazy(() => import('@/components/product/ProductDetailView'));
-const CheckoutView = lazy(() => import('@/components/checkout/CheckoutView'));
-const OrderConfirmation = lazy(() => import('@/components/checkout/OrderConfirmation'));
-const AdminDashboard = lazy(() => import('@/components/admin/AdminDashboard'));
-const AdminProducts = lazy(() => import('@/components/admin/AdminProducts'));
-const AdminProductForm = lazy(() => import('@/components/admin/AdminProductForm'));
-const AdminPromos = lazy(() => import('@/components/admin/AdminPromos'));
-const AdminOrders = lazy(() => import('@/components/admin/AdminOrders'));
-const AdminCategories = lazy(() => import('@/components/admin/AdminCategories'));
-const AdminSettings = lazy(() => import('@/components/admin/AdminSettings'));
-const OrderTrackingView = lazy(() => import('@/components/order/OrderTrackingView'));
-const OrderHistoryView = lazy(() => import('@/components/order/OrderHistoryView'));
-const WishlistView = lazy(() => import('@/components/wishlist/WishlistView'));
-const ProductComparisonView = lazy(() => import('@/components/product/ProductComparisonView'));
-const InfoPageView = lazy(() => import('@/components/info/InfoPageView'));
+// The storefront is a single client-side app; this server wrapper only adds
+// per-product metadata so shared links (/?view=product&slug=...) show the
+// product's title, description and image in WhatsApp, Instagram and Google.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const slug = typeof params.slug === "string" ? params.slug : null;
+  if (params.view !== "product" || !slug) return {};
 
-function LoadingFallback() {
-  return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-neutral-500 tracking-widest">CARGANDO...</p>
-      </div>
-    </div>
-  );
-}
+  try {
+    const product = await db.product.findUnique({
+      where: { slug },
+      include: { images: { orderBy: { isPrimary: "desc" }, take: 1 } },
+    });
+    if (!product || !product.isActive) return {};
 
-function ViewRouter() {
-  const { currentView, viewParams } = useNavigationStore();
+    const [withImages] = rewriteProductImages([product as unknown as Record<string, unknown>]);
+    const image = (withImages.images as { url: string }[] | undefined)?.[0]?.url;
+    const price = `$${Math.round(product.price).toLocaleString("es-CO")} COP`;
+    const description = `${price} · ${product.description}`.slice(0, 200);
+    const url = `/?view=product&slug=${encodeURIComponent(product.slug)}`;
 
-  const views: Record<string, React.ReactNode> = {
-    home: <HomeView />,
-    collection: <CollectionView />,
-    product: <ProductDetailView />,
-    checkout: <CheckoutView />,
-    'order-confirmation': <OrderConfirmation />,
-    'admin-dashboard': <AdminDashboard />,
-    'admin-products': <AdminProducts />,
-    'admin-products-new': <AdminProductForm />,
-    'admin-products-edit': <AdminProductForm />,
-    'admin-promos': <AdminPromos />,
-    'admin-orders': <AdminOrders />,
-    'admin-categories': <AdminCategories />,
-    'admin-settings': <AdminSettings />,
-    wishlist: <WishlistView />,
-    'order-tracking': <OrderTrackingView />,
-    'order-history': <OrderHistoryView />,
-    'product-comparison': <ProductComparisonView />,
-    'info-page': <InfoPageView />,
-  };
-
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={currentView + JSON.stringify(viewParams)}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -12 }}
-        transition={{ duration: 0.25, ease: 'easeInOut' }}
-      >
-        <Suspense fallback={<LoadingFallback />}>
-          {views[currentView] || <HomeView />}
-        </Suspense>
-      </motion.div>
-    </AnimatePresence>
-  );
+    return {
+      title: `${product.title} | KOP STUDIO`,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        title: product.title,
+        description,
+        url,
+        type: "website",
+        images: image && !image.startsWith("data:") ? [{ url: image, alt: product.title }] : undefined,
+      },
+    };
+  } catch {
+    return {};
+  }
 }
 
 export default function Page() {
-  const { currentView } = useNavigationStore();
-  const isAdmin = currentView.startsWith('admin');
-  const [showBackToTop, setShowBackToTop] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 400);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      {!isAdmin && (
-        <>
-          <AnnouncementBar />
-          <PromoBanner />
-          <Header />
-        </>
-      )}
-      <main className="flex-1">
-        <ViewRouter />
-      </main>
-      {!isAdmin && <Footer />}
-      {!isAdmin && <NewsletterSuccess />}
-      <CartDrawer />
-      <SearchCommandPalette />
-      <UserAuthDialog />
-
-      {/* Social Proof Notification */}
-      {!isAdmin && <SocialProofNotification />}
-
-      {/* Compare Floating Bar */}
-      {!isAdmin && <CompareFloatingBar />}
-
-      {/* Abandoned Cart Notification */}
-      {!isAdmin && <AbandonedCartNotification />}
-
-      {/* Floating WhatsApp - only on non-admin views */}
-      {!isAdmin && (
-        <a
-          href="https://wa.me/"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Contactar por WhatsApp"
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-all hover:scale-110"
-        >
-          <MessageCircle className="size-6 text-white" fill="white" />
-        </a>
-      )}
-
-      {/* Back to Top - only on non-admin views */}
-      {!isAdmin && (
-        <AnimatePresence>
-          {showBackToTop && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              aria-label="Volver arriba"
-              className="fixed bottom-6 left-6 z-50 w-11 h-11 bg-[#1a1a1a] border border-[#333] hover:bg-white hover:text-black text-white rounded-full flex items-center justify-center transition-colors duration-200"
-            >
-              <ArrowUp className="size-4" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-      )}
-    </div>
-  );
+  return <App />;
 }

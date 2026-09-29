@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 
 // In-memory cache for settings (refreshed on update)
 let settingsCache: Record<string, string> | null = null;
@@ -21,19 +22,20 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
     "Secar a la sombra",
     "Planchar a baja temperatura",
   ]),
+  whatsapp_number: "",
+  // Business identification (Ley 1480 art. 50 / Ley 1581) — shown in footer and legal pages
+  business_name: "",
+  business_nit: "",
+  business_address: "",
+  business_email: "",
+  business_phone: "",
+  business_hours: "",
+  instagram_url: "",
+  twitter_url: "",
   social_proof_enabled: "true",
   social_proof_initial_delay: "15000",
   social_proof_interval_min: "35000",
   social_proof_interval_max: "60000",
-  social_proof_messages: JSON.stringify([
-    { text: "alguien en Pasto", action: "acaba de comprar", product: "Sivere Hoodie - Mandala Sacred", time: "hace 2 min" },
-    { text: "personas viendo", product: "Ascensión Tee - Angel Wings", count: 3 },
-    { text: "alguien en Tumaco", action: "agregó al carrito", product: "Puffer Bag Urban - Chain Edition", time: "hace 5 min" },
-    { text: "personas viendo", product: "72+1 Cargo Pants - Tactical Black", count: 2 },
-    { text: "alguien en Ipiales", action: "compró", product: "Memento Tee - Gothic Cross", time: "hace 1 min" },
-    { text: "personas viendo", product: "Basic Essential Tee - Midnight", count: 4 },
-    { text: "alguien en La Unión", action: "acaba de comprar", product: "Fiat Lux Tee - Oración", time: "hace 3 min" },
-  ]),
 };
 
 async function getSettingsFromDB(): Promise<Record<string, string>> {
@@ -71,6 +73,9 @@ export async function GET() {
 
 // PUT /api/settings — admin only, bulk update
 export async function PUT(request: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const updates: Record<string, string> = body;
@@ -108,6 +113,9 @@ export async function PUT(request: Request) {
 
 // POST /api/settings/reset — reset to defaults
 export async function POST(request: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     if (body?._action !== "reset") {

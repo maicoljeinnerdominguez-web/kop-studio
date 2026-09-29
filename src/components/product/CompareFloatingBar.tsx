@@ -66,7 +66,7 @@ export default function CompareFloatingBar() {
                     {thumbnails[id] ? (
                       <img
                         src={thumbnails[id]}
-                        alt=""
+                        alt="Producto en comparación"
                         className="w-full h-full object-cover"
                         loading="lazy" decoding="async"
                       />

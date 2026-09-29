@@ -268,7 +268,7 @@ export default function CartDrawer() {
                     className="mx-5 mb-3 overflow-hidden"
                   >
                     <div className="border-2 border-dashed border-red-600/50 bg-red-600/5 rounded-lg p-3 flex items-center gap-3 skeleton-shine">
-                      <Package className="size-5 text-red-600 flex-shrink-0" />
+                      <Package className="size-5 text-red-500 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-white text-xs font-semibold leading-tight">
                           Lleva un Puffer Bag Urban por solo{' '}

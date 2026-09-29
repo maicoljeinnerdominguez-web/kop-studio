@@ -13,18 +13,6 @@ import { useNavigationStore } from '@/stores/useNavigationStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
 import type { Product, ProductVariant } from '@/types'
 
-function getProductRating(productId: string): { rating: number; count: number } {
-  let hash = 0
-  for (let i = 0; i < productId.length; i++) {
-    hash = ((hash << 5) - hash) + productId.charCodeAt(i)
-    hash |= 0
-  }
-  const absHash = Math.abs(hash)
-  const rating = 4 + (absHash % 10) / 10
-  const count = 5 + (absHash % 25)
-  return { rating: Math.round(rating * 10) / 10, count }
-}
-
 interface ProductQuickViewProps {
   product: Product | null
   open: boolean
@@ -99,7 +87,8 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
   const wishlisted = isInWishlist(product.id)
 
   // Rating
-  const { rating: productRating, count: reviewCount } = getProductRating(product.id)
+  const productRating = product.ratingAvg ?? 0
+  const reviewCount = product.reviewCount ?? 0
 
   const handleSizeSelect = (size: string) => {
     setSelectedSize(size)
@@ -186,8 +175,9 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
               </p>
             )}
 
-            {/* Star Rating */}
-            <div className="flex items-center gap-1 mt-2">
+            {/* Star Rating (real reviews only) */}
+            {reviewCount > 0 && (
+            <div className="flex items-center gap-1 mt-2" aria-label={`${productRating} de 5 estrellas, ${reviewCount} reseñas`}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
@@ -203,6 +193,7 @@ export default function ProductQuickView({ product, open, onOpenChange }: Produc
                 {productRating} ({reviewCount})
               </span>
             </div>
+            )}
 
             {/* Stock Indicator */}
             <div className="flex items-center gap-1.5 mt-3">

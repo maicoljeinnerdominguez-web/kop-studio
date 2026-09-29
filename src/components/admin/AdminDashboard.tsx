@@ -569,6 +569,10 @@ export default function AdminDashboard() {
                   <div
                     key={order.id}
                     onClick={() => toggleExpand(order.id)}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={expandedOrders.has(order.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(order.id); } }}
                     className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 rounded-lg mb-3 cursor-pointer hover:bg-[#111] transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">

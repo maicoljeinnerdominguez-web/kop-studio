@@ -46,7 +46,8 @@ const productSchema = z.object({
   isBestseller: z.boolean().default(false),
 });
 
-type ProductFormData = z.infer<typeof productSchema>;
+type ProductFormInput = z.input<typeof productSchema>;
+type ProductFormData = z.output<typeof productSchema>;
 
 interface ImageRow {
   url: string;
@@ -86,7 +87,7 @@ export default function AdminProductForm() {
   const [garmentDetails, setGarmentDetails] = useState<string[]>([]);
   const [washGuide, setWashGuide] = useState<string[]>([]);
 
-  const form = useForm<ProductFormData>({
+  const form = useForm<ProductFormInput, unknown, ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       title: '',
@@ -168,9 +169,6 @@ export default function AdminProductForm() {
       try {
         if (product.washGuide) setWashGuide(JSON.parse(product.washGuide));
       } catch { /* ignore */ }
-      if (product.materialTags || product.materialCare || product.garmentDetails || product.washGuide) {
-        setCareLabelsOpen(true);
-      }
     } catch {
       toast.error('Error al cargar producto');
       navigate('admin-products');
@@ -538,7 +536,11 @@ export default function AdminProductForm() {
                       <div className="flex-shrink-0">
                         {img.url ? (
                           <div className="relative w-20 h-20 bg-[#1a1a1a] border border-[#262626] group cursor-pointer"
-                            onClick={() => handleFileSelect(index)}>
+                            onClick={() => handleFileSelect(index)}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Cambiar imagen"
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleFileSelect(index); } }}>
                             <img
                               src={img.url}
                               alt={img.altText || 'Preview'}

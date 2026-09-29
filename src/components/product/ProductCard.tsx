@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, type Variants } from 'framer-motion'
 import { toast } from 'sonner'
 import { Heart, ShoppingBag, Eye, Zap } from 'lucide-react'
 import { useCartStore } from '@/stores/useCartStore'
@@ -11,24 +11,12 @@ import ProductQuickView from '@/components/product/ProductQuickView'
 import QuickBuyModal from '@/components/product/QuickBuyModal'
 import type { Product } from '@/types'
 
-function getProductRating(productId: string): { rating: number; count: number } {
-  let hash = 0
-  for (let i = 0; i < productId.length; i++) {
-    hash = ((hash << 5) - hash) + productId.charCodeAt(i)
-    hash |= 0
-  }
-  const absHash = Math.abs(hash)
-  const rating = 4 + (absHash % 10) / 10
-  const count = 5 + (absHash % 25)
-  return { rating: Math.round(rating * 10) / 10, count }
-}
-
 interface ProductCardProps {
   product: Product
   index?: number
 }
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1,
@@ -98,7 +86,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const stockStatus = totalStock === 0 ? 'out' : totalStock < 5 ? 'low' : 'in'
   const stockDotColor = stockStatus === 'in' ? 'bg-green-500' : stockStatus === 'low' ? 'bg-yellow-500' : 'bg-red-500'
 
-  const { rating: productRating, count: reviewCount } = getProductRating(product.id)
+  // Real review data only; nothing is shown until the product has reviews
+  const productRating = product.ratingAvg ?? 0
+  const reviewCount = product.reviewCount ?? 0
 
   const primaryImage = (product.images || []).find((img) => img.isPrimary) || (product.images || [])[0]
   const secondaryImage = (product.images || []).find((img) => !img.isPrimary) || (product.images || [])[1]
@@ -294,7 +284,8 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           <p className="text-xs text-neutral-500 mt-0.5">
             {product.category?.name || ''}
           </p>
-          <div className="flex items-center gap-1 mt-1">
+          {reviewCount > 0 && (
+          <div className="flex items-center gap-1 mt-1" aria-label={`${productRating} de 5 estrellas, ${reviewCount} reseñas`}>
             {[1, 2, 3, 4, 5].map((star) => (
               <svg key={star} className={`size-3 ${star <= Math.round(productRating) ? 'text-yellow-500' : 'text-neutral-700'}`} viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -302,6 +293,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             ))}
             <span className="text-[10px] text-neutral-500 ml-0.5">({reviewCount})</span>
           </div>
+          )}
           <div className="flex items-center gap-2 mt-1.5">
             <span className="text-base font-bold text-white">
               {formatPrice(product.price)}

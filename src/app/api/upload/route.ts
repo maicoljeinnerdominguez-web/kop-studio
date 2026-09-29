@@ -2,12 +2,21 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { requireAdmin } from "@/lib/auth";
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const EXT_BY_TYPE: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "image/gif": ".gif",
+};
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "products");
 
 export async function POST(request: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -16,7 +25,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No se envió ningún archivo" }, { status: 400 });
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const ext = EXT_BY_TYPE[file.type];
+    if (!ext) {
       return NextResponse.json(
         { error: "Tipo de archivo no permitido. Usa JPG, PNG, WebP o GIF" },
         { status: 400 }
@@ -33,8 +43,7 @@ export async function POST(request: Request) {
     // Ensure upload directory exists
     await mkdir(UPLOAD_DIR, { recursive: true });
 
-    // Generate unique filename preserving extension
-    const ext = path.extname(file.name) || ".png";
+    // Extension comes from the validated MIME type, never from the client filename
     const filename = `${crypto.randomUUID()}${ext}`;
     const filePath = path.join(UPLOAD_DIR, filename);
 

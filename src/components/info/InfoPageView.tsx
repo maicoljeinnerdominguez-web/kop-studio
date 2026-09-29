@@ -1,9 +1,13 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useSiteSettings, whatsappLink } from '@/lib/siteSettings';
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '@/lib/pricing';
+
+const formatCOP = (n: number) => `$${n.toLocaleString('es-CO')}`;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,13 +35,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
-  Loader2,
   ChevronRight,
   Phone,
 } from 'lucide-react';
 
 /* ─── animation helpers ─── */
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1,
@@ -120,26 +123,22 @@ function EnviosContent() {
       icon: CreditCard,
       title: 'Costos de envío',
       body: (
+        // Same values the checkout charges (src/lib/pricing.ts)
         <div className="space-y-2">
           <div className="flex justify-between items-center bg-[#1a1a1a] border border-[#222] px-4 py-2.5">
-            <span className="text-neutral-300">Bogotá, Medellín, Cali, Barranquilla</span>
-            <span className="text-white font-semibold">$12.000 COP</span>
-          </div>
-          <div className="flex justify-between items-center bg-[#1a1a1a] border border-[#222] px-4 py-2.5">
-            <span className="text-neutral-300">Otras ciudades principales</span>
-            <span className="text-white font-semibold">$15.000 COP</span>
-          </div>
-          <div className="flex justify-between items-center bg-[#1a1a1a] border border-[#222] px-4 py-2.5">
-            <span className="text-neutral-300">Zonas rurales</span>
-            <span className="text-white font-semibold">$22.000 COP</span>
+            <span className="text-neutral-300">Envío a todo Colombia</span>
+            <span className="text-white font-semibold">{formatCOP(SHIPPING_COST)} COP</span>
           </div>
           <div className="flex justify-between items-center bg-red-600/10 border border-red-600/30 px-4 py-2.5 mt-3">
             <span className="text-red-400 font-medium">
               <CheckCircle2 className="inline size-3.5 mr-1.5 -mt-0.5" />
               Envío gratis
             </span>
-            <span className="text-white font-bold">En compras +$250.000 COP</span>
+            <span className="text-white font-bold">En compras desde {formatCOP(FREE_SHIPPING_THRESHOLD)} COP</span>
           </div>
+          <p className="text-xs text-neutral-400 pt-1">
+            El costo de envío se muestra siempre antes de pagar, en el resumen de tu pedido.
+          </p>
         </div>
       ),
     },
@@ -180,9 +179,9 @@ function EnviosContent() {
       title: 'Seguimiento de tu pedido',
       body: (
         <p>
-          Cada pedido incluye un <span className="text-white font-medium">número de guía</span>{' '}
-          que podrás usar para rastrear tu paquete en tiempo real a través del sitio web de la
-          transportadora. También puedes usar nuestra herramienta de{' '}
+          Cuando despachemos tu pedido te compartiremos el{' '}
+          <span className="text-white font-medium">número de guía</span> para que lo rastrees en
+          el sitio web de la transportadora. También puedes consultar el estado con nuestra herramienta de{' '}
           <button
             onClick={() => useNavigationStore.getState().navigate('order-tracking')}
             className="text-red-400 hover:text-red-300 underline underline-offset-2"
@@ -228,8 +227,24 @@ function DevolucionesContent() {
       body: (
         <p>
           Tienes un plazo de{' '}
-          <span className="text-white font-bold">7 días calendario</span> contados desde la
-          fecha de recepción de tu pedido para solicitar un cambio o devolución.
+          <span className="text-white font-bold">7 días calendario</span> (nunca menos de 5 días
+          hábiles) contados desde la fecha de recepción de tu pedido para solicitar un cambio o
+          devolución.
+        </p>
+      ),
+    },
+    {
+      icon: Shield,
+      title: 'Derecho de retracto (Ley 1480, art. 47)',
+      body: (
+        <p>
+          Como tu compra fue en línea, puedes <span className="text-white font-medium">retractarte
+          dentro de los 5 días hábiles</span> siguientes a la entrega, sin tener que explicar el
+          motivo, <span className="text-white">incluso si el producto estaba en promoción</span>. El
+          producto debe devolverse en las mismas condiciones en que lo recibiste y el costo del
+          transporte de la devolución corre por tu cuenta. Te reembolsamos el valor pagado en un
+          plazo máximo de <span className="text-white">30 días calendario</span>. No aplica para
+          productos personalizados ni prendas de uso íntimo.
         </p>
       ),
     },
@@ -264,7 +279,7 @@ function DevolucionesContent() {
           </li>
           <li className="flex items-start gap-2">
             <span className="text-red-400 font-bold shrink-0">✕</span>
-            <span>Artículos en promoción o liquidación (salvo defecto de fábrica)</span>
+            <span>Cambios por talla o gusto en artículos en liquidación (sí aplican el derecho de retracto y la garantía)</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-red-400 font-bold shrink-0">✕</span>
@@ -312,10 +327,24 @@ function DevolucionesContent() {
       title: 'Defectos de fábrica',
       body: (
         <p>
-          Todos nuestros productos cuentan con una <span className="text-white font-bold">garantía de 30 días</span>{' '}
-          por defectos de fábrica. En caso de presentar un defecto, realizaremos el cambio{' '}
+          Todos nuestros productos cuentan con una <span className="text-white font-medium">garantía legal de 30 días</span>{' '}
+          por defectos de fabricación, conforme a la Ley 1480 de 2011. En caso de presentar un defecto, realizaremos el cambio{' '}
           <span className="text-white font-medium">sin costo adicional</span> (KOP STUDIO asume el envío de ida y
           vuelta).
+        </p>
+      ),
+    },
+    {
+      icon: CreditCard,
+      title: 'Reversión del pago (Ley 1480, art. 51)',
+      body: (
+        <p>
+          Si pagaste con tarjeta, PSE u otro medio electrónico y fuiste víctima de fraude, la
+          operación no fue solicitada, no recibiste el producto o este no corresponde a lo que
+          compraste o es defectuoso, puedes solicitar la{' '}
+          <span className="text-white font-medium">reversión del pago</span> dentro de los 5 días
+          hábiles siguientes a la fecha en que conociste el hecho o recibiste el producto. Debes
+          informarlo a KOP STUDIO y a la entidad emisora de tu medio de pago.
         </p>
       ),
     },
@@ -345,16 +374,19 @@ function DevolucionesContent() {
 }
 
 function TerminosContent() {
+  const { business } = useSiteSettings();
+  const seller = business.name || 'KOP STUDIO';
+  const contactEmail = business.email || 'el correo publicado en la sección de Contacto';
   const sections = [
     {
       title: '1. Aceptación de los términos',
       body: (
         <p>
-          Al acceder, navegar y/o realizar compras en <span className="text-white font-medium">kopstudio.com</span>{' '}
-          (en adelante, &ldquo;la Plataforma&rdquo;), usted acepta de manera integral los presentes Términos y
-          Condiciones. Si no está de acuerdo con alguno de estos términos, le rogamos abstenerse de utilizar
-          nuestros servicios. KOP STUDIO se reserva el derecho de modificar estos términos en cualquier momento
-          sin previo aviso.
+          Al acceder, navegar y/o realizar compras en esta tienda en línea (en adelante, &ldquo;la
+          Plataforma&rdquo;), operada por <span className="text-white font-medium">{seller}</span>
+          {business.nit && <> (NIT/CC {business.nit})</>}, usted acepta los presentes Términos y
+          Condiciones. Si no está de acuerdo con alguno de ellos, le pedimos abstenerse de utilizar
+          nuestros servicios.
         </p>
       ),
     },
@@ -374,8 +406,8 @@ function TerminosContent() {
       body: (
         <>
           <p>
-            Para realizar compras es necesario crear una cuenta proporcionando información veraz y completa:
-            nombre, correo electrónico, número telefónico y dirección de envío.
+            Puedes comprar como invitado o crear una cuenta. En ambos casos debes proporcionar información
+            veraz y completa: nombre, correo electrónico, número telefónico y dirección de envío.
           </p>
           <p>
             El usuario es responsable de mantener la confidencialidad de sus credenciales de acceso. KOP STUDIO
@@ -390,14 +422,16 @@ function TerminosContent() {
       body: (
         <>
           <p>
-            Todos los precios están expresados en <span className="text-white font-medium">Pesos Colombianos (COP)</span> e
-            incluyen IVA. Los precios pueden modificarse sin previo aviso, sin embargo, el precio vigente al
-            momento de la compra será el aplicable.
+            Todos los precios están expresados en <span className="text-white font-medium">Pesos Colombianos (COP)</span> y
+            son el valor total a pagar por el producto, incluidos los impuestos aplicables. El costo del
+            envío se informa por separado antes de pagar. El precio que aplica es el vigente al momento de
+            la compra.
           </p>
           <p>
-            Aceptamos los siguientes medios de pago: <span className="text-white font-medium">Wompi, PSE, Nequi</span> y{' '}
-            <span className="text-white font-medium">tarjetas de crédito y débito</span> (Visa, Mastercard). Todas las
-            transacciones son procesadas de forma segura a través de pasarelas de pago certificadas.
+            Los pagos en línea se procesan a través de <span className="text-white font-medium">Wompi</span>{' '}
+            (tarjetas de crédito y débito, PSE, Nequi). No vemos ni almacenamos los datos de tu tarjeta.
+            Cuando el pago en línea no está disponible, el pedido queda reservado y te contactamos para
+            coordinar el pago.
           </p>
         </>
       ),
@@ -406,10 +440,11 @@ function TerminosContent() {
       title: '5. Proceso de compra y confirmación',
       body: (
         <p>
-          Una vez completado el proceso de compra, recibirás un correo electrónico de confirmación con el
-          resumen de tu pedido y el número de guía de envío cuando el pedido sea despachado. La confirmación
-          del pedido no garantiza la disponibilidad del producto; en caso de agotamiento, nos comunicaremos
-          contigo para ofrecer alternativas o reembolso.
+          Al completar la compra verás en pantalla tu número de orden, con el que puedes consultar su
+          estado. Las unidades se reservan en el momento de crear el pedido, por lo que solo se venden
+          productos con existencias. Cuando el pedido sea despachado te compartiremos el número de guía
+          de la transportadora. Si el pago en línea es rechazado, el pedido se cancela automáticamente
+          y no se realiza ningún cobro.
         </p>
       ),
     },
@@ -434,10 +469,10 @@ function TerminosContent() {
       title: '7. Limitación de responsabilidad',
       body: (
         <p>
-          KOP STUDIO no será responsable por daños indirectos, incidentales, especiales o consecuentes
-          derivados del uso de la Plataforma. Nuestra responsabilidad total en relación con cualquier
-          producto adquirido no excederá el monto pagado por dicho producto. No garantizamos que la
-          Plataforma esté disponible de forma ininterrumpida o libre de errores.
+          Hacemos lo posible para que la Plataforma esté disponible y sin errores, pero no podemos
+          garantizar que funcione de forma ininterrumpida. Nada de lo dispuesto en estos términos
+          limita los derechos que te reconoce la Ley 1480 de 2011, incluidos la garantía legal, el
+          derecho de retracto y la reversión del pago.
         </p>
       ),
     },
@@ -445,10 +480,9 @@ function TerminosContent() {
       title: '8. Modificaciones a los términos',
       body: (
         <p>
-          KOP STUDIO se reserva el derecho de actualizar, modificar o eliminar cualquier parte de estos
-          términos en cualquier momento. Los cambios entrarán en vigencia a partir de su publicación en la
-          Plataforma. El uso continuado de la Plataforma después de la publicación de cambios constituye
-          la aceptación de dichos cambios.
+          Podemos actualizar estos términos. Los cambios rigen desde su publicación en esta página y{' '}
+          <span className="text-white">no afectan las compras ya realizadas</span>, que se rigen por los
+          términos vigentes al momento de la compra.
         </p>
       ),
     },
@@ -464,11 +498,17 @@ function TerminosContent() {
       ),
     },
     {
-      title: '10. Contacto',
+      title: '10. Identificación del vendedor y PQR',
       body: (
         <p>
-          Para cualquier consulta relacionada con estos Términos y Condiciones, puedes contactarnos a
-          través de: <span className="text-white font-medium">contacto@kopstudio.com</span>
+          Vendedor: <span className="text-white font-medium">{seller}</span>
+          {business.nit && <>, NIT/CC {business.nit}</>}
+          {business.address && <>, {business.address}</>}. Para peticiones, quejas o reclamos escríbenos a{' '}
+          <span className="text-white font-medium">{contactEmail}</span>
+          {business.phone && <> o llámanos al {business.phone}</>}. También puedes acudir a la{' '}
+          <a href="https://www.sic.gov.co" target="_blank" rel="noopener noreferrer" className="text-red-400 underline underline-offset-2">
+            Superintendencia de Industria y Comercio
+          </a>.
         </p>
       ),
     },
@@ -487,145 +527,155 @@ function TerminosContent() {
   );
 }
 
+const PRIVACY_LAST_UPDATED = '25 de septiembre de 2026';
+
+function BulletList({ items }: { items: React.ReactNode[] }) {
+  return (
+    <ul className="list-none space-y-1.5 mt-2">
+      {items.map((d, i) => (
+        <li key={i} className="flex items-start gap-2">
+          <ChevronRight className="size-3.5 text-red-500 mt-0.5 shrink-0" />
+          <span>{d}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Política de Tratamiento de Datos Personales (Ley 1581 de 2012, Decreto 1377 de 2013).
+// Must describe what the site actually does — update it if data flows change.
 function PrivacidadContent() {
+  const { business } = useSiteSettings();
+  const controller = business.name || 'KOP STUDIO';
+  const contactEmail = business.email || 'el correo publicado en la sección de Contacto';
   const sections = [
     {
-      title: '1. Datos recopilados',
-      body: (
-        <>
-          <p>Recopilamos los siguientes datos personales para prestar nuestros servicios:</p>
-          <ul className="list-none space-y-1.5 mt-2">
-            {['Nombre completo', 'Correo electrónico', 'Dirección de envío', 'Número telefónico', 'Datos de pago (procesados por terceros certificados)'].map((d) => (
-              <li key={d} className="flex items-start gap-2">
-                <ChevronRight className="size-3.5 text-red-500 mt-0.5 shrink-0" />
-                <span>{d}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      ),
-    },
-    {
-      title: '2. Finalidad del tratamiento',
-      body: (
-        <>
-          <p>Tus datos son utilizados para:</p>
-          <ul className="list-none space-y-1.5 mt-2">
-            {['Procesar y gestionar tus pedidos', 'Realizar envíos y entregas', 'Enviar notificaciones sobre tu compra', 'Enviar comunicaciones de marketing (solo con tu consentimiento)', 'Mejorar nuestros productos y servicios', 'Cumplir con obligaciones legales'].map((d) => (
-              <li key={d} className="flex items-start gap-2">
-                <ChevronRight className="size-3.5 text-red-500 mt-0.5 shrink-0" />
-                <span>{d}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      ),
-    },
-    {
-      title: '3. Base legal',
+      title: '1. Responsable del tratamiento',
       body: (
         <p>
-          El tratamiento de tus datos personales se realiza con base en la{' '}
-          <span className="text-white font-bold">Ley 1581 de 2012 (Ley de Protección de Datos Personales de Colombia)</span>,
-          el Decreto 1377 de 2013 y demás normas concordantes. KOP STUDIO actúa como responsable del
-          tratamiento de datos.
+          <span className="text-white font-medium">{controller}</span>
+          {business.nit && <>, identificado con NIT/CC {business.nit}</>}
+          {business.address && <>, con domicilio en {business.address}</>}. Correo:{' '}
+          <span className="text-white font-medium">{contactEmail}</span>
+          {business.phone && <>. Teléfono: {business.phone}</>}.
         </p>
       ),
     },
     {
-      title: '4. Derechos del titular (ARCO)',
+      title: '2. Datos que recopilamos',
+      body: (
+        <BulletList
+          items={[
+            'Al comprar: nombre, correo, teléfono y dirección de envío.',
+            'Si creas una cuenta: nombre, correo, teléfono (opcional) y tu contraseña cifrada.',
+            'Si escribes una reseña: el nombre que elijas mostrar y tu comentario, que serán públicos.',
+            'No recibimos ni guardamos los datos de tu tarjeta: el pago lo procesa Wompi directamente.',
+          ]}
+        />
+      ),
+    },
+    {
+      title: '3. Finalidades',
+      body: (
+        <BulletList
+          items={[
+            'Procesar, cobrar y entregar tus pedidos, y atender cambios, devoluciones y garantías.',
+            'Comunicarnos contigo sobre tu pedido.',
+            'Gestionar tu cuenta y el historial de pedidos.',
+            'Mostrar de forma anónima la ciudad y el producto de compras recientes (nunca tu nombre).',
+            'Cumplir obligaciones legales, contables y tributarias.',
+          ]}
+        />
+      ),
+    },
+    {
+      title: '4. Con quién compartimos tus datos',
       body: (
         <>
-          <p>
-            Como titular de tus datos personales, tienes derecho a:
-          </p>
-          <ul className="list-none space-y-1.5 mt-2">
-            {[
-              { label: 'Acceso', desc: 'Solicitar información sobre los datos que tenemos sobre ti' },
-              { label: 'Rectificación', desc: 'Corregir datos inexactos o incompletos' },
-              { label: 'Cancelación', desc: 'Solicitar la eliminación de tus datos personales' },
-              { label: 'Oposición', desc: 'Oponerte al tratamiento de tus datos para fines específicos' },
-            ].map((d) => (
-              <li key={d.label} className="flex items-start gap-2">
-                <span className="text-red-400 font-semibold text-xs w-28 shrink-0">{d.label}:</span>
-                <span>{d.desc}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2">
-            Para ejercer estos derechos, envía un correo a{' '}
-            <span className="text-white font-medium">contacto@kopstudio.com</span>.
-          </p>
+          <p>Solo con los encargados necesarios para prestar el servicio:</p>
+          <BulletList
+            items={[
+              <><span className="text-white">Wompi (Bancolombia)</span>: procesamiento de pagos.</>,
+              <><span className="text-white">Empresas de transporte</span>: nombre, teléfono y dirección para la entrega.</>,
+              <><span className="text-white">Proveedor de hosting</span>: almacenamiento seguro de la tienda y su base de datos.</>,
+            ]}
+          />
+          <p>No vendemos ni cedemos tus datos a terceros para publicidad.</p>
         </>
       ),
     },
     {
-      title: '5. Transferencia de datos',
-      body: (
-        <p>
-          Tus datos personales <span className="text-white font-medium">no serán compartidos con terceros</span> excepto
-          con empresas de transporte (Servientrega, Interrapidísimo, Coordinadora) y pasarelas de pago (Wompi)
-          estrictamente necesarias para la prestación del servicio. Estas empresas están obligadas por contrato
-          a mantener la confidencialidad de tus datos.
-        </p>
-      ),
-    },
-    {
-      title: '6. Cookies',
+      title: '5. Cookies y almacenamiento local',
       body: (
         <>
           <p>
-            Nuestra plataforma utiliza cookies para mejorar tu experiencia:
+            Usamos únicamente elementos <span className="text-white">necesarios</span> para que la
+            tienda funcione. No usamos cookies de analítica, publicidad ni rastreo de terceros.
           </p>
-          <ul className="list-none space-y-1.5 mt-2">
-            {[
-              { type: 'Técnicas', desc: 'Necesarias para el funcionamiento básico de la plataforma' },
-              { type: 'Analíticas', desc: 'Nos ayudan a entender cómo usas la plataforma' },
-              { type: 'Marketing', desc: 'Para mostrar publicidad relevante (solo con tu consentimiento)' },
-            ].map((c) => (
-              <li key={c.type} className="flex items-start gap-2">
-                <span className="text-red-400 font-semibold text-xs w-24 shrink-0">{c.type}:</span>
-                <span>{c.desc}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2">
-            Puedes configurar tu navegador para bloquear o eliminar cookies, aunque esto puede afectar la
-            funcionalidad de la plataforma.
-          </p>
+          <BulletList
+            items={[
+              <><span className="text-white">kop_session</span> (cookie): mantiene tu sesión iniciada. Dura 7 días o hasta que cierres sesión.</>,
+              <><span className="text-white">Almacenamiento local del navegador</span>: guarda tu carrito, favoritos y productos vistos en tu propio dispositivo.</>,
+            ]}
+          />
+          <p>Puedes borrarlos desde la configuración de tu navegador; el carrito y la sesión se perderán.</p>
         </>
       ),
     },
     {
-      title: '7. Seguridad',
+      title: '6. Tus derechos',
+      body: (
+        <>
+          <p>Como titular de los datos puedes, de forma gratuita:</p>
+          <BulletList
+            items={[
+              'Conocer, actualizar y rectificar tus datos.',
+              'Solicitar prueba de la autorización que nos diste.',
+              'Ser informado sobre el uso que les damos.',
+              'Revocar la autorización y/o pedir la supresión de tus datos, cuando no exista un deber legal de conservarlos.',
+              'Presentar quejas ante la Superintendencia de Industria y Comercio (SIC).',
+            ]}
+          />
+        </>
+      ),
+    },
+    {
+      title: '7. Cómo ejercer tus derechos',
       body: (
         <p>
-          Implementamos medidas de seguridad técnicas, administrativas y organizacionales para proteger tus
-          datos personales, incluyendo{' '}
-          <span className="text-white font-medium">encriptación SSL/TLS</span> en todas las transmisiones de
-          datos. Sin embargo, ningún sistema de seguridad es infalible, por lo que no podemos garantizar una
-          seguridad absoluta.
+          Escribe a <span className="text-white font-medium">{contactEmail}</span> indicando tu nombre,
+          correo usado en la tienda y tu solicitud. Respondemos las{' '}
+          <span className="text-white">consultas en máximo 10 días hábiles</span> (prorrogables 5 más) y
+          los <span className="text-white">reclamos en máximo 15 días hábiles</span> (prorrogables 8 más),
+          conforme a los artículos 14 y 15 de la Ley 1581 de 2012.
         </p>
       ),
     },
     {
-      title: '8. Menores de edad',
+      title: '8. Seguridad y conservación',
       body: (
         <p>
-          KOP STUDIO <span className="text-white font-bold">no recopila datos personales de menores de edad</span>.
-          Si eres menor de 18 años, no debes usar esta plataforma sin la supervisión y autorización de tus
-          padres o tutores legales. Si detectamos que se han recopilado datos de un menor, los eliminaremos
-          de inmediato.
+          La tienda usa conexión cifrada (HTTPS), las contraseñas se guardan cifradas y el acceso al
+          panel está restringido. Conservamos los datos de pedidos el tiempo exigido por las normas
+          contables y tributarias; los demás, mientras mantengas tu cuenta o hasta que pidas su supresión.
         </p>
       ),
     },
     {
-      title: '9. Contacto del responsable',
+      title: '9. Menores de edad',
       body: (
         <p>
-          Para consultas, quejas, reclamos o ejercer tus derechos ARCO, contacta al responsable del
-          tratamiento de datos: <span className="text-white font-medium">contacto@kopstudio.com</span>. Tu
-          solicitud será atendida en un plazo máximo de 15 días hábiles.
+          La tienda está dirigida a mayores de edad. Si eres menor, realiza tus compras con la
+          autorización y acompañamiento de tu representante legal.
+        </p>
+      ),
+    },
+    {
+      title: '10. Vigencia',
+      body: (
+        <p>
+          Esta política rige desde el {PRIVACY_LAST_UPDATED}. Si la cambiamos de forma sustancial, lo
+          informaremos en esta página.
         </p>
       ),
     },
@@ -644,114 +694,111 @@ function PrivacidadContent() {
   );
 }
 
+const CONTACT_SUBJECTS = [
+  'Consulta general',
+  'Estado de pedido',
+  'Devolución o cambio',
+  'Tallas y medidas',
+  'Ventas mayoristas',
+  'Queja o reclamo',
+  'Otro',
+];
+
+const contactInputClass =
+  'bg-[#1a1a1a] border-[#333] text-white placeholder:text-neutral-500 text-sm rounded-none focus-visible:border-red-600/50 transition-colors';
+
 function ContactoContent() {
   const navigate = useNavigationStore((s) => s.navigate);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { whatsappNumber, business } = useSiteSettings();
+  const [formData, setFormData] = useState({ name: '', subject: '', message: '' });
 
-  const handleSubmit = async (e: FormEvent) => {
+  // Messages are sent through the customer's own WhatsApp or email app, so they
+  // always reach the store (nothing is silently stored on the server).
+  const canSend = !!whatsappNumber || !!business.email;
+
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-
-    if (!formData.name.trim() || !formData.email.trim() || !formData.subject || !formData.message.trim()) {
+    if (!formData.name.trim() || !formData.subject || !formData.message.trim()) {
       toast.error('Completa todos los campos');
       return;
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error('Ingresa un correo electrónico válido');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        toast.success('¡Mensaje enviado! Te responderemos pronto.');
-        setFormData({ name: '', email: '', subject: '', message: '' });
-      } else {
-        toast.error('Error al enviar el mensaje. Intenta de nuevo.');
-      }
-    } catch {
-      toast.error('Error de conexión. Intenta de nuevo.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    const text = `Hola KOP STUDIO, soy ${formData.name.trim()}.\nAsunto: ${formData.subject}\n\n${formData.message.trim()}`;
+    const wa = whatsappLink(whatsappNumber, text);
+    const url =
+      wa ??
+      `mailto:${business.email}?subject=${encodeURIComponent(`[${formData.subject}] ${formData.name.trim()}`)}&body=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
+
+  const cards = [
+    whatsappNumber && { icon: MessageCircle, label: 'WhatsApp', value: `+${whatsappNumber}`, href: whatsappLink(whatsappNumber) ?? undefined, accent: true },
+    business.email && { icon: Mail, label: 'Email', value: business.email, href: `mailto:${business.email}`, accent: false },
+    business.phone && { icon: MessageCircle, label: 'Teléfono', value: business.phone, href: `tel:${business.phone.replace(/[^\d+]/g, '')}`, accent: false },
+    business.hours && { icon: Clock, label: 'Horario', value: business.hours, accent: false },
+    { icon: MapPin, label: 'Ubicación', value: business.address || 'La Unión, Nariño, Colombia', accent: false },
+  ].filter(Boolean) as { icon: React.ElementType; label: string; value: string; href?: string; accent: boolean }[];
+
+  const socials = [
+    business.instagramUrl && { href: business.instagramUrl, label: 'Instagram', Icon: Instagram },
+    business.twitterUrl && { href: business.twitterUrl, label: 'X / Twitter', Icon: Twitter },
+  ].filter(Boolean) as { href: string; label: string; Icon: React.ElementType }[];
 
   return (
     <>
-      {/* Contact Info Cards */}
+      {/* Contact Info Cards (only real, configured data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 mb-8">
-        {[
-          { icon: MessageCircle, label: 'WhatsApp', value: '+57 XXX XXX XXXX', accent: true },
-          { icon: Mail, label: 'Email', value: 'contacto@kopstudio.com', accent: false },
-          { icon: Clock, label: 'Horario', value: 'Lun-Sáb 9:00 AM - 6:00 PM', accent: false },
-          { icon: MapPin, label: 'Ubicación', value: 'La Unión, Nariño, Colombia', accent: false },
-        ].map((item, i) => (
-          <motion.div
-            key={item.label}
-            custom={i}
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className={`flex items-start gap-3 p-4 border ${
-              item.accent ? 'border-red-600/30 bg-red-600/5' : 'border-[#222] bg-[#111]'
-            } rounded-sm`}
-          >
-            <item.icon className={`size-5 mt-0.5 shrink-0 ${item.accent ? 'text-red-500' : 'text-neutral-500'}`} />
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
-                {item.label}
-              </p>
-              <p className={`text-sm mt-0.5 ${item.accent ? 'text-white font-medium' : 'text-neutral-300'}`}>
-                {item.value}
-              </p>
-            </div>
-          </motion.div>
-        ))}
+        {cards.map((item, i) => {
+          const content = (
+            <>
+              <item.icon className={`size-5 mt-0.5 shrink-0 ${item.accent ? 'text-red-500' : 'text-neutral-400'}`} />
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">{item.label}</p>
+                <p className={`text-sm mt-0.5 break-all ${item.accent ? 'text-white font-medium' : 'text-neutral-300'}`}>
+                  {item.value}
+                </p>
+              </div>
+            </>
+          );
+          const className = `flex items-start gap-3 p-4 border ${
+            item.accent ? 'border-red-600/30 bg-red-600/5' : 'border-[#222] bg-[#111]'
+          } rounded-sm`;
+          return (
+            <motion.div key={item.label} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+              {item.href ? (
+                <a href={item.href} target="_blank" rel="noopener noreferrer" className={`${className} hover:border-red-600/50 transition-colors`}>
+                  {content}
+                </a>
+              ) : (
+                <div className={className}>{content}</div>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Social Links */}
-      <SectionHeader icon={Instagram} title="Redes Sociales" index={5} />
-      <SectionBody index={5.5}>
-        <div className="flex items-center gap-3">
-          <a
-            href="https://instagram.com/kopstudio"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2.5 border border-[#222] bg-[#111] hover:border-white/30 text-neutral-400 hover:text-white text-sm transition-colors"
-          >
-            <Instagram className="size-4" />
-            @kopstudio
-          </a>
-          <a
-            href="https://twitter.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2.5 border border-[#222] bg-[#111] hover:border-white/30 text-neutral-400 hover:text-white text-sm transition-colors"
-          >
-            <Twitter className="size-4" />
-            @kopstudio
-          </a>
-        </div>
-      </SectionBody>
+      {socials.length > 0 && (
+        <>
+          <SectionHeader icon={Instagram} title="Redes Sociales" index={5} />
+          <SectionBody index={5.5}>
+            <div className="flex items-center gap-3">
+              {socials.map(({ href, label, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 border border-[#333] text-neutral-300 hover:text-white hover:border-white/50 text-sm transition-colors"
+                >
+                  <Icon className="size-4" />
+                  {label}
+                </a>
+              ))}
+            </div>
+          </SectionBody>
+        </>
+      )}
 
-      <RedDivider />
-
-      {/* FAQ Link */}
-      <div className="mt-6">
+      <div className="mt-8">
         <button
           onClick={() => navigate('info-page', { slug: 'faq' })}
           className="flex items-center gap-2 text-neutral-400 hover:text-white text-sm transition-colors group"
@@ -762,97 +809,72 @@ function ContactoContent() {
         </button>
       </div>
 
-      <RedDivider />
-
-      {/* Contact Form */}
-      <SectionHeader icon={Mail} title="Envíanos un mensaje" index={7} />
-      <motion.div
-        custom={7.5}
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-      >
-        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
-                Nombre
-              </label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-                placeholder="Tu nombre"
-                disabled={isSubmitting}
-                className="bg-[#1a1a1a] border-[#333] text-white placeholder:text-neutral-600 text-sm h-10 rounded-none focus-visible:border-red-600/50 transition-colors"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
-                Email
-              </label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
-                placeholder="tu@email.com"
-                disabled={isSubmitting}
-                className="bg-[#1a1a1a] border-[#333] text-white placeholder:text-neutral-600 text-sm h-10 rounded-none focus-visible:border-red-600/50 transition-colors"
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
-              Asunto
-            </label>
-            <Select
-              value={formData.subject}
-              onValueChange={(v) => setFormData((p) => ({ ...p, subject: v }))}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger className="bg-[#1a1a1a] border-[#333] text-white text-sm h-10 rounded-none focus:ring-red-600/30 focus:border-red-600/50">
-                <SelectValue placeholder="Selecciona un asunto" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1a1a1a] border-[#333]">
-                <SelectItem value="consulta-general" className="text-neutral-300 focus:text-white focus:bg-[#222]">Consulta general</SelectItem>
-                <SelectItem value="estado-pedido" className="text-neutral-300 focus:text-white focus:bg-[#222]">Estado de pedido</SelectItem>
-                <SelectItem value="devolucion-cambio" className="text-neutral-300 focus:text-white focus:bg-[#222]">Devolución o cambio</SelectItem>
-                <SelectItem value="tallas-medidas" className="text-neutral-300 focus:text-white focus:bg-[#222]">Tallas y medidas</SelectItem>
-                <SelectItem value="mayorista" className="text-neutral-300 focus:text-white focus:bg-[#222]">Ventas mayoristas</SelectItem>
-                <SelectItem value="queja-reclamo" className="text-neutral-300 focus:text-white focus:bg-[#222]">Queja o reclamo</SelectItem>
-                <SelectItem value="otro" className="text-neutral-300 focus:text-white focus:bg-[#222]">Otro</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
-              Mensaje
-            </label>
-            <Textarea
-              value={formData.message}
-              onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
-              placeholder="Escribe tu mensaje aquí..."
-              rows={5}
-              disabled={isSubmitting}
-              className="bg-[#1a1a1a] border-[#333] text-white placeholder:text-neutral-600 text-sm rounded-none focus-visible:border-red-600/50 transition-colors resize-none"
-            />
-          </div>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-widest font-bold px-8 h-11 rounded-none hover:scale-[1.02] active:scale-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="size-4 animate-spin" />
-                Enviando...
-              </span>
-            ) : (
-              'ENVIAR MENSAJE'
-            )}
-          </Button>
-        </form>
-      </motion.div>
+      {canSend && (
+        <>
+          <RedDivider />
+          <SectionHeader icon={Mail} title="Envíanos un mensaje" index={7} />
+          <motion.div custom={7.5} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <p className="text-neutral-400 text-xs mt-1">
+              Al enviar se abrirá {whatsappNumber ? 'WhatsApp' : 'tu aplicación de correo'} con tu mensaje listo.
+            </p>
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="contact-name" className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">
+                    Nombre
+                  </label>
+                  <Input
+                    id="contact-name"
+                    autoComplete="name"
+                    maxLength={100}
+                    value={formData.name}
+                    onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Tu nombre"
+                    className={`${contactInputClass} h-10`}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="contact-subject" className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">
+                    Asunto
+                  </label>
+                  <Select value={formData.subject} onValueChange={(v) => setFormData((p) => ({ ...p, subject: v }))}>
+                    <SelectTrigger id="contact-subject" className="bg-[#1a1a1a] border-[#333] text-white text-sm h-10 rounded-none focus:ring-red-600/30 focus:border-red-600/50">
+                      <SelectValue placeholder="Selecciona un asunto" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1a] border-[#333]">
+                      {CONTACT_SUBJECTS.map((subject) => (
+                        <SelectItem key={subject} value={subject} className="text-neutral-300 focus:text-white focus:bg-[#222]">
+                          {subject}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="contact-message" className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">
+                  Mensaje
+                </label>
+                <Textarea
+                  id="contact-message"
+                  maxLength={2000}
+                  value={formData.message}
+                  onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
+                  placeholder="Escribe tu mensaje aquí..."
+                  rows={5}
+                  className={`${contactInputClass} resize-none`}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white uppercase text-xs tracking-widest font-bold px-8 h-11 rounded-none transition-all"
+              >
+                {whatsappNumber ? 'ENVIAR POR WHATSAPP' : 'ENVIAR POR CORREO'}
+              </Button>
+            </form>
+          </motion.div>
+        </>
+      )}
     </>
   );
 }
@@ -861,10 +883,10 @@ function FAQContent() {
   const navigate = useNavigationStore((s) => s.navigate);
   const faqs = [
     { q: '¿Cuánto tarda mi envío?', a: 'Las ciudades principales (Bogotá, Medellín, Cali, Barranquilla) tienen entregas de 1-3 días hábiles. Otras zonas: 3-7 días hábiles.' },
-    { q: '¿El envío es gratis?', a: 'Sí, en compras mayores a $250.000 COP. Para compras menores, el costo varía entre $12.000 y $22.000 COP según la zona.' },
-    { q: '¿Puedo cambiar mi pedido?', a: 'Puedes solicitar cambios o devoluciones dentro de los 7 días calendario después de recibir tu pedido, siempre que la prenda esté sin uso y con etiquetas.' },
-    { q: '¿Qué métodos de pago aceptan?', a: 'Aceptamos tarjetas Visa/Mastercard, PSE, Nequi y otros medios a través de Wompi.' },
-    { q: '¿Cómo rastreo mi pedido?', a: 'Recibirás un número de guía por email. También puedes usar nuestra herramienta de rastrear pedido desde el menú principal.' },
+    { q: '¿El envío es gratis?', a: `Sí, en compras desde ${formatCOP(FREE_SHIPPING_THRESHOLD)} COP. Para compras menores, el envío a cualquier parte de Colombia cuesta ${formatCOP(SHIPPING_COST)} COP y se muestra antes de pagar.` },
+    { q: '¿Puedo cambiar mi pedido?', a: 'Puedes solicitar cambios o devoluciones dentro de los 7 días calendario después de recibir tu pedido, siempre que la prenda esté sin uso y con etiquetas. Además, tienes derecho de retracto durante 5 días hábiles (Ley 1480).' },
+    { q: '¿Qué métodos de pago aceptan?', a: 'Pagas en línea de forma segura a través de Wompi (tarjetas, PSE, Nequi). Si el pago en línea no está disponible, tu pedido queda reservado y te contactamos para coordinar el pago.' },
+    { q: '¿Cómo rastreo mi pedido?', a: 'Guarda el número de orden que ves al finalizar tu compra. Cuando despachemos tu pedido te compartiremos el número de guía, y puedes consultar el estado con la herramienta de rastrear pedido.' },
     { q: '¿Hacen envíos internacionales?', a: 'Actualmente solo realizamos envíos dentro de Colombia. Estamos trabajando para habilitar envíos internacionales pronto.' },
     { q: '¿Cómo sé mi talla?', a: 'Cada producto incluye una guía de tallas. Si tienes dudas, contáctanos por WhatsApp para asesoría personalizada.' },
     { q: '¿Las prendas son unisex?', a: 'La mayoría de nuestros diseños son unisex. Revisa la guía de tallas específica de cada producto para encontrar tu ajuste ideal.' },

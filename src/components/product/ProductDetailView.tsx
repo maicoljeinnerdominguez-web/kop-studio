@@ -418,7 +418,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
 
   if (loading) {
     return (
-      <main className="min-h-screen max-w-7xl mx-auto px-4 py-8">
+      <div className="min-h-screen max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           <Skeleton className="aspect-square w-full bg-[#111] rounded-md" />
           <div className="space-y-4">
@@ -429,13 +429,13 @@ function ProductDetailInner({ slug }: { slug: string }) {
             <Skeleton className="h-12 w-full bg-[#111] rounded-md" />
           </div>
         </div>
-      </main>
+      </div>
     )
   }
 
   if (!product) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
         <p className="text-gray-400 text-lg mb-4">Producto no encontrado</p>
         <Button
           variant="outline"
@@ -444,12 +444,12 @@ function ProductDetailInner({ slug }: { slug: string }) {
         >
           Volver
         </Button>
-      </main>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen">
+    <div className="min-h-screen">
       {/* Breadcrumb */}
       <div className="border-b border-[#1a1a1a]">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -457,18 +457,18 @@ function ProductDetailInner({ slug }: { slug: string }) {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink
-                  className="cursor-pointer text-gray-500 hover:text-white"
+                  className="cursor-pointer text-neutral-500 hover:text-white"
                   onClick={() => navigate('home')}
                 >
                   Inicio
                 </BreadcrumbLink>
               </BreadcrumbItem>
-              <BreadcrumbSeparator className="text-gray-600" />
+              <BreadcrumbSeparator className="text-neutral-500" />
               {product.category && (
                 <>
                   <BreadcrumbItem>
                     <BreadcrumbLink
-                      className="cursor-pointer text-gray-500 hover:text-white"
+                      className="cursor-pointer text-neutral-500 hover:text-white"
                       onClick={() =>
                         navigate('collection', { category: product.category!.slug })
                       }
@@ -476,7 +476,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                       {product.category.name}
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="text-gray-600" />
+                  <BreadcrumbSeparator className="text-neutral-500" />
                 </>
               )}
               <BreadcrumbItem>
@@ -507,8 +507,8 @@ function ProductDetailInner({ slug }: { slug: string }) {
               onClick={() => setLightboxOpen(true)}
               role="button"
               tabIndex={0}
-              aria-label="Open image lightbox"
-              onKeyDown={(e) => { if (e.key === 'Enter') setLightboxOpen(true) }}
+              aria-label="Ampliar imagen"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLightboxOpen(true) } }}
             >
               <AnimatePresence mode="wait">
                 {(product.images || []).map((image, i) => (
@@ -605,7 +605,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                   <span className="text-base text-neutral-500 line-through">
                     {formatPrice(product.compareAtPrice!)}
                   </span>
-                  <span className="text-sm font-bold text-red-600">
+                  <span className="text-sm font-bold text-red-500">
                     -{discountPercent}%
                   </span>
                 </>
@@ -703,7 +703,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                 })}
               </div>
               {isOutOfStock && (
-                <p className="text-sm text-red-600 mt-3">Agotado</p>
+                <p className="text-sm text-red-500 mt-3">Agotado</p>
               )}
             </div>
 
@@ -844,22 +844,22 @@ function ProductDetailInner({ slug }: { slug: string }) {
               <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
                 <Truck className="size-5 text-neutral-400 shrink-0" />
                 <div>
-                  <p className="text-xs font-medium text-white">Envío Express</p>
-                  <p className="text-[10px] text-neutral-500">2-4 días hábiles</p>
+                  <p className="text-xs font-medium text-white">Envío nacional</p>
+                  <p className="text-[10px] text-neutral-500">1 a 7 días hábiles</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
                 <RotateCcw className="size-5 text-neutral-400 shrink-0" />
                 <div>
-                  <p className="text-xs font-medium text-white">Devoluciones</p>
-                  <p className="text-[10px] text-neutral-500">30 días para cambios</p>
+                  <p className="text-xs font-medium text-white">Cambios</p>
+                  <p className="text-[10px] text-neutral-500">7 días · retracto 5 días hábiles</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-md">
                 <Shield className="size-5 text-neutral-400 shrink-0" />
                 <div>
-                  <p className="text-xs font-medium text-white">Compra Segura</p>
-                  <p className="text-[10px] text-neutral-500">Pago protegido</p>
+                  <p className="text-xs font-medium text-white">Pago seguro</p>
+                  <p className="text-[10px] text-neutral-500">Conexión cifrada</p>
                 </div>
               </div>
             </div>
@@ -893,7 +893,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     <ul className="text-sm text-neutral-400 space-y-1.5">
                       {labels.garmentDetails.map((detail, i) => (
                         <li key={i} className="flex items-center gap-2">
-                          <Check className="size-3.5 text-red-600" />
+                          <Check className="size-3.5 text-red-500" />
                           {detail}
                         </li>
                       ))}
@@ -909,7 +909,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
                     <ul className="text-sm text-neutral-400 space-y-1.5">
                       {labels.washGuide.map((step, i) => (
                         <li key={i} className="flex items-center gap-2">
-                          <Check className="size-3.5 text-red-600" />
+                          <Check className="size-3.5 text-red-500" />
                           {step}
                         </li>
                       ))}
@@ -977,7 +977,7 @@ function ProductDetailInner({ slug }: { slug: string }) {
         open={lightboxOpen}
         onOpenChange={setLightboxOpen}
       />
-    </main>
+    </div>
   )
 }
 

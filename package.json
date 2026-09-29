@@ -1,17 +1,18 @@
 {
-  "name": "nextjs_tailwind_shadcn_ts",
+  "name": "kop-studio",
   "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
+    "start": "NODE_ENV=production node .next/standalone/server.js",
     "lint": "eslint .",
     "db:push": "bunx prisma@6 db push",
     "db:generate": "bunx prisma@6 generate",
     "db:migrate": "bunx prisma@6 migrate dev",
     "db:reset": "bunx prisma@6 migrate reset",
-    "db:seed": "bun run prisma/seed.ts"
+    "db:seed": "bun run prisma/seed.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

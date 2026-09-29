@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem, Product, ProductVariant } from "@/types";
-
-const FREE_SHIPPING_THRESHOLD = 250000;
-const UPSELL_PRODUCT_ID = "upsell-puffer-bag";
-const UPSELL_PRICE = 40000;
+import {
+  FREE_SHIPPING_THRESHOLD,
+  SHIPPING_COST,
+  UPSELL_PRICE,
+  UPSELL_PRODUCT_ID,
+} from "@/lib/pricing";
 
 interface CartStore {
   items: CartItem[];
@@ -85,7 +87,7 @@ export const useCartStore = create<CartStore>()(
       getTotal: () => {
         const subtotal = get().getSubtotal();
         const hasFree = get().hasFreeShipping();
-        return hasFree ? subtotal : subtotal + 15000;
+        return hasFree ? subtotal : subtotal + SHIPPING_COST;
       },
 
       getItemCount: () => {

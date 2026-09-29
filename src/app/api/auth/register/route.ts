@@ -1,11 +1,16 @@
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { setSessionCookie } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, "register", 5, 60 * 60 * 1000);
+  if (limited) return limited;
+
   try {
     const body = await request.json();
-    const { name, email, password, phone } = body;
+    const { name, email, password, phone, acceptPrivacy } = body;
 
     // Validation
     if (!name || typeof name !== "string" || name.trim().length < 2) {
@@ -25,6 +30,13 @@ export async function POST(request: Request) {
     if (!password || typeof password !== "string" || password.length < 6) {
       return NextResponse.json(
         { error: "La contraseña debe tener al menos 6 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    if (acceptPrivacy !== true) {
+      return NextResponse.json(
+        { error: "Debes autorizar el tratamiento de tus datos personales" },
         { status: 400 }
       );
     }
@@ -50,21 +62,17 @@ export async function POST(request: Request) {
         passwordHash,
         phone: phone?.trim() || null,
         role: "USER",
+        privacyAcceptedAt: new Date(),
       },
     });
 
-    return NextResponse.json(
-      {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-        message: "¡Cuenta creada exitosamente!",
-      },
+    const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    const response = NextResponse.json(
+      { user: sessionUser, message: "¡Cuenta creada exitosamente!" },
       { status: 201 }
     );
+    setSessionCookie(response, sessionUser);
+    return response;
   } catch (err) {
     console.error("Registration error:", err);
     return NextResponse.json(

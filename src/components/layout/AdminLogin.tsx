@@ -22,8 +22,8 @@ export default function AdminLogin({ open, onOpenChange }: AdminLoginProps) {
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigationStore((s) => s.navigate);
 
-  const [email, setEmail] = useState('admin@kopstudio.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -38,11 +38,13 @@ export default function AdminLogin({ open, onOpenChange }: AdminLoginProps) {
       return;
     }
 
-    const success = await login(email, password);
+    const result = await login(email, password);
 
-    if (success) {
+    if (result.success && useAuthStore.getState().isAdmin) {
       onOpenChange(false);
       navigate('admin-dashboard');
+    } else if (result.success) {
+      setError('Esta cuenta no tiene permisos de administrador.');
     } else {
       setError('Credenciales inválidas. Intenta de nuevo.');
     }
@@ -115,10 +117,6 @@ export default function AdminLogin({ open, onOpenChange }: AdminLoginProps) {
             {loading ? 'INGRESANDO...' : 'INGRESAR'}
           </Button>
 
-          {/* Demo Credentials Hint */}
-          <p className="text-neutral-600 text-[11px] text-center leading-relaxed">
-            Demo: admin@kopstudio.com / admin123
-          </p>
         </form>
       </DialogContent>
     </Dialog>
